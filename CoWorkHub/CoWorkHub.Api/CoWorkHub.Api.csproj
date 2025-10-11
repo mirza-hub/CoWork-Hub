@@ -17,4 +17,8 @@
     <Folder Include="Controllers\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CoWorkHub.Services\CoWorkHub.Services.csproj" />
+  </ItemGroup>
+
 </Project>

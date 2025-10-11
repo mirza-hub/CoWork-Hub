@@ -1,3 +1,6 @@
+using CoWorkHub.Services.Database;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +9,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+var connectionString = builder.Configuration.GetConnectionString("CoWorkHubConnection");
+builder.Services.AddDbContext<_210095Context>(options =>
+    options.UseSqlServer(connectionString));
 
 var app = builder.Build();
 
