@@ -29,7 +29,7 @@ public partial class _210095Context : DbContext
 
     public virtual DbSet<Reservation> Reservations { get; set; }
 
-    public virtual DbSet<ReservationStatus> ReservationStatuses { get; set; }
+    public virtual DbSet<ReservationStatus> ReservationStatuses { get; set; }         
 
     public virtual DbSet<Resource> Resources { get; set; }
 
