@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Services
 {
-    public class CityService : BaseService<Model.City, CitySearchObject, Database.City>, ICityInterface
+    public class CityService : BaseService<Model.City, CitySearchObject, Database.City>, ICityService
     {
         public CityService(_210095Context context, IMapper mapper)
             : base(context, mapper) { }
@@ -21,7 +21,7 @@ namespace CoWorkHub.Services.Services
 
             if (!string.IsNullOrWhiteSpace(search.CityNameGTE))
             {
-                query = query.Where(x => x.CityName.StartsWith(search.CityNameGTE));
+                query = query.Where(x => x.CityName.ToLower().StartsWith(search.CityNameGTE.ToLower()));
             }
 
             return query;

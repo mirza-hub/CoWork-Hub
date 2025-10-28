@@ -8,9 +8,9 @@ namespace CoWorkHub.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ResourcesController : BaseCRUDController<Resource, ResourcesSearchObject, ResourcesInsertRequest, ResourcesUpdateRequest>
+    public class WorkingSpaceController : BaseCRUDController<Model.WorkingSpace, WorkingSpaceSearchObject, WorkingSpaceInsertRequest, WorkingSpaceUpdateRequest>
     {
-        public ResourcesController(IResourcesService service)
-            : base(service) {  }
+        public WorkingSpaceController(IWorkingSpaceService service) 
+            : base(service) { }
     }
 }

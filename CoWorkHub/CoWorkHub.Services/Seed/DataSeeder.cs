@@ -108,7 +108,7 @@ namespace CoWorkHub.Services.Seed
                 context.SaveChanges();
             }
 
-            // 7. Coworking spaces
+            // 7. Working spaces
             if (!context.WorkingSpaces.Any())
             {
                 context.WorkingSpaces.AddRange(
@@ -117,8 +117,8 @@ namespace CoWorkHub.Services.Seed
                         Name = "Tech Hub Sarajevo",
                         Description = "Modern coworking space in the center of Sarajevo",
                         CityId = 1,
-                        Capacity = "50",
-                        Price = "25",
+                        Capacity = 50,
+                        Price = 25,
                         WorkspaceTypeId = 1,
                         WorkingSpaceStatusId = 1,
                         CreatedBy = 1 
@@ -128,8 +128,8 @@ namespace CoWorkHub.Services.Seed
                         Name = "Zagreb BizLab",
                         Description = "Space for startup and freelancers in Zagreb",
                         CityId = 3,
-                        Capacity = "40",
-                        Price = "30",
+                        Capacity = 40,
+                        Price = 30,
                         WorkspaceTypeId = 2,
                         WorkingSpaceStatusId = 1,
                         CreatedBy = 1
