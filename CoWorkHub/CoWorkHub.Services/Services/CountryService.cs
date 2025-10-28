@@ -22,7 +22,7 @@ namespace CoWorkHub.Services.Services
 
             if (!string.IsNullOrWhiteSpace(search.CountryNameGTE))
             {
-                query = query.Where(x => x.CountryName.StartsWith(search.CountryNameGTE));
+                query = query.Where(x => x.CountryName.ToLower().StartsWith(search.CountryNameGTE.ToLower()));
             }
 
             return query;

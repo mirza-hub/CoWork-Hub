@@ -3,6 +3,6 @@ using CoWorkHub.Model.SearchObjects;
 
 namespace CoWorkHub.Services.Interfaces
 {
-    public interface ICityInterface : IService<City, CitySearchObject>
+    public interface ICityService : IService<City, CitySearchObject>
     {  }
 }

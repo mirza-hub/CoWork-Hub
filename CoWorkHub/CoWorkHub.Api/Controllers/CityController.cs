@@ -8,7 +8,7 @@ namespace CoWorkHub.Api.Controllers
     [Route("[controller]")]
     public class CityController : BaseController<Model.City, CitySearchObject>
     {
-        public CityController(ICityInterface service)
+        public CityController(ICityService service)
             : base(service) { }
     }
 }

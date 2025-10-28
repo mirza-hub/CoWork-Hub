@@ -13,9 +13,9 @@ public partial class WorkingSpace
 
     public int CityId { get; set; }
 
-    public string Capacity { get; set; } = null!;
+    public int Capacity { get; set; }
 
-    public string Price { get; set; } = null!;
+    public decimal Price { get; set; }
 
     public int WorkspaceTypeId { get; set; }
 

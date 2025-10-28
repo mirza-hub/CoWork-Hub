@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model.SearchObjects;
+﻿using CoWorkHub.Model.Requests;
+using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using MapsterMapper;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Services
 {
-    public class ResourcesService : BaseService<Model.Resource, ResourcesSearchObject, Database.Resource>, IResourcesService
+    public class ResourcesService : BaseCRUDService<Model.Resource, ResourcesSearchObject, Database.Resource, ResourcesInsertRequest, ResourcesUpdateRequest>, IResourcesService
     {
         public ResourcesService(_210095Context context, IMapper mapper)
             : base(context, mapper) { }
@@ -21,7 +22,7 @@ namespace CoWorkHub.Services.Services
 
             if (!string.IsNullOrWhiteSpace(search.ResourceNameGTE))
             {
-                query = query.Where(x => x.ResourceName.StartsWith(search.ResourceNameGTE));
+                query = query.Where(x => x.ResourceName.ToLower().StartsWith(search.ResourceNameGTE.ToLower()));
             }
 
             return query;

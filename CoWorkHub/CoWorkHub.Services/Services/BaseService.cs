@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Services
 {
-    public class BaseService<TModel, TSearch, TBEntity> : IService<TModel, TSearch> where TModel : class where TSearch : BaseSearchObject where TBEntity : class
+    public abstract class BaseService<TModel, TSearch, TDbBEntity> : IService<TModel, TSearch> where TModel : class where TSearch : BaseSearchObject where TDbBEntity : class
     {
         public _210095Context Context { get; set; }
         public IMapper Mapper { get; set; }
@@ -27,7 +27,7 @@ namespace CoWorkHub.Services.Services
         {
             List<TModel> result = new List<TModel>();
 
-            var query = Context.Set<TBEntity>().AsQueryable();
+            var query = Context.Set<TDbBEntity>().AsQueryable();
 
             query = AddFilter(search, query);
 
@@ -55,14 +55,14 @@ namespace CoWorkHub.Services.Services
             return pagedResult;
         }
 
-        public virtual IQueryable<TBEntity> AddFilter(TSearch search, IQueryable<TBEntity> query)
+        public virtual IQueryable<TDbBEntity> AddFilter(TSearch search, IQueryable<TDbBEntity> query)
         {
             return query;
         }
 
         public TModel GetById(int id)
         {
-            var entity = Context.Set<TBEntity>().Find(id);
+            var entity = Context.Set<TDbBEntity>().Find(id);
 
             if (entity != null)
                 return Mapper.Map<TModel>(entity);
