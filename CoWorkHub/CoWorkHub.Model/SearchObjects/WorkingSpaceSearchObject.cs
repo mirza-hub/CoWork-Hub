@@ -9,7 +9,6 @@ namespace CoWorkHub.Model.SearchObjects
         public string? NameFTS { get; set; }
         public int? CityId { get; set; }
         public int? WorkspaceTypeId { get; set; }
-        public int? WorkingSpaceStatusId { get; set; }
         public int? CapacityGTE { get; set; }
         public int? CapacityLTE { get; set; }
         public decimal? PriceGTE { get; set; }

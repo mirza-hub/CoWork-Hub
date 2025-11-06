@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class Review
+public partial class Review : ISoftDeletable
 {
     public int ReviewsId { get; set; }
 
@@ -28,4 +29,6 @@ public partial class Review
     public virtual User Users { get; set; } = null!;
 
     public virtual WorkingSpace WorkingSpaces { get; set; } = null!;
+
+    public bool IsDeleted { get; set; } = false;
 }

@@ -1,13 +1,10 @@
 ﻿using CoWorkHub.Model;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 
 namespace CoWorkHub.Services.Interfaces
 {
-    public interface ICountryService : IService<Country, CountrySearchObject> 
+    public interface ICountryService : ICRUDService<Country, CountrySearchObject, CountryInsertRequest, CountryUpdateRequest> 
     {  }
 }

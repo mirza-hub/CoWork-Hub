@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class PaymentMethod
+public partial class PaymentMethod : ISoftDeletable
 {
     public int PaymentMethodId { get; set; }
 
@@ -16,4 +17,6 @@ public partial class PaymentMethod
     public DateTime? DeletedAt { get; set; }
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+    public bool IsDeleted { get; set; } = false;
 }

@@ -1,8 +1,8 @@
 ﻿using CoWorkHub.Model.SearchObjects;
-using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CoWorkHub.Api.Controllers
+namespace CoWorkHub.Api.Controllers.BaseControllers
 {
     [ApiController]
     [Route("[controller]")]

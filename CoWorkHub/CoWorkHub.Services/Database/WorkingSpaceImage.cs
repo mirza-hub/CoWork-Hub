@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class WorkingSpaceImage
+public partial class WorkingSpaceImage : ISoftDeletable
 {
     public int ImageId { get; set; }
 
@@ -20,4 +21,8 @@ public partial class WorkingSpaceImage
     public virtual User CreatedByNavigation { get; set; } = null!;
 
     public virtual WorkingSpace WorkingSpaces { get; set; } = null!;
+
+    public DateTime? DeletedAt { get; set; }
+
+    public bool IsDeleted { get; set; } = false;
 }

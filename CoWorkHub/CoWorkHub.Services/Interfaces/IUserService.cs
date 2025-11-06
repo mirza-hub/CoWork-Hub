@@ -1,5 +1,7 @@
 ﻿using CoWorkHub.Model;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,9 +10,7 @@ using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Interfaces
 {
-    public interface IService<TModel, TSearch> where TSearch : BaseSearchObject
+    public interface IUserService : ICRUDService<Model.User, UserSearchObject, UserInsertRequest, UserUpdateRequest>
     {
-        public PagedResult<TModel> GetPaged(TSearch search);
-        public TModel GetById(int id);
     }
 }

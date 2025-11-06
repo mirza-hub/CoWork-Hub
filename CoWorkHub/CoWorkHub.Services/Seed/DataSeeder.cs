@@ -1,16 +1,11 @@
-﻿using CoWorkHub.Services.Database;
-using CoWorkHub.Services.Helper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CoWorkHub.Services.Auth;
+using CoWorkHub.Services.Database;
 
 namespace CoWorkHub.Services.Seed
 {
     public static class DataSeeder
     {
-        public static void Seed(_210095Context context)
+        public static void Seed(_210095Context context, IPasswordService passwordService)
         {
             // 1. Countries
             if (!context.Countries.Any())
@@ -79,6 +74,12 @@ namespace CoWorkHub.Services.Seed
             // 6. Users
             if (!context.Users.Any())
             {
+                var adminSalt = passwordService.GenerateSalt();
+                var adminHash = passwordService.GenerateHash(adminSalt, "test");
+
+                var userSalt = passwordService.GenerateSalt();
+                var userHash = passwordService.GenerateHash(userSalt, "test");
+
                 context.Users.AddRange(
                     new User
                     {
@@ -87,7 +88,8 @@ namespace CoWorkHub.Services.Seed
                         Email = "admin@example.com",
                         Username = "desktop",
                         PhoneNumber = "061111111",
-                        PasswordHash = PasswordHelper.SetPassword("test"),
+                        PasswordSalt = adminSalt,
+                        PasswordHash = adminHash,
                         CityId = 1,
                         RoleId = 1,
                         IsActive = true
@@ -99,7 +101,8 @@ namespace CoWorkHub.Services.Seed
                         Email = "user@example.com",
                         Username = "mobile",
                         PhoneNumber = "062222222",
-                        PasswordHash = PasswordHelper.SetPassword("test"),
+                        PasswordSalt = userSalt,
+                        PasswordHash = userHash,
                         CityId = 3,
                         RoleId = 2,
                         IsActive = true
@@ -120,7 +123,7 @@ namespace CoWorkHub.Services.Seed
                         Capacity = 50,
                         Price = 25,
                         WorkspaceTypeId = 1,
-                        WorkingSpaceStatusId = 1,
+                        StateMachine = "draft",
                         CreatedBy = 1 
                     },
                     new WorkingSpace
@@ -131,7 +134,7 @@ namespace CoWorkHub.Services.Seed
                         Capacity = 40,
                         Price = 30,
                         WorkspaceTypeId = 2,
-                        WorkingSpaceStatusId = 1,
+                        StateMachine = "draft",
                         CreatedBy = 1
                     }
                 );

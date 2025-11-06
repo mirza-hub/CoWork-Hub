@@ -1,15 +1,22 @@
-﻿using CoWorkHub.Model.Requests;
+﻿using Azure.Core;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Services.BaseServicesImplementation;
+using CoWorkHub.Services.WorkingSpaceStateMachine;
 using MapsterMapper;
 
 namespace CoWorkHub.Services.Services
 {
     public class WorkingSpaceService : BaseCRUDService<Model.WorkingSpace, WorkingSpaceSearchObject, Database.WorkingSpace, WorkingSpaceInsertRequest, WorkingSpaceUpdateRequest>, IWorkingSpaceService
     {
-        public WorkingSpaceService(_210095Context context, IMapper mapper) 
-            : base(context, mapper)  {  }
+        public BaseWorkingSpaceState BaseWorkingSpaceState { get; set; }
+        public WorkingSpaceService(_210095Context context, IMapper mapper, BaseWorkingSpaceState baseWorkingSpaceState) 
+            : base(context, mapper) 
+        {
+            BaseWorkingSpaceState = baseWorkingSpaceState;
+        }
 
         public override IQueryable<WorkingSpace> AddFilter(WorkingSpaceSearchObject search, IQueryable<WorkingSpace> query)
         {
@@ -23,9 +30,6 @@ namespace CoWorkHub.Services.Services
 
             if (search.WorkspaceTypeId.HasValue)
                 query = query.Where(x => x.WorkspaceTypeId == search.WorkspaceTypeId.Value);
-
-            if (search.WorkingSpaceStatusId.HasValue)
-                query = query.Where(x => x.WorkingSpaceStatusId == search.WorkingSpaceStatusId.Value);
 
             if (search.CapacityGTE.HasValue)
                 query = query.Where(x => x.Capacity >= search.CapacityGTE.Value);
@@ -42,18 +46,74 @@ namespace CoWorkHub.Services.Services
             return query;
         }
 
-        public override void BeforeInsert(WorkingSpaceInsertRequest request, WorkingSpace entity)
+        public override Model.WorkingSpace Insert(WorkingSpaceInsertRequest request)
         {
-            base.BeforeInsert(request, entity);
-            entity.CreatedBy = 1; //SAD ZA SAD NEK OSTANE KEC DOK SE NE IMPLEMENTIRA LOGOVANJE KORISNIKA
-            entity.CreatedAt = DateTime.UtcNow;
+            var state = BaseWorkingSpaceState.CreateState("initial");
+            return state.Insert(request);
         }
 
-        public override void BeforeUpdate(WorkingSpaceUpdateRequest request, WorkingSpace entity)
+        public override Model.WorkingSpace Update(int id, WorkingSpaceUpdateRequest request)
         {
-            base.BeforeUpdate(request, entity);
-            entity.ModifiedAt = DateTime.UtcNow;
-            entity.ModifiedBy = 1; //SAD ZA SAD NEK OSTANE KEC DOK SE NE IMPLEMENTIRA LOGOVANJE KORISNIKA
+            var entity = GetById(id);
+            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
+            return state.Update(id, request);
+        }
+
+        public Model.WorkingSpace Activate(int id)
+        {
+            var entity = GetById(id);
+            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
+            return state.Activate(id);
+        }
+
+        public Model.WorkingSpace Edit(int id)
+        {
+            var entity = GetById(id);
+            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
+            return state.Edit(id);
+        }
+
+        public Model.WorkingSpace Hide(int id)
+        {
+            var entity = GetById(id);
+            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
+            return state.Hide(id);
+        }
+
+        public Model.WorkingSpace SetMaintenance(int id)
+        {
+            var entity = GetById(id);
+            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
+            return state.SetMaintenance(id);
+        }
+
+        public override void Delete(int id)
+        {
+            var entity = GetById(id);
+            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
+            state.Delete(id);
+        }
+
+        public Model.WorkingSpace Restore(int id)
+        {
+            var entity = GetById(id);
+            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
+            return state.Restore(id);
+        }
+
+        public List<string> AllowedActions(int id)
+        {
+            if (id <= 0)
+            {
+                var state = BaseWorkingSpaceState.CreateState("initial");
+                return state.AllowedActions(null);
+            }
+            else
+            {
+                var entity = Context.WorkingSpaces.Find(id);
+                var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
+                return state.AllowedActions(entity);
+            }
         }
     }
 }

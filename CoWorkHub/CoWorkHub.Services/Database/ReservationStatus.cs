@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class ReservationStatus
+public partial class ReservationStatus : ISoftDeletable
 {
     public int ReservationStatusId { get; set; }
 
@@ -16,4 +17,6 @@ public partial class ReservationStatus
     public DateTime? DeletedAt { get; set; }
 
     public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
+
+    public bool IsDeleted { get; set; } = false;
 }

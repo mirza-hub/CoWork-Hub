@@ -1,16 +1,13 @@
-﻿using CoWorkHub.Model.SearchObjects;
+﻿using CoWorkHub.Model.Requests;
+using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Services
 {
-    public class CityService : BaseService<Model.City, CitySearchObject, Database.City>, ICityService
+    public class CityService : BaseCRUDService<Model.City, CitySearchObject, Database.City, CityInsertRequest, CityUpdateRequest>, ICityService
     {
         public CityService(_210095Context context, IMapper mapper)
             : base(context, mapper) { }
@@ -25,6 +22,24 @@ namespace CoWorkHub.Services.Services
             }
 
             return query;
+        }
+
+        public override void BeforeInsert(CityInsertRequest request, City entity)
+        {
+            base.BeforeInsert(request, entity);
+
+            var existingCity = Context.Cities
+                .FirstOrDefault(x => x.CityName.ToLower() == request.CityName.ToLower()
+                       || x.PostalCode.ToLower() == request.PostalCode.ToLower());
+
+            if (existingCity != null)
+            {
+                if (existingCity.CityName.Equals(request.CityName, StringComparison.OrdinalIgnoreCase))
+                    throw new Exception("A city with this name already exists in the database.");
+
+                if (existingCity.PostalCode.Equals(request.PostalCode, StringComparison.OrdinalIgnoreCase))
+                    throw new Exception("This postal code is already assigned.");
+            }
         }
     }
 }

@@ -1,13 +1,9 @@
 ﻿using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
+using CoWorkHub.Services.Interfaces;
 using MapsterMapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace CoWorkHub.Services.Services
+namespace CoWorkHub.Services.Services.BaseServicesImplementation
 {
     public abstract class BaseCRUDService<TModel, TSearch, TDbEntity, TInsert, TUpdate>
         : BaseService<TModel, TSearch, TDbEntity> where TModel : class
@@ -25,10 +21,13 @@ namespace CoWorkHub.Services.Services
             Context.Add(entity);
             Context.SaveChanges();
 
+            AfterInsert(request, entity);
+
             return Mapper.Map<TModel>(entity);
         }
 
         public virtual void BeforeInsert(TInsert request, TDbEntity entity) { }
+        public virtual void AfterInsert(TInsert request, TDbEntity entity) { }
 
         public virtual TModel Update(int id, TUpdate request)
         {
@@ -42,10 +41,13 @@ namespace CoWorkHub.Services.Services
 
             Context.SaveChanges();
 
+            AfterUpdate(request, entity);
+
             return Mapper.Map<TModel>(entity);
         }
 
         public virtual void BeforeUpdate(TUpdate request, TDbEntity entity) { }
+        public virtual void AfterUpdate(TUpdate request, TDbEntity entity) { }
 
         public virtual void Delete(int id)
         {
@@ -56,10 +58,23 @@ namespace CoWorkHub.Services.Services
 
             BeforeDelete(entity);
 
-            Context.Remove(entity);
+            if (entity is ISoftDeletable softDeletableEntity)
+            {
+                softDeletableEntity.IsDeleted = true;
+                softDeletableEntity.DeletedAt = DateTime.Now;
+
+                Context.Update(entity);
+            }
+            else
+            {
+                Context.Remove(entity);
+            }
+
             Context.SaveChanges();
+            AfterDelete(entity);
         }
 
         public virtual void BeforeDelete(TDbEntity entity) { }
+        public virtual void AfterDelete(TDbEntity entity) { }
     }
 }

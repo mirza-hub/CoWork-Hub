@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class Notification
+public partial class Notification : ISoftDeletable
 {
     public int NotificationId { get; set; }
 
@@ -18,4 +19,6 @@ public partial class Notification
     public DateTime? DeletedAt { get; set; }
 
     public virtual User User { get; set; } = null!;
+
+    public bool IsDeleted { get; set; } = false;
 }
