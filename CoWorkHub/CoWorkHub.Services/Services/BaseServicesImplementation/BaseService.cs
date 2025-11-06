@@ -2,7 +2,7 @@
 using CoWorkHub.Model;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
-using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System;
@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CoWorkHub.Services.Services
+namespace CoWorkHub.Services.Services.BaseServicesImplementation
 {
     public abstract class BaseService<TModel, TSearch, TDbBEntity> : IService<TModel, TSearch> where TModel : class where TSearch : BaseSearchObject where TDbBEntity : class
     {
@@ -23,7 +23,7 @@ namespace CoWorkHub.Services.Services
             Mapper = mapper;
         }
 
-        public PagedResult<TModel> GetPaged(TSearch search)
+        public virtual PagedResult<TModel> GetPaged(TSearch search)
         {
             List<TModel> result = new List<TModel>();
 
@@ -60,7 +60,7 @@ namespace CoWorkHub.Services.Services
             return query;
         }
 
-        public TModel GetById(int id)
+        public virtual TModel GetById(int id)
         {
             var entity = Context.Set<TDbBEntity>().Find(id);
 

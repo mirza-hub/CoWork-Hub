@@ -1,6 +1,7 @@
 ﻿using CoWorkHub.Model;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 
 namespace CoWorkHub.Services.Interfaces
 {

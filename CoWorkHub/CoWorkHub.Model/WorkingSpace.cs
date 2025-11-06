@@ -13,6 +13,6 @@ namespace CoWorkHub.Model
         public string Capacity { get; set; }
         public string Price { get; set; }
         public int WorkspaceTypeId { get; set; }
-        public int WorkingSpaceStatusId { get; set; }
+        public string? StateMachine { get; set; }
     }
 }

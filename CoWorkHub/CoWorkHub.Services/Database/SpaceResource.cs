@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class SpaceResource
+public partial class SpaceResource : ISoftDeletable
 {
     public int SpaceResourcesId { get; set; }
 
@@ -32,4 +33,6 @@ public partial class SpaceResource
     public virtual Resource Resources { get; set; } = null!;
 
     public virtual WorkingSpace WorkingSpaces { get; set; } = null!;
+
+    public bool IsDeleted { get; set; } = false;
 }

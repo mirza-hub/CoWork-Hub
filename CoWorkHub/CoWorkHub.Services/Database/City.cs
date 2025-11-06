@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class City
+public partial class City : ISoftDeletable
 {
     public int CityId { get; set; }
 
@@ -18,4 +19,8 @@ public partial class City
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 
     public virtual ICollection<WorkingSpace> WorkingSpaces { get; set; } = new List<WorkingSpace>();
+
+    public bool IsDeleted { get; set; } = false;
+
+    public DateTime? DeletedAt { get; set; }
 }

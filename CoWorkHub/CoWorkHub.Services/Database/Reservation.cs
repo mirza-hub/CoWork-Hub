@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class Reservation
+public partial class Reservation : ISoftDeletable
 {
     public int ReservationId { get; set; }
 
@@ -30,4 +31,8 @@ public partial class Reservation
     public virtual User Users { get; set; } = null!;
 
     public virtual WorkingSpace WorkingSpaces { get; set; } = null!;
+
+    public DateTime? DeletedAt { get; set; }
+
+    public bool IsDeleted { get; set; } = false;
 }

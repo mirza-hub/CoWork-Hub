@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class WorkingSpaceStatus
+public partial class WorkingSpaceStatus : ISoftDeletable
 {
     public int WorkingSpaceStatusId { get; set; }
 
@@ -15,5 +16,5 @@ public partial class WorkingSpaceStatus
 
     public DateTime? DeletedAt { get; set; }
 
-    public virtual ICollection<WorkingSpace> WorkingSpaces { get; set; } = new List<WorkingSpace>();
+    public bool IsDeleted { get; set; } = false;
 }

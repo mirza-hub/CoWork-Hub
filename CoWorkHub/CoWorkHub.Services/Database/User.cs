@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CoWorkHub.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace CoWorkHub.Services.Database;
 
-public partial class User
+public partial class User : ISoftDeletable
 {
     public int UsersId { get; set; }
 
@@ -18,6 +19,8 @@ public partial class User
     public string PhoneNumber { get; set; } = null!;
 
     public string? ProfileImageUrl { get; set; }
+
+    public string PasswordSalt { get; set; } = null!;
 
     public string PasswordHash { get; set; } = null!;
 
@@ -60,4 +63,6 @@ public partial class User
     public virtual ICollection<WorkingSpaceImage> WorkingSpaceImages { get; set; } = new List<WorkingSpaceImage>();
 
     public virtual ICollection<WorkingSpace> WorkingSpaceModifiedByNavigations { get; set; } = new List<WorkingSpace>();
+
+    public bool IsDeleted { get; set; } = false;
 }

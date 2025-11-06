@@ -1,8 +1,10 @@
 ﻿using CoWorkHub.Model;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 
 namespace CoWorkHub.Services.Interfaces
 {
-    public interface ICityService : IService<City, CitySearchObject>
+    public interface ICityService : ICRUDService<City, CitySearchObject, CityInsertRequest, CityUpdateRequest>
     {  }
 }

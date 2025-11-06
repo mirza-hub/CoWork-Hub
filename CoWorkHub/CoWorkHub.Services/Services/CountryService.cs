@@ -1,17 +1,13 @@
-﻿using CoWorkHub.Model;
+﻿using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Services
 {
-    public class CountryService : BaseService<Model.Country, CountrySearchObject, Database.Country>, ICountryService
+    public class CountryService : BaseCRUDService<Model.Country, CountrySearchObject, Database.Country, CountryInsertRequest, CountryUpdateRequest>, ICountryService
     {
         public CountryService(_210095Context context, IMapper mapper) 
             : base(context, mapper) { }
@@ -26,6 +22,20 @@ namespace CoWorkHub.Services.Services
             }
 
             return query;
+        }
+
+        public override void BeforeInsert(CountryInsertRequest request, Country entity)
+        {
+            base.BeforeInsert(request, entity);
+
+            var existingCountry = Context.Countries
+                .FirstOrDefault(x => x.CountryName.ToLower() == request.CountryName.ToLower());
+
+            if (existingCountry != null)
+            {
+                if (existingCountry.CountryName.Equals(request.CountryName, StringComparison.OrdinalIgnoreCase))
+                    throw new Exception("A country with this name already exists in the database.");
+            }
         }
     }
 }

@@ -6,12 +6,11 @@ namespace CoWorkHub.Model.Requests
 {
     public class WorkingSpaceInsertRequest
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public int CityId { get; set; }
-        public string Capacity { get; set; }
-        public string Price { get; set; }
+        public string Name { get; set; } = null!;
+        public string Description { get; set; } = null!;
+        public int CityId { get; set; } 
+        public int Capacity { get; set; }
+        public decimal Price { get; set; }
         public int WorkspaceTypeId { get; set; }
-        public int WorkingSpaceStatusId { get; set; }
     }
 }

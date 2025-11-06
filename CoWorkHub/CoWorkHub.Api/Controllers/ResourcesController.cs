@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model;
+﻿using CoWorkHub.Api.Controllers.BaseControllers;
+using CoWorkHub.Model;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Interfaces;

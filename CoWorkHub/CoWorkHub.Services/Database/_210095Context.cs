@@ -344,11 +344,6 @@ public partial class _210095Context : DbContext
                 .HasForeignKey(d => d.ModifiedBy)
                 .HasConstraintName("FK_WorkingSpacesModifiedBy_Users");
 
-            entity.HasOne(d => d.WorkingSpaceStatus).WithMany(p => p.WorkingSpaces)
-                .HasForeignKey(d => d.WorkingSpaceStatusId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_WorkingSpaces_WorkingSpaceStatus");
-
             entity.HasOne(d => d.WorkspaceType).WithMany(p => p.WorkingSpaces)
                 .HasForeignKey(d => d.WorkspaceTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
