@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model.SearchObjects;
+﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using MapsterMapper;
@@ -14,7 +15,7 @@ namespace CoWorkHub.Services.Services.BaseServicesImplementation
 
         public virtual TModel Insert(TInsert request)
         {
-            TDbEntity entity = Mapper.Map<TDbEntity>(request);
+            TDbEntity entity = Mapper.Map<TDbEntity>(request!);
          
             BeforeInsert(request, entity);
 
@@ -35,6 +36,9 @@ namespace CoWorkHub.Services.Services.BaseServicesImplementation
 
             var entity = set.Find(id);
 
+            if (entity == null)
+                throw new UserException("Entity not found.");
+
             Mapper.Map(request, entity);
 
             BeforeUpdate(request, entity);
@@ -54,7 +58,7 @@ namespace CoWorkHub.Services.Services.BaseServicesImplementation
             var entity = Context.Set<TDbEntity>().Find(id);
 
             if (entity == null)
-                throw new Exception("Not found");
+                throw new UserException("Entity not found.");
 
             BeforeDelete(entity);
 

@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model.Requests;
+﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
@@ -34,7 +35,7 @@ namespace CoWorkHub.Services.Services
             if (existingCountry != null)
             {
                 if (existingCountry.CountryName.Equals(request.CountryName, StringComparison.OrdinalIgnoreCase))
-                    throw new Exception("A country with this name already exists in the database.");
+                    throw new UserException("A country with this name already exists in the database.");
             }
         }
     }

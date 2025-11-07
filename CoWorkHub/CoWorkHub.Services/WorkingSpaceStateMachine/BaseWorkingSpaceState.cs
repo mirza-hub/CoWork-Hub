@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model.Requests;
+﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Services.Database;
 using MapsterMapper;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,47 +27,47 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
 
         public virtual Model.WorkingSpace Insert(WorkingSpaceInsertRequest request)
         {
-            throw new Exception("Method not allowed.");
+            throw new UserException("Method not allowed.");
         }
 
         public virtual Model.WorkingSpace Update(int id, WorkingSpaceUpdateRequest request)
         {
-            throw new Exception("Method not allowed.");
+            throw new UserException("Method not allowed.");
         }
 
         public virtual Model.WorkingSpace Activate(int id)
         {
-            throw new Exception("Method not allowed.");
+            throw new UserException("Method not allowed.");
         }
 
         public virtual Model.WorkingSpace Hide(int id)
         {
-            throw new Exception("Method not allowed.");
+            throw new UserException("Method not allowed.");
         }
 
         public virtual Model.WorkingSpace Edit(int id)
         {
-            throw new Exception("Method not allowed.");
+            throw new UserException("Method not allowed.");
         }
 
         public virtual Model.WorkingSpace SetMaintenance(int id)
         {
-            throw new Exception("Method not allowed.");
+            throw new UserException("Method not allowed.");
         }
 
         public virtual void Delete(int id)
         {
-            throw new Exception("Method not allowed.");
+            throw new UserException("Method not allowed.");
         }
 
         public virtual Model.WorkingSpace Restore(int id)
         {
-            throw new Exception("Method not allowed.");
+            throw new UserException("Method not allowed.");
         }
 
         public virtual List<string> AllowedActions(Database.WorkingSpace entity)
         {
-            throw new Exception("Method not allowed.");
+            throw new UserException("Method not allowed.");
         }
 
         public BaseWorkingSpaceState CreateState(string stateName)
@@ -85,7 +86,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
                     return ServiceProvider.GetService<MaintenanceWorkingSpaceState>();
                 case "deleted":
                     return ServiceProvider.GetService<DeletedWorkingSpaceState>();
-                default: throw new Exception("State not recognized");
+                default: throw new UserException("State not recognized");
             }
         }
     }

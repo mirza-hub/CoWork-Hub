@@ -7,7 +7,7 @@ public partial class ActivityLog
 {
     public int ActivityLogId { get; set; }
 
-    public int UserId { get; set; }
+    public int? UserId { get; set; }
 
     public string Action { get; set; } = null!;
 
@@ -15,5 +15,5 @@ public partial class ActivityLog
 
     public DateTime CreatedAt { get; set; }
 
-    public virtual User User { get; set; } = null!;
+    public virtual User? User { get; set; } = null!;
 }

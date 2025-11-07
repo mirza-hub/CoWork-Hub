@@ -1,4 +1,6 @@
 ﻿using Azure.Core;
+using CoWorkHub.Model;
+using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
@@ -6,19 +8,25 @@ using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using CoWorkHub.Services.WorkingSpaceStateMachine;
 using MapsterMapper;
+using Microsoft.Extensions.Logging;
 
 namespace CoWorkHub.Services.Services
 {
     public class WorkingSpaceService : BaseCRUDService<Model.WorkingSpace, WorkingSpaceSearchObject, Database.WorkingSpace, WorkingSpaceInsertRequest, WorkingSpaceUpdateRequest>, IWorkingSpaceService
     {
         public BaseWorkingSpaceState BaseWorkingSpaceState { get; set; }
-        public WorkingSpaceService(_210095Context context, IMapper mapper, BaseWorkingSpaceState baseWorkingSpaceState) 
+        private readonly ILogger<WorkingSpaceService> _logger;
+        public WorkingSpaceService(_210095Context context, 
+            IMapper mapper, 
+            BaseWorkingSpaceState baseWorkingSpaceState,
+            ILogger<WorkingSpaceService> logger) 
             : base(context, mapper) 
         {
             BaseWorkingSpaceState = baseWorkingSpaceState;
+            _logger = logger;
         }
 
-        public override IQueryable<WorkingSpace> AddFilter(WorkingSpaceSearchObject search, IQueryable<WorkingSpace> query)
+        public override IQueryable<Database.WorkingSpace> AddFilter(WorkingSpaceSearchObject search, IQueryable<Database.WorkingSpace> query)
         {
             query = base.AddFilter(search, query);
 
@@ -61,6 +69,7 @@ namespace CoWorkHub.Services.Services
 
         public Model.WorkingSpace Activate(int id)
         {
+            _logger.LogInformation("Admin activated workspace");
             var entity = GetById(id);
             var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
             return state.Activate(id);
@@ -111,6 +120,8 @@ namespace CoWorkHub.Services.Services
             else
             {
                 var entity = Context.WorkingSpaces.Find(id);
+                if (entity == null)
+                    throw new UserException("Working space not found.");
                 var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
                 return state.AllowedActions(entity);
             }
