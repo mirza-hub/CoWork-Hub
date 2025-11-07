@@ -1,6 +1,8 @@
+using CoWorkHub.Api.Filters;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Logging;
 using CoWorkHub.Services.Seed;
 using CoWorkHub.Services.Services;
 using CoWorkHub.Services.WorkingSpaceStateMachine;
@@ -28,7 +30,10 @@ builder.Services.AddTransient<DeletedWorkingSpaceState>();
 
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(x =>
+{
+    x.Filters.Add<ExceptionFilter>();
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

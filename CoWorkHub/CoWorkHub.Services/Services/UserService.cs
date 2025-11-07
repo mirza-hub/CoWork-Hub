@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model.Requests;
+﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
@@ -56,13 +57,13 @@ namespace CoWorkHub.Services.Services
             base.BeforeInsert(request, entity);
 
             if (request.Password != request.PasswordConfirm)
-                throw new Exception("Password and onfirmation password must match.");
+                throw new UserException("Password and onfirmation password must match.");
 
             if (Context.Users.Any(x => x.Username.ToLower() == request.Username.ToLower()))
-                throw new Exception("User with this username is already registered.");
+                throw new UserException("User with this username is already registered.");
 
             if (Context.Users.Any(x => x.Email.ToLower() == request.Email.ToLower()))
-                throw new Exception("User with this email is already registered.");
+                throw new UserException("User with this email is already registered.");
 
             entity.PasswordSalt = _passwordService.GenerateSalt();
             entity.PasswordHash = _passwordService.GenerateHash(entity.PasswordSalt, request.Password);

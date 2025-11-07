@@ -4,6 +4,7 @@ using CoWorkHub.Services.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CoWorkHub.Services.Migrations
 {
     [DbContext(typeof(_210095Context))]
-    partial class _210095ContextModelSnapshot : ModelSnapshot
+    [Migration("20251106165412_updatedStateMachineColumn")]
+    partial class updatedStateMachineColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,7 +47,7 @@ namespace CoWorkHub.Services.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
 
-                    b.Property<int?>("UserId")
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("ActivityLogId")
@@ -766,6 +769,7 @@ namespace CoWorkHub.Services.Migrations
                     b.HasOne("CoWorkHub.Services.Database.User", "User")
                         .WithMany("ActivityLogs")
                         .HasForeignKey("UserId")
+                        .IsRequired()
                         .HasConstraintName("FK_ActivityLog_Users");
 
                     b.Navigation("User");

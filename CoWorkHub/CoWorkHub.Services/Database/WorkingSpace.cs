@@ -20,7 +20,7 @@ public partial class WorkingSpace : ISoftDeletable
 
     public int WorkspaceTypeId { get; set; }
 
-    public string? StateMachine { get; set; }
+    public string StateMachine { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
 

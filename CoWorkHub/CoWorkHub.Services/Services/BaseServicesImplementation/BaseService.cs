@@ -67,7 +67,7 @@ namespace CoWorkHub.Services.Services.BaseServicesImplementation
             if (entity != null)
                 return Mapper.Map<TModel>(entity);
             else
-                return null;
+                return null!;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model.Requests;
+﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
@@ -35,10 +36,10 @@ namespace CoWorkHub.Services.Services
             if (existingCity != null)
             {
                 if (existingCity.CityName.Equals(request.CityName, StringComparison.OrdinalIgnoreCase))
-                    throw new Exception("A city with this name already exists in the database.");
+                    throw new UserException("A city with this name already exists in the database.");
 
                 if (existingCity.PostalCode.Equals(request.PostalCode, StringComparison.OrdinalIgnoreCase))
-                    throw new Exception("This postal code is already assigned.");
+                    throw new UserException("This postal code is already assigned.");
             }
         }
     }
