@@ -14,8 +14,9 @@ namespace CoWorkHub.Model
         public string PhoneNumber { get; set; } = null!;
         public string? ProfileImageUrl { get; set; }
         public int CityId { get; set; }
-        public int RoleId { get; set; }
         public bool IsActive { get; set; }
+        public bool? IsDeleted { get; set; } = false;
         public DateTime CreatedAt { get; set; }
+        public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     }
 }

@@ -4,6 +4,7 @@ using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.WorkingSpaceStateMachine;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoWorkHub.Api.Controllers
@@ -15,40 +16,35 @@ namespace CoWorkHub.Api.Controllers
         public WorkingSpaceController(IWorkingSpaceService service)
             : base(service) { }
 
-        [HttpPut("{id}/activate")]
-        public WorkingSpace Activate(int id)
+        
+        [Authorize(Roles = "Admin")]
+        public override WorkingSpace Insert(WorkingSpaceInsertRequest request)
         {
-            return (_service as IWorkingSpaceService).Activate(id);
+            return base.Insert(request);
         }
 
-        [HttpPut("{id}/edit")]
-        public Model.WorkingSpace Edit(int id)
+        [Authorize(Roles = "Admin")]
+        public override WorkingSpace Update(int id, WorkingSpaceUpdateRequest request)
         {
-            return (_service as IWorkingSpaceService).Edit(id);
+            return base.Update(id, request);
         }
 
-        [HttpPut("{id}/hide")]
-        public Model.WorkingSpace Hide(int id)
+        [Authorize(Roles = "Admin")]
+        public override void Delete(int id)
         {
-            return (_service as IWorkingSpaceService).Hide(id);
+            base.Delete(id);
         }
 
-        [HttpPut("{id}/setMaintenance")]
-        public Model.WorkingSpace SetMaintenance(int id)
+        [AllowAnonymous]
+        public override PagedResult<WorkingSpace> GetList([FromQuery] WorkingSpaceSearchObject searchObject)
         {
-            return (_service as IWorkingSpaceService).SetMaintenance(id);
+            return base.GetList(searchObject);
         }
 
-        [HttpPut("{id}/restore")]
-        public Model.WorkingSpace Restore(int id)
+        [AllowAnonymous]
+        public override WorkingSpace GetById(int id)
         {
-            return (_service as IWorkingSpaceService).Restore(id);
-        }
-
-        [HttpGet("{id}/allowedActions")]
-        public List<string> AllowedActions(int id)
-        {
-            return (_service as IWorkingSpaceService).AllowedActions(id);
+            return base.GetById(id);
         }
     }
 }

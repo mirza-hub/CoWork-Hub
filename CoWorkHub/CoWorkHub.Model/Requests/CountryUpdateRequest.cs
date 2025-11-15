@@ -6,6 +6,6 @@ namespace CoWorkHub.Model.Requests
 {
     public class CountryUpdateRequest
     {
-        public string CountryName { get; set; }
+        public string? CountryName { get; set; }
     }
 }

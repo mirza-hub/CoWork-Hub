@@ -8,7 +8,7 @@ namespace CoWorkHub.Services.Services.BaseServicesImplementation
 {
     public abstract class BaseCRUDService<TModel, TSearch, TDbEntity, TInsert, TUpdate>
         : BaseService<TModel, TSearch, TDbEntity> where TModel : class
-        where TSearch : BaseSearchObject where TDbEntity : class
+        where TSearch : BaseSearchObject where TDbEntity : class, ISoftDeletable
     {
         protected BaseCRUDService(_210095Context context, IMapper mapper) 
             : base(context, mapper) { }

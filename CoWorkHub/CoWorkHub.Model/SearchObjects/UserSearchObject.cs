@@ -11,8 +11,7 @@ namespace CoWorkHub.Model.SearchObjects
         public string? UsernameGTE { get; set; }
         public string? Email { get; set; }
         public int? CityId { get; set; }
-        public int? RoleId { get; set; }
+        public bool? IsUserRolesIncluded { get; set; }
         public bool? IsActive { get; set; }
-        public bool? IsDeleted { get; set; }
     }
 }

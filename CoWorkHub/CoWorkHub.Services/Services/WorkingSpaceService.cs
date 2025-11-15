@@ -3,27 +3,27 @@ using CoWorkHub.Model;
 using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using CoWorkHub.Services.WorkingSpaceStateMachine;
 using MapsterMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace CoWorkHub.Services.Services
 {
     public class WorkingSpaceService : BaseCRUDService<Model.WorkingSpace, WorkingSpaceSearchObject, Database.WorkingSpace, WorkingSpaceInsertRequest, WorkingSpaceUpdateRequest>, IWorkingSpaceService
     {
-        public BaseWorkingSpaceState BaseWorkingSpaceState { get; set; }
-        private readonly ILogger<WorkingSpaceService> _logger;
+        private readonly ICurrentUserService _currentUserService;
+
         public WorkingSpaceService(_210095Context context, 
             IMapper mapper, 
-            BaseWorkingSpaceState baseWorkingSpaceState,
-            ILogger<WorkingSpaceService> logger) 
+            ICurrentUserService currentUserService) 
             : base(context, mapper) 
         {
-            BaseWorkingSpaceState = baseWorkingSpaceState;
-            _logger = logger;
+            _currentUserService = currentUserService;
         }
 
         public override IQueryable<Database.WorkingSpace> AddFilter(WorkingSpaceSearchObject search, IQueryable<Database.WorkingSpace> query)
@@ -36,95 +36,53 @@ namespace CoWorkHub.Services.Services
             if (search.CityId.HasValue)
                 query = query.Where(x => x.CityId == search.CityId.Value);
 
-            if (search.WorkspaceTypeId.HasValue)
-                query = query.Where(x => x.WorkspaceTypeId == search.WorkspaceTypeId.Value);
+            if (!string.IsNullOrWhiteSpace(search.AddressFTS))
+                query = query.Where(x => x.Address.ToLower().Contains(search.AddressFTS.ToLower()));
 
-            if (search.CapacityGTE.HasValue)
-                query = query.Where(x => x.Capacity >= search.CapacityGTE.Value);
-
-            if (search.CapacityLTE.HasValue)
-                query = query.Where(x => x.Capacity <= search.CapacityLTE.Value);
-
-            if (search.PriceGTE.HasValue)
-                query = query.Where(x => x.Price >= search.PriceGTE.Value);
-
-            if (search.PriceLTE.HasValue)
-                query = query.Where(x => x.Price <= search.PriceLTE.Value);
+            if (search.IsSpaceUnitIncluded == true)
+                query = query.Include(x => x.SpaceUnits);
 
             return query;
         }
 
-        public override Model.WorkingSpace Insert(WorkingSpaceInsertRequest request)
+        public override void BeforeInsert(WorkingSpaceInsertRequest request, Database.WorkingSpace entity)
         {
-            var state = BaseWorkingSpaceState.CreateState("initial");
-            return state.Insert(request);
-        }
+            base.BeforeInsert(request, entity);
 
-        public override Model.WorkingSpace Update(int id, WorkingSpaceUpdateRequest request)
-        {
-            var entity = GetById(id);
-            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
-            return state.Update(id, request);
-        }
+            var existingWorkingSpace = Context.WorkingSpaces
+               .FirstOrDefault(x => x.Name.ToLower() == request.Name.ToLower());
 
-        public Model.WorkingSpace Activate(int id)
-        {
-            _logger.LogInformation("Admin activated workspace");
-            var entity = GetById(id);
-            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
-            return state.Activate(id);
-        }
-
-        public Model.WorkingSpace Edit(int id)
-        {
-            var entity = GetById(id);
-            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
-            return state.Edit(id);
-        }
-
-        public Model.WorkingSpace Hide(int id)
-        {
-            var entity = GetById(id);
-            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
-            return state.Hide(id);
-        }
-
-        public Model.WorkingSpace SetMaintenance(int id)
-        {
-            var entity = GetById(id);
-            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
-            return state.SetMaintenance(id);
-        }
-
-        public override void Delete(int id)
-        {
-            var entity = GetById(id);
-            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
-            state.Delete(id);
-        }
-
-        public Model.WorkingSpace Restore(int id)
-        {
-            var entity = GetById(id);
-            var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
-            return state.Restore(id);
-        }
-
-        public List<string> AllowedActions(int id)
-        {
-            if (id <= 0)
+            if (existingWorkingSpace != null)
             {
-                var state = BaseWorkingSpaceState.CreateState("initial");
-                return state.AllowedActions(null);
+                if (existingWorkingSpace.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
+                    throw new UserException("A working space with this name already exists in the database.");
             }
-            else
+
+            entity.CreatedAt = DateTime.UtcNow;
+            entity.CreatedBy = (int)_currentUserService.GetUserId();
+        }
+
+        public override void BeforeUpdate(WorkingSpaceUpdateRequest request, Database.WorkingSpace entity)
+        {
+            base.BeforeUpdate(request, entity);
+
+            var existingWorkingSpace = Context.WorkingSpaces
+               .FirstOrDefault(x => x.Name.ToLower() == request.Name.ToLower());
+
+            if (existingWorkingSpace != null)
             {
-                var entity = Context.WorkingSpaces.Find(id);
-                if (entity == null)
-                    throw new UserException("Working space not found.");
-                var state = BaseWorkingSpaceState.CreateState(entity.StateMachine);
-                return state.AllowedActions(entity);
+                throw new UserException("Another working space with this name already exists in the database.");
             }
+
+            entity.ModifiedAt = DateTime.UtcNow;
+            entity.ModifiedBy = _currentUserService.GetUserId();
+        }
+
+        public override void BeforeDelete(Database.WorkingSpace entity)
+        {
+            base.BeforeDelete(entity);
+
+            entity.DeletedBy = _currentUserService.GetUserId();
         }
     }
 }

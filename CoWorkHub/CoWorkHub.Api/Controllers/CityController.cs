@@ -1,7 +1,9 @@
 ﻿using CoWorkHub.Api.Controllers.BaseControllers;
+using CoWorkHub.Model;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoWorkHub.Api.Controllers
@@ -12,5 +14,35 @@ namespace CoWorkHub.Api.Controllers
     {
         public CityController(ICityService service)
             : base(service) { }
+
+        [Authorize(Roles = "Admin")]
+        public override City Insert(CityInsertRequest request)
+        {
+            return base.Insert(request);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public override City Update(int id, CityUpdateRequest request)
+        {
+            return base.Update(id, request);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public override void Delete(int id)
+        {
+            base.Delete(id);
+        }
+
+        [AllowAnonymous]
+        public override PagedResult<City> GetList([FromQuery] CitySearchObject searchObject)
+        {
+            return base.GetList(searchObject);
+        }
+
+        [AllowAnonymous]
+        public override City GetById(int id)
+        {
+            return base.GetById(id);
+        }
     }
 }

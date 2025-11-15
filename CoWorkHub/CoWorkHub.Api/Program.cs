@@ -1,13 +1,16 @@
+using CoWorkHub.Api.Auth;
 using CoWorkHub.Api.Filters;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
-using CoWorkHub.Services.Logging;
+using CoWorkHub.Services.ReservationStateMachine;
 using CoWorkHub.Services.Seed;
 using CoWorkHub.Services.Services;
 using CoWorkHub.Services.WorkingSpaceStateMachine;
 using Mapster;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,18 +20,34 @@ builder.Services.AddTransient<ICityService, CityService>();
 builder.Services.AddTransient<IResourcesService, ResourcesService>();
 builder.Services.AddTransient<IWorkingSpaceService, WorkingSpaceService>();
 builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IRoleService, RoleService>();
+builder.Services.AddTransient<IWorkspaceTypeService, WorkspaceTypeService>();
+builder.Services.AddTransient<IPaymentMethodService, PaymentMethodService>();
+builder.Services.AddTransient<IReservationService, ReservationService>();
+builder.Services.AddTransient<IReviewService, ReviewService>();
+builder.Services.AddTransient<ISpaceUnitService, SpaceUnitService>();
+builder.Services.AddTransient<ISpaceUnitResourceService, SpaceUnitResourceService>();
 
+//state machines
+//Reservation
+builder.Services.AddTransient<BaseReservationState>();
+builder.Services.AddTransient<InitialReservationState>();
+builder.Services.AddTransient<PendingReservationState>();
+builder.Services.AddTransient<ConfirmedReservationState>();
+builder.Services.AddTransient<CanceledReservationiState>();
+builder.Services.AddTransient<CompletedReservationiState>();
 
-//state machine
-builder.Services.AddTransient<BaseWorkingSpaceState>();
-builder.Services.AddTransient<InitialWorkingSpaceState>();
-builder.Services.AddTransient<DraftWorkingSpaceState>();
-builder.Services.AddTransient<ActiveWorkingSpaceState>();
-builder.Services.AddTransient<HiddenWorkingSpaceState>();
-builder.Services.AddTransient<MaintenanceWorkingSpaceState>();
-builder.Services.AddTransient<DeletedWorkingSpaceState>();
+ //SpaceUnit
+builder.Services.AddTransient<BaseSpaceUnitState>();
+builder.Services.AddTransient<InitialSpaceUnitState>();
+builder.Services.AddTransient<DraftSpaceUnitState>();
+builder.Services.AddTransient<ActiveSpaceUnitState>();
+builder.Services.AddTransient<HiddenSpaceUnitState>();
+builder.Services.AddTransient<MaintenanceSpaceUnitState>();
+builder.Services.AddTransient<DeletedSpaceUnitState>();
 
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddControllers(x =>
 {
@@ -36,13 +55,35 @@ builder.Services.AddControllers(x =>
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("basicAuth", new Microsoft.OpenApi.Models.OpenApiSecurityScheme()
+    {
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "basic"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference{Type = ReferenceType.SecurityScheme, Id = "basicAuth"}
+            },
+            new string[]{}
+    } });
+
+});
 
 var connectionString = builder.Configuration.GetConnectionString("CoWorkHubConnection");
 builder.Services.AddDbContext<_210095Context>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddMapster();
+builder.Services.AddAuthentication("BasicAuthentication")
+    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -61,6 +102,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors(
+    options => options
+        .SetIsOriginAllowed(x => _ = true)
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials()
+);
 
 app.UseHttpsRedirection();
 

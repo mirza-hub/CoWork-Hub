@@ -38,5 +38,18 @@ namespace CoWorkHub.Services.Services
                     throw new UserException("A country with this name already exists in the database.");
             }
         }
+
+        public override void BeforeUpdate(CountryUpdateRequest request, Country entity)
+        {
+            base.BeforeUpdate(request, entity);
+
+            var existingCountry = Context.Countries
+                .FirstOrDefault(x => x.CountryName.ToLower() == request.CountryName.ToLower());
+
+            if (existingCountry != null)
+            {
+                throw new UserException("Another country with this name already exists in the database.");
+            }
+        }
     }
 }

@@ -16,7 +16,7 @@ public partial class Resource : ISoftDeletable
 
     public DateTime? DeletedAt { get; set; }
 
-    public virtual ICollection<SpaceResource> SpaceResources { get; set; } = new List<SpaceResource>();
+    public virtual ICollection<SpaceUnitResource> SpaceUnitResources { get; set; } = new List<SpaceUnitResource>();
 
     public bool IsDeleted { get; set; } = false;
 }

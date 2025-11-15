@@ -16,7 +16,5 @@ public partial class ReservationStatus : ISoftDeletable
 
     public DateTime? DeletedAt { get; set; }
 
-    public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
-
     public bool IsDeleted { get; set; } = false;
 }

@@ -14,11 +14,11 @@ public partial class Payment : ISoftDeletable
 
     public DateTime PaymentDate { get; set; }
 
-    public decimal? Discount { get; set; }
+    public decimal? Discount { get; set; } = 0;
 
     public decimal TotalPaymentAmount { get; set; }
 
-    public int Status { get; set; }
+    public string StateMachine { get; set; } = null!; //Status
 
     public DateTime CreatedAt { get; set; }
 
