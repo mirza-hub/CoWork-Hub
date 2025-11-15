@@ -37,9 +37,15 @@ public partial class _210095Context : DbContext
 
     public virtual DbSet<Role> Roles { get; set; }
 
-    public virtual DbSet<SpaceResource> SpaceResources { get; set; }
+    public virtual DbSet<SpaceUnit> SpaceUnits { get; set; }
+
+    public virtual DbSet<SpaceUnitImage> SpaceUnitImages { get; set; }
+
+    public virtual DbSet<SpaceUnitResource> SpaceUnitResources { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<UserRole> UserRoles { get; set; }
 
     public virtual DbSet<WorkingSpace> WorkingSpaces { get; set; }
 
@@ -157,33 +163,54 @@ public partial class _210095Context : DbContext
 
         modelBuilder.Entity<Reservation>(entity =>
         {
-            entity.HasKey(e => e.ReservationId).HasName("PK__Reservat__B7EE5F242E0ED512");
+            entity.HasKey(e => e.ReservationId);
 
-            entity.ToTable("Reservation");
+            entity.Property(e => e.TotalPrice)
+                .HasColumnType("decimal(10, 2)");
 
-            entity.Property(e => e.CanceledAt).HasColumnType("datetime");
+            entity.Property(e => e.StartDate)
+                .HasColumnType("datetime")
+                .IsRequired();
+
+            entity.Property(e => e.EndDate)
+                .HasColumnType("datetime")
+                .IsRequired();
+
+            entity.Property(e => e.PeopleCount)
+                .HasDefaultValue(1);
+
+            entity.Property(e => e.StateMachine)
+                .IsRequired();
+
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.EndDate).HasColumnType("datetime");
-            entity.Property(e => e.StartDate).HasColumnType("datetime");
-            entity.Property(e => e.TotalPrice).HasColumnType("decimal(10, 2)");
+                .IsRequired();
 
-            entity.HasOne(d => d.ReservationStatus).WithMany(p => p.Reservations)
-                .HasForeignKey(d => d.ReservationStatusId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Reservation_ReservationStatus");
+            entity.Property(e => e.CanceledAt);
 
-            entity.HasOne(d => d.Users).WithMany(p => p.Reservations)
+            entity.Property(e => e.DeletedAt);
+
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false);
+
+            entity.HasOne(d => d.Users)
+                .WithMany(p => p.Reservations)
                 .HasForeignKey(d => d.UsersId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Reservation_Users");
 
-            entity.HasOne(d => d.WorkingSpaces).WithMany(p => p.Reservations)
-                .HasForeignKey(d => d.WorkingSpacesId)
+            entity.HasOne(d => d.SpaceUnit)
+                .WithMany(p => p.Reservations)
+                .HasForeignKey(d => d.SpaceUnitId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Reservation_WorkingSpaces");
+                .HasConstraintName("FK_Reservation_SpaceUnit");
+
+            entity.HasMany(d => d.Payments)
+                .WithOne(p => p.Reservation)
+                .HasForeignKey(p => p.ReservationId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Reservation_Payments");
         });
+
 
         modelBuilder.Entity<ReservationStatus>(entity =>
         {
@@ -213,29 +240,44 @@ public partial class _210095Context : DbContext
 
         modelBuilder.Entity<Review>(entity =>
         {
-            entity.HasKey(e => e.ReviewsId).HasName("PK__Reviews__64C7C0ED5D0E3FBD");
+            entity.HasKey(e => e.ReviewsId);
 
-            entity.Property(e => e.Comment).HasMaxLength(250);
+            entity.Property(e => e.Rating)
+                .IsRequired();
+
+            entity.Property(e => e.Comment)
+                .IsRequired()
+                .HasMaxLength(2000);
+
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.DeletedAt).HasColumnType("datetime");
-            entity.Property(e => e.ModifiedAt).HasColumnType("datetime");
+                .IsRequired();
 
-            entity.HasOne(d => d.DeletedByNavigation).WithMany(p => p.ReviewDeletedByNavigations)
-                .HasForeignKey(d => d.DeletedBy)
-                .HasConstraintName("FK_ReviewsDeletedBy_Users");
+            entity.Property(e => e.ModifiedAt);
 
-            entity.HasOne(d => d.Users).WithMany(p => p.ReviewUsers)
+            entity.Property(e => e.DeletedAt);
+
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false);
+
+            entity.HasOne(d => d.Users)
+                .WithMany(p => p.ReviewUsers)
                 .HasForeignKey(d => d.UsersId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Reviews_Users");
+                .HasConstraintName("FK_Review_User");
 
-            entity.HasOne(d => d.WorkingSpaces).WithMany(p => p.Reviews)
-                .HasForeignKey(d => d.WorkingSpacesId)
+            entity.HasOne(d => d.SpaceUnit)
+                .WithMany(p => p.Reviews)
+                .HasForeignKey(d => d.SpaceUnitId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Reviews_WorkingSpaces");
+                .HasConstraintName("FK_Review_SpaceUnit");
+
+            entity.HasOne(d => d.DeletedByNavigation)
+                .WithMany(u => u.ReviewDeletedByNavigations)
+                .HasForeignKey(d => d.DeletedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Review_DeletedBy");
         });
+
 
         modelBuilder.Entity<Role>(entity =>
         {
@@ -245,38 +287,145 @@ public partial class _210095Context : DbContext
             entity.Property(e => e.RoleName).HasMaxLength(50);
         });
 
-        modelBuilder.Entity<SpaceResource>(entity =>
+        modelBuilder.Entity<SpaceUnit>(entity =>
         {
-            entity.HasKey(e => e.SpaceResourcesId).HasName("PK__SpaceRes__56967D54D4E076DF");
+            entity.HasKey(e => e.SpaceUnitId);
+
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(e => e.Description)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.Capacity)
+                .IsRequired();
+
+            entity.Property(e => e.PricePerDay)
+                .HasColumnType("decimal(10, 2)")
+                .IsRequired();
+
+            entity.Property(e => e.StateMachine)
+                .IsRequired()
+                .HasMaxLength(50);
 
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.DeletedAt).HasColumnType("datetime");
-            entity.Property(e => e.ModifiedAt).HasColumnType("datetime");
+                .IsRequired();
 
-            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.SpaceResourceCreatedByNavigations)
+            entity.Property(e => e.ModifiedAt);
+
+            entity.Property(e => e.DeletedAt);
+
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false);
+
+            entity.HasOne(d => d.WorkingSpace)
+                .WithMany(p => p.SpaceUnits)
+                .HasForeignKey(d => d.WorkingSpaceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SpaceUnit_WorkingSpace");
+
+            entity.HasOne(d => d.WorkspaceType)
+                .WithMany(p => p.SpaceUnits)
+                .HasForeignKey(d => d.WorkspaceTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SpaceUnit_WorkspaceType");
+
+            entity.HasMany(d => d.Reservations)
+                .WithOne(p => p.SpaceUnit)
+                .HasForeignKey(p => p.SpaceUnitId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_SpaceUnit_Reservations");
+
+            entity.HasMany(d => d.Reviews)
+                .WithOne(p => p.SpaceUnit)
+                .HasForeignKey(p => p.SpaceUnitId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_SpaceUnit_Reviews");
+
+            entity.HasMany(d => d.SpaceUnitResources)
+                .WithOne(p => p.SpaceUnit)
+                .HasForeignKey(p => p.SpaceUnitId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_SpaceUnit_SpaceUnitResources");
+
+            entity.HasMany(d => d.SpaceUnitImages)
+                .WithOne(p => p.SpaceUnit)
+                .HasForeignKey(p => p.SpaceUnitId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_SpaceUnit_SpaceUnitImages");
+        });
+
+        modelBuilder.Entity<SpaceUnitImage>(entity =>
+        {
+            entity.HasKey(e => e.ImageId);
+
+            entity.Property(e => e.ImagePath)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(e => e.Description)
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.CreatedAt)
+                .IsRequired();
+
+            entity.Property(e => e.DeletedAt);
+
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false);
+
+            entity.HasOne(d => d.SpaceUnit)
+                .WithMany(p => p.SpaceUnitImages)
+                .HasForeignKey(d => d.SpaceUnitId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_SpaceUnitImage_SpaceUnit");
+        });
+
+        modelBuilder.Entity<SpaceUnitResource>(entity =>
+        {
+            entity.HasKey(e => e.SpaceResourcesId);
+
+            entity.Property(e => e.CreatedAt)
+                .IsRequired();
+
+            entity.Property(e => e.ModifiedAt);
+
+            entity.Property(e => e.DeletedAt);
+
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false);
+
+            entity.HasOne(d => d.SpaceUnit)
+                .WithMany(p => p.SpaceUnitResources)
+                .HasForeignKey(d => d.SpaceUnitId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_SpaceUnitResource_SpaceUnit");
+
+            entity.HasOne(d => d.Resources)
+                .WithMany(p => p.SpaceUnitResources)
+                .HasForeignKey(d => d.ResourcesId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_SpaceUnitResource_Resource");
+
+            entity.HasOne(d => d.CreatedByNavigation)
+                .WithMany(u=>u.SpaceUnitResourceCreatedByNavigations)
                 .HasForeignKey(d => d.CreatedBy)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SpaceResourcesCreatedBy_Users");
+                .HasConstraintName("FK_SpaceUnitResource_CreatedBy");
 
-            entity.HasOne(d => d.DeletedByNavigation).WithMany(p => p.SpaceResourceDeletedByNavigations)
-                .HasForeignKey(d => d.DeletedBy)
-                .HasConstraintName("FK_SpaceResourcesDeletedBy_Users");
-
-            entity.HasOne(d => d.ModifiedByNavigation).WithMany(p => p.SpaceResourceModifiedByNavigations)
+            entity.HasOne(d => d.ModifiedByNavigation)
+                .WithMany(u => u.SpaceUnitResourceModifiedByNavigations)
                 .HasForeignKey(d => d.ModifiedBy)
-                .HasConstraintName("FK_SpaceResourcesModifiedBy_Users");
-
-            entity.HasOne(d => d.Resources).WithMany(p => p.SpaceResources)
-                .HasForeignKey(d => d.ResourcesId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SpaceResources_Resources");
+                .HasConstraintName("FK_SpaceUnitResource_ModifiedBy");
 
-            entity.HasOne(d => d.WorkingSpaces).WithMany(p => p.SpaceResources)
-                .HasForeignKey(d => d.WorkingSpacesId)
+            entity.HasOne(d => d.DeletedByNavigation)
+                .WithMany(u => u.SpaceUnitResourceDeletedByNavigations)
+                .HasForeignKey(d => d.DeletedBy)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SpaceResources_WorkingSpaces");
+                .HasConstraintName("FK_SpaceUnitResource_DeletedBy");
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -305,18 +454,12 @@ public partial class _210095Context : DbContext
                 .HasForeignKey(d => d.CityId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Users_City");
-
-            entity.HasOne(d => d.Role).WithMany(p => p.Users)
-                .HasForeignKey(d => d.RoleId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Users_Roles");
         });
 
         modelBuilder.Entity<WorkingSpace>(entity =>
         {
             entity.HasKey(e => e.WorkingSpacesId).HasName("PK__WorkingS__A2EB71C9F9A3BC23");
 
-            entity.Property(e => e.Capacity).HasMaxLength(50);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -324,7 +467,6 @@ public partial class _210095Context : DbContext
             entity.Property(e => e.Description).HasMaxLength(200);
             entity.Property(e => e.ModifiedAt).HasColumnType("datetime");
             entity.Property(e => e.Name).HasMaxLength(50);
-            entity.Property(e => e.Price).HasMaxLength(50);
 
             entity.HasOne(d => d.City).WithMany(p => p.WorkingSpaces)
                 .HasForeignKey(d => d.CityId)
@@ -344,10 +486,6 @@ public partial class _210095Context : DbContext
                 .HasForeignKey(d => d.ModifiedBy)
                 .HasConstraintName("FK_WorkingSpacesModifiedBy_Users");
 
-            entity.HasOne(d => d.WorkspaceType).WithMany(p => p.WorkingSpaces)
-                .HasForeignKey(d => d.WorkspaceTypeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_WorkingSpaces_WorkspaceType");
         });
 
         modelBuilder.Entity<WorkingSpaceImage>(entity =>
@@ -398,6 +536,38 @@ public partial class _210095Context : DbContext
             entity.Property(e => e.ModifiedAt).HasColumnType("datetime");
             entity.Property(e => e.TypeName).HasMaxLength(50);
         });
+
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.HasKey(ur => ur.UserRoleId);
+            entity.ToTable("UserRoles");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.Property(e => e.ModifiedAt)
+                .HasColumnType("datetime");
+
+            entity.Property(e => e.DeletedAt)
+                .HasColumnType("datetime");
+
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false);
+
+            entity.HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_UserRoles_Users");
+
+            entity.HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_UserRoles_Roles");
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }

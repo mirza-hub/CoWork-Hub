@@ -26,11 +26,9 @@ public partial class User : ISoftDeletable
 
     public int CityId { get; set; }
 
-    public int RoleId { get; set; }
+    public bool IsActive { get; set; } = true;
 
-    public bool IsActive { get; set; }
-
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? ModifiedAt { get; set; }
 
@@ -48,13 +46,13 @@ public partial class User : ISoftDeletable
 
     public virtual ICollection<Review> ReviewUsers { get; set; } = new List<Review>();
 
-    public virtual Role Role { get; set; } = null!;
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 
-    public virtual ICollection<SpaceResource> SpaceResourceCreatedByNavigations { get; set; } = new List<SpaceResource>();
+    public virtual ICollection<SpaceUnitResource> SpaceUnitResourceCreatedByNavigations { get; set; } = new List<SpaceUnitResource>();
 
-    public virtual ICollection<SpaceResource> SpaceResourceDeletedByNavigations { get; set; } = new List<SpaceResource>();
+    public virtual ICollection<SpaceUnitResource> SpaceUnitResourceDeletedByNavigations { get; set; } = new List<SpaceUnitResource>();
 
-    public virtual ICollection<SpaceResource> SpaceResourceModifiedByNavigations { get; set; } = new List<SpaceResource>();
+    public virtual ICollection<SpaceUnitResource> SpaceUnitResourceModifiedByNavigations { get; set; } = new List<SpaceUnitResource>();
 
     public virtual ICollection<WorkingSpace> WorkingSpaceCreatedByNavigations { get; set; } = new List<WorkingSpace>();
 

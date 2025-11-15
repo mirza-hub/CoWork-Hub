@@ -189,8 +189,9 @@ namespace CoWorkHub.Services.Migrations
                     b.Property<int>("ReservationId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("StateMachine")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotalPaymentAmount")
                         .HasColumnType("decimal(10, 2)");
@@ -247,12 +248,10 @@ namespace CoWorkHub.Services.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReservationId"));
 
                     b.Property<DateTime?>("CanceledAt")
-                        .HasColumnType("datetime");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
@@ -261,13 +260,24 @@ namespace CoWorkHub.Services.Migrations
                         .HasColumnType("datetime");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
-                    b.Property<int>("ReservationStatusId")
+                    b.Property<int>("PeopleCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("SpaceUnitId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime");
+
+                    b.Property<string>("StateMachine")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(10, 2)");
@@ -275,19 +285,13 @@ namespace CoWorkHub.Services.Migrations
                     b.Property<int>("UsersId")
                         .HasColumnType("int");
 
-                    b.Property<int>("WorkingSpacesId")
-                        .HasColumnType("int");
+                    b.HasKey("ReservationId");
 
-                    b.HasKey("ReservationId")
-                        .HasName("PK__Reservat__B7EE5F242E0ED512");
-
-                    b.HasIndex("ReservationStatusId");
+                    b.HasIndex("SpaceUnitId");
 
                     b.HasIndex("UsersId");
 
-                    b.HasIndex("WorkingSpacesId");
-
-                    b.ToTable("Reservation", (string)null);
+                    b.ToTable("Reservations");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.ReservationStatus", b =>
@@ -366,39 +370,43 @@ namespace CoWorkHub.Services.Migrations
 
                     b.Property<string>("Comment")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime");
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("DeletedBy")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime");
+                        .HasColumnType("datetime2");
 
                     b.Property<byte>("Rating")
                         .HasColumnType("tinyint");
 
+                    b.Property<int>("SpaceUnitId")
+                        .HasColumnType("int");
+
                     b.Property<int>("UsersId")
                         .HasColumnType("int");
 
-                    b.Property<int>("WorkingSpacesId")
+                    b.Property<int?>("WorkingSpacesId")
                         .HasColumnType("int");
 
-                    b.HasKey("ReviewsId")
-                        .HasName("PK__Reviews__64C7C0ED5D0E3FBD");
+                    b.HasKey("ReviewsId");
 
                     b.HasIndex("DeletedBy");
+
+                    b.HasIndex("SpaceUnitId");
 
                     b.HasIndex("UsersId");
 
@@ -436,7 +444,103 @@ namespace CoWorkHub.Services.Migrations
                     b.ToTable("Roles");
                 });
 
-            modelBuilder.Entity("CoWorkHub.Services.Database.SpaceResource", b =>
+            modelBuilder.Entity("CoWorkHub.Services.Database.SpaceUnit", b =>
+                {
+                    b.Property<int>("SpaceUnitId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SpaceUnitId"));
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("PricePerDay")
+                        .HasColumnType("decimal(10, 2)");
+
+                    b.Property<string>("StateMachine")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("WorkingSpaceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WorkspaceTypeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("SpaceUnitId");
+
+                    b.HasIndex("WorkingSpaceId");
+
+                    b.HasIndex("WorkspaceTypeId");
+
+                    b.ToTable("SpaceUnits");
+                });
+
+            modelBuilder.Entity("CoWorkHub.Services.Database.SpaceUnitImage", b =>
+                {
+                    b.Property<int>("ImageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ImageId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ImagePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("SpaceUnitId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ImageId");
+
+                    b.HasIndex("SpaceUnitId");
+
+                    b.ToTable("SpaceUnitImages");
+                });
+
+            modelBuilder.Entity("CoWorkHub.Services.Database.SpaceUnitResource", b =>
                 {
                     b.Property<int>("SpaceResourcesId")
                         .ValueGeneratedOnAdd()
@@ -445,24 +549,24 @@ namespace CoWorkHub.Services.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SpaceResourcesId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("CreatedBy")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime");
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("DeletedBy")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime");
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("ModifiedBy")
                         .HasColumnType("int");
@@ -470,11 +574,10 @@ namespace CoWorkHub.Services.Migrations
                     b.Property<int>("ResourcesId")
                         .HasColumnType("int");
 
-                    b.Property<int>("WorkingSpacesId")
+                    b.Property<int>("SpaceUnitId")
                         .HasColumnType("int");
 
-                    b.HasKey("SpaceResourcesId")
-                        .HasName("PK__SpaceRes__56967D54D4E076DF");
+                    b.HasKey("SpaceResourcesId");
 
                     b.HasIndex("CreatedBy");
 
@@ -484,9 +587,9 @@ namespace CoWorkHub.Services.Migrations
 
                     b.HasIndex("ResourcesId");
 
-                    b.HasIndex("WorkingSpacesId");
+                    b.HasIndex("SpaceUnitId");
 
-                    b.ToTable("SpaceResources");
+                    b.ToTable("SpaceUnitResources");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.User", b =>
@@ -552,9 +655,6 @@ namespace CoWorkHub.Services.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -565,8 +665,6 @@ namespace CoWorkHub.Services.Migrations
 
                     b.HasIndex("CityId");
 
-                    b.HasIndex("RoleId");
-
                     b.HasIndex(new[] { "Username" }, "UQ__Users__536C85E44DEE34AB")
                         .IsUnique();
 
@@ -574,6 +672,45 @@ namespace CoWorkHub.Services.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("CoWorkHub.Services.Database.UserRole", b =>
+                {
+                    b.Property<int>("UserRoleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserRoleId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserRoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.WorkingSpace", b =>
@@ -584,9 +721,9 @@ namespace CoWorkHub.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WorkingSpacesId"));
 
-                    b.Property<int>("Capacity")
-                        .HasMaxLength(50)
-                        .HasColumnType("int");
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("CityId")
                         .HasColumnType("int");
@@ -624,17 +761,6 @@ namespace CoWorkHub.Services.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<decimal>("Price")
-                        .HasMaxLength(50)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("StateMachine")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("WorkspaceTypeId")
-                        .HasColumnType("int");
-
                     b.HasKey("WorkingSpacesId")
                         .HasName("PK__WorkingS__A2EB71C9F9A3BC23");
 
@@ -645,8 +771,6 @@ namespace CoWorkHub.Services.Migrations
                     b.HasIndex("DeletedBy");
 
                     b.HasIndex("ModifiedBy");
-
-                    b.HasIndex("WorkspaceTypeId");
 
                     b.ToTable("WorkingSpaces");
                 });
@@ -804,8 +928,9 @@ namespace CoWorkHub.Services.Migrations
                     b.HasOne("CoWorkHub.Services.Database.Reservation", "Reservation")
                         .WithMany("Payments")
                         .HasForeignKey("ReservationId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_Payment_Reservation");
+                        .HasConstraintName("FK_Reservation_Payments");
 
                     b.Navigation("PaymentMethod");
 
@@ -814,11 +939,12 @@ namespace CoWorkHub.Services.Migrations
 
             modelBuilder.Entity("CoWorkHub.Services.Database.Reservation", b =>
                 {
-                    b.HasOne("CoWorkHub.Services.Database.ReservationStatus", "ReservationStatus")
+                    b.HasOne("CoWorkHub.Services.Database.SpaceUnit", "SpaceUnit")
                         .WithMany("Reservations")
-                        .HasForeignKey("ReservationStatusId")
+                        .HasForeignKey("SpaceUnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_Reservation_ReservationStatus");
+                        .HasConstraintName("FK_SpaceUnit_Reservations");
 
                     b.HasOne("CoWorkHub.Services.Database.User", "Users")
                         .WithMany("Reservations")
@@ -826,17 +952,9 @@ namespace CoWorkHub.Services.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Reservation_Users");
 
-                    b.HasOne("CoWorkHub.Services.Database.WorkingSpace", "WorkingSpaces")
-                        .WithMany("Reservations")
-                        .HasForeignKey("WorkingSpacesId")
-                        .IsRequired()
-                        .HasConstraintName("FK_Reservation_WorkingSpaces");
-
-                    b.Navigation("ReservationStatus");
+                    b.Navigation("SpaceUnit");
 
                     b.Navigation("Users");
-
-                    b.Navigation("WorkingSpaces");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.Review", b =>
@@ -844,56 +962,94 @@ namespace CoWorkHub.Services.Migrations
                     b.HasOne("CoWorkHub.Services.Database.User", "DeletedByNavigation")
                         .WithMany("ReviewDeletedByNavigations")
                         .HasForeignKey("DeletedBy")
-                        .HasConstraintName("FK_ReviewsDeletedBy_Users");
+                        .HasConstraintName("FK_Review_DeletedBy");
+
+                    b.HasOne("CoWorkHub.Services.Database.SpaceUnit", "SpaceUnit")
+                        .WithMany("Reviews")
+                        .HasForeignKey("SpaceUnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_SpaceUnit_Reviews");
 
                     b.HasOne("CoWorkHub.Services.Database.User", "Users")
                         .WithMany("ReviewUsers")
                         .HasForeignKey("UsersId")
                         .IsRequired()
-                        .HasConstraintName("FK_Reviews_Users");
+                        .HasConstraintName("FK_Review_User");
 
-                    b.HasOne("CoWorkHub.Services.Database.WorkingSpace", "WorkingSpaces")
+                    b.HasOne("CoWorkHub.Services.Database.WorkingSpace", null)
                         .WithMany("Reviews")
-                        .HasForeignKey("WorkingSpacesId")
-                        .IsRequired()
-                        .HasConstraintName("FK_Reviews_WorkingSpaces");
+                        .HasForeignKey("WorkingSpacesId");
 
                     b.Navigation("DeletedByNavigation");
 
-                    b.Navigation("Users");
+                    b.Navigation("SpaceUnit");
 
-                    b.Navigation("WorkingSpaces");
+                    b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("CoWorkHub.Services.Database.SpaceResource", b =>
+            modelBuilder.Entity("CoWorkHub.Services.Database.SpaceUnit", b =>
+                {
+                    b.HasOne("CoWorkHub.Services.Database.WorkingSpace", "WorkingSpace")
+                        .WithMany("SpaceUnits")
+                        .HasForeignKey("WorkingSpaceId")
+                        .IsRequired()
+                        .HasConstraintName("FK_SpaceUnit_WorkingSpace");
+
+                    b.HasOne("CoWorkHub.Services.Database.WorkspaceType", "WorkspaceType")
+                        .WithMany("SpaceUnits")
+                        .HasForeignKey("WorkspaceTypeId")
+                        .IsRequired()
+                        .HasConstraintName("FK_SpaceUnit_WorkspaceType");
+
+                    b.Navigation("WorkingSpace");
+
+                    b.Navigation("WorkspaceType");
+                });
+
+            modelBuilder.Entity("CoWorkHub.Services.Database.SpaceUnitImage", b =>
+                {
+                    b.HasOne("CoWorkHub.Services.Database.SpaceUnit", "SpaceUnit")
+                        .WithMany("SpaceUnitImages")
+                        .HasForeignKey("SpaceUnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_SpaceUnitImage_SpaceUnit");
+
+                    b.Navigation("SpaceUnit");
+                });
+
+            modelBuilder.Entity("CoWorkHub.Services.Database.SpaceUnitResource", b =>
                 {
                     b.HasOne("CoWorkHub.Services.Database.User", "CreatedByNavigation")
-                        .WithMany("SpaceResourceCreatedByNavigations")
+                        .WithMany("SpaceUnitResourceCreatedByNavigations")
                         .HasForeignKey("CreatedBy")
                         .IsRequired()
-                        .HasConstraintName("FK_SpaceResourcesCreatedBy_Users");
+                        .HasConstraintName("FK_SpaceUnitResource_CreatedBy");
 
                     b.HasOne("CoWorkHub.Services.Database.User", "DeletedByNavigation")
-                        .WithMany("SpaceResourceDeletedByNavigations")
+                        .WithMany("SpaceUnitResourceDeletedByNavigations")
                         .HasForeignKey("DeletedBy")
-                        .HasConstraintName("FK_SpaceResourcesDeletedBy_Users");
+                        .HasConstraintName("FK_SpaceUnitResource_DeletedBy");
 
                     b.HasOne("CoWorkHub.Services.Database.User", "ModifiedByNavigation")
-                        .WithMany("SpaceResourceModifiedByNavigations")
+                        .WithMany("SpaceUnitResourceModifiedByNavigations")
                         .HasForeignKey("ModifiedBy")
-                        .HasConstraintName("FK_SpaceResourcesModifiedBy_Users");
+                        .HasConstraintName("FK_SpaceUnitResource_ModifiedBy");
 
                     b.HasOne("CoWorkHub.Services.Database.Resource", "Resources")
-                        .WithMany("SpaceResources")
+                        .WithMany("SpaceUnitResources")
                         .HasForeignKey("ResourcesId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_SpaceResources_Resources");
+                        .HasConstraintName("FK_SpaceUnitResource_Resource");
 
-                    b.HasOne("CoWorkHub.Services.Database.WorkingSpace", "WorkingSpaces")
-                        .WithMany("SpaceResources")
-                        .HasForeignKey("WorkingSpacesId")
+                    b.HasOne("CoWorkHub.Services.Database.SpaceUnit", "SpaceUnit")
+                        .WithMany("SpaceUnitResources")
+                        .HasForeignKey("SpaceUnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_SpaceResources_WorkingSpaces");
+                        .HasConstraintName("FK_SpaceUnitResource_SpaceUnit");
 
                     b.Navigation("CreatedByNavigation");
 
@@ -903,7 +1059,7 @@ namespace CoWorkHub.Services.Migrations
 
                     b.Navigation("Resources");
 
-                    b.Navigation("WorkingSpaces");
+                    b.Navigation("SpaceUnit");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.User", b =>
@@ -914,15 +1070,28 @@ namespace CoWorkHub.Services.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Users_City");
 
-                    b.HasOne("CoWorkHub.Services.Database.Role", "Role")
-                        .WithMany("Users")
-                        .HasForeignKey("RoleId")
-                        .IsRequired()
-                        .HasConstraintName("FK_Users_Roles");
-
                     b.Navigation("City");
+                });
+
+            modelBuilder.Entity("CoWorkHub.Services.Database.UserRole", b =>
+                {
+                    b.HasOne("CoWorkHub.Services.Database.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserRoles_Roles");
+
+                    b.HasOne("CoWorkHub.Services.Database.User", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserRoles_Users");
 
                     b.Navigation("Role");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.WorkingSpace", b =>
@@ -949,12 +1118,6 @@ namespace CoWorkHub.Services.Migrations
                         .HasForeignKey("ModifiedBy")
                         .HasConstraintName("FK_WorkingSpacesModifiedBy_Users");
 
-                    b.HasOne("CoWorkHub.Services.Database.WorkspaceType", "WorkspaceType")
-                        .WithMany("WorkingSpaces")
-                        .HasForeignKey("WorkspaceTypeId")
-                        .IsRequired()
-                        .HasConstraintName("FK_WorkingSpaces_WorkspaceType");
-
                     b.Navigation("City");
 
                     b.Navigation("CreatedByNavigation");
@@ -962,8 +1125,6 @@ namespace CoWorkHub.Services.Migrations
                     b.Navigation("DeletedByNavigation");
 
                     b.Navigation("ModifiedByNavigation");
-
-                    b.Navigation("WorkspaceType");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.WorkingSpaceImage", b =>
@@ -1007,19 +1168,25 @@ namespace CoWorkHub.Services.Migrations
                     b.Navigation("Payments");
                 });
 
-            modelBuilder.Entity("CoWorkHub.Services.Database.ReservationStatus", b =>
-                {
-                    b.Navigation("Reservations");
-                });
-
             modelBuilder.Entity("CoWorkHub.Services.Database.Resource", b =>
                 {
-                    b.Navigation("SpaceResources");
+                    b.Navigation("SpaceUnitResources");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.Role", b =>
                 {
-                    b.Navigation("Users");
+                    b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("CoWorkHub.Services.Database.SpaceUnit", b =>
+                {
+                    b.Navigation("Reservations");
+
+                    b.Navigation("Reviews");
+
+                    b.Navigation("SpaceUnitImages");
+
+                    b.Navigation("SpaceUnitResources");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.User", b =>
@@ -1034,11 +1201,13 @@ namespace CoWorkHub.Services.Migrations
 
                     b.Navigation("ReviewUsers");
 
-                    b.Navigation("SpaceResourceCreatedByNavigations");
+                    b.Navigation("SpaceUnitResourceCreatedByNavigations");
 
-                    b.Navigation("SpaceResourceDeletedByNavigations");
+                    b.Navigation("SpaceUnitResourceDeletedByNavigations");
 
-                    b.Navigation("SpaceResourceModifiedByNavigations");
+                    b.Navigation("SpaceUnitResourceModifiedByNavigations");
+
+                    b.Navigation("UserRoles");
 
                     b.Navigation("WorkingSpaceCreatedByNavigations");
 
@@ -1051,18 +1220,16 @@ namespace CoWorkHub.Services.Migrations
 
             modelBuilder.Entity("CoWorkHub.Services.Database.WorkingSpace", b =>
                 {
-                    b.Navigation("Reservations");
-
                     b.Navigation("Reviews");
 
-                    b.Navigation("SpaceResources");
+                    b.Navigation("SpaceUnits");
 
                     b.Navigation("WorkingSpaceImages");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.WorkspaceType", b =>
                 {
-                    b.Navigation("WorkingSpaces");
+                    b.Navigation("SpaceUnits");
                 });
 #pragma warning restore 612, 618
         }

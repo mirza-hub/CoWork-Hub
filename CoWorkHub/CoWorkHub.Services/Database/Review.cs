@@ -10,7 +10,7 @@ public partial class Review : ISoftDeletable
 
     public int UsersId { get; set; }
 
-    public int WorkingSpacesId { get; set; }
+    public int SpaceUnitId { get; set; }
 
     public byte Rating { get; set; }
 
@@ -28,7 +28,7 @@ public partial class Review : ISoftDeletable
 
     public virtual User Users { get; set; } = null!;
 
-    public virtual WorkingSpace WorkingSpaces { get; set; } = null!;
+    public virtual SpaceUnit SpaceUnit { get; set; } = null!;
 
     public bool IsDeleted { get; set; } = false;
 }

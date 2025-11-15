@@ -10,17 +10,11 @@ public partial class WorkingSpace : ISoftDeletable
 
     public string Name { get; set; } = null!;
 
-    public string Description { get; set; } = null!;
-
     public int CityId { get; set; }
 
-    public int Capacity { get; set; }
+    public string Description { get; set; } = null!;
 
-    public decimal Price { get; set; }
-
-    public int WorkspaceTypeId { get; set; }
-
-    public string StateMachine { get; set; } = null!;
+    public string Address { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
 
@@ -42,15 +36,11 @@ public partial class WorkingSpace : ISoftDeletable
 
     public virtual User? ModifiedByNavigation { get; set; }
 
-    public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
-
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
-    public virtual ICollection<SpaceResource> SpaceResources { get; set; } = new List<SpaceResource>();
+    public virtual ICollection<SpaceUnit> SpaceUnits { get; set; } = new List<SpaceUnit>();
 
     public virtual ICollection<WorkingSpaceImage> WorkingSpaceImages { get; set; } = new List<WorkingSpaceImage>();
-
-    public virtual WorkspaceType WorkspaceType { get; set; } = null!;
 
     public bool IsDeleted { get; set; } = false;
 }

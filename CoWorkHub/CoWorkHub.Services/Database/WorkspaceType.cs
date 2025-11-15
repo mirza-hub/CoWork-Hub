@@ -16,7 +16,7 @@ public partial class WorkspaceType : ISoftDeletable
 
     public DateTime? DeletedAt { get; set; }
 
-    public virtual ICollection<WorkingSpace> WorkingSpaces { get; set; } = new List<WorkingSpace>();
+    public virtual ICollection<SpaceUnit> SpaceUnits { get; set; } = new List<SpaceUnit>();
 
     public bool IsDeleted { get; set; } = false;
 }
