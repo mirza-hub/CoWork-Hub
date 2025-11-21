@@ -11,6 +11,7 @@ using Mapster;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,6 +86,7 @@ builder.Services.AddAuthentication("BasicAuthentication")
 
 builder.Services.AddHttpContextAccessor();
 
+
 var app = builder.Build();
 
 // Starting the seeding process on application startup
@@ -116,6 +118,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+
 
 using (var scope = app.Services.CreateScope())
 {
