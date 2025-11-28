@@ -48,7 +48,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
                     .Sum(r => r.PeopleCount);
 
                 if (totalPeople + request.PeopleCount > spaceUnit.Capacity)
-                    throw new InvalidOperationException($"Cannot reserve: capacity exceeded. Max capacity is {spaceUnit.Capacity}.");
+                    throw new UserException($"Cannot reserve: capacity exceeded. Max capacity is {spaceUnit.Capacity}.");
             }
             else
             {
@@ -56,18 +56,18 @@ namespace CoWorkHub.Services.ReservationStateMachine
                 bool overlaps = set.Any(r => r.SpaceUnitId == request.SpaceUnitId && !r.IsDeleted &&
                                              r.StartDate < request.EndDate && r.EndDate > request.StartDate);
                 if (overlaps)
-                    throw new InvalidOperationException("This space unit is already reserved for the selected dates.");
+                    throw new UserException("This space unit is already reserved for the selected dates.");
 
                 // provjeri da PeopleCount nije veći od kapaciteta
                 if (request.PeopleCount > spaceUnit.Capacity)
-                    throw new ArgumentException($"PeopleCount exceeds the capacity of the space unit ({spaceUnit.Capacity}).");
+                    throw new UserException($"PeopleCount exceeds the capacity of the space unit ({spaceUnit.Capacity}).");
             }
 
             var entity = Mapper.Map<Reservation>(request);
             entity.UsersId = (int)_currentUserService.GetUserId();
             entity.StateMachine = "pending";
             entity.CreatedAt = DateTime.UtcNow;
-            entity.TotalPrice = request.PeopleCount * entity.SpaceUnit.PricePerDay;
+            entity.TotalPrice = request.PeopleCount * spaceUnit.PricePerDay;
 
             set.Add(entity);
             Context.SaveChanges();

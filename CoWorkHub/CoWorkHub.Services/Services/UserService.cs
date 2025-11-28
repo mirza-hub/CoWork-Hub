@@ -26,14 +26,10 @@ namespace CoWorkHub.Services.Services
         {
             query = base.AddFilter(search, query);
 
-            if (!string.IsNullOrWhiteSpace(search?.FirstNameGTE))
-                query = query.Where(x => x.FirstName.ToLower().StartsWith(search.FirstNameGTE.ToLower()));
-
-            if (!string.IsNullOrWhiteSpace(search?.LastNameGTE))
-                query = query.Where(x => x.LastName.ToLower().StartsWith(search.LastNameGTE.ToLower()));
-
-            if (!string.IsNullOrWhiteSpace(search?.UsernameGTE))
-                query = query.Where(x => x.Username.ToLower().StartsWith(search.UsernameGTE.ToLower()));
+            if (!string.IsNullOrWhiteSpace(search?.FTS))
+                query = query.Where(x => x.FirstName.ToLower().StartsWith(search.FTS.ToLower()) 
+                || x.LastName.ToLower().StartsWith(search.FTS.ToLower()) 
+                || x.Username.ToLower().StartsWith(search.FTS.ToLower()));
 
             if (!string.IsNullOrWhiteSpace(search?.Email))
                 query = query.Where(x => x.Email == search.Email);
@@ -125,6 +121,13 @@ namespace CoWorkHub.Services.Services
             }
 
             entity.ModifiedAt = DateTime.UtcNow;
+        }
+
+        public override void BeforeDelete(User entity)
+        {
+            base.BeforeDelete(entity);
+
+            entity.IsActive = false;
         }
     }
 }

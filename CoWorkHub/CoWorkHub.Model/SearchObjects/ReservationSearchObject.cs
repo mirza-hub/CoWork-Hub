@@ -6,8 +6,8 @@ namespace CoWorkHub.Model.SearchObjects
 {
     public class ReservationSearchObject : BaseSearchObject
     {
-        public int? UserId { get; set; }
-        public int? SpaceUnitId { get; set; }
+        public string? UserFullName { get; set; }
+        public string? SpaceUnitName { get; set; }
         public DateTime? DateFrom { get; set; }
         public DateTime? DateTo { get; set; }
         public decimal? PriceFrom { get; set; }

@@ -69,10 +69,6 @@ namespace CoWorkHub.Services.Services.BaseServicesImplementation
             {
                 query = query.Where(x => x.IsDeleted == search.IsDeleted.Value);
             }
-            else
-            {
-                query = query.Where(x => x.IsDeleted == false);
-            }
 
             return query;
         }

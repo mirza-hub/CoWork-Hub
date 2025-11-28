@@ -27,11 +27,16 @@ namespace CoWorkHub.Services.Services
         {
             query = base.AddFilter(search, query);
 
-            if (search.UserId.HasValue)
-                query = query.Where(r => r.UsersId == search.UserId.Value);
+            if (!string.IsNullOrWhiteSpace(search?.UserFullName))
+            {
+                var fullName = search.UserFullName.ToLower().Trim();
+                query = query.Where(r =>
+                    (r.Users.FirstName + " " + r.Users.LastName).ToLower().Contains(fullName)
+                );
+            }
 
-            if (search.SpaceUnitId.HasValue)
-                query = query.Where(r => r.SpaceUnitId == search.SpaceUnitId.Value);
+            if (!string.IsNullOrWhiteSpace(search?.SpaceUnitName))
+                query = query.Where(r => r.SpaceUnit.Name.ToLower().StartsWith(search.SpaceUnitName.ToLower()));
 
             if (search.DateFrom.HasValue)
                 query = query.Where(r => r.EndDate >= search.DateFrom.Value);

@@ -17,5 +17,6 @@ namespace CoWorkHub.Model
         public virtual User Users { get; set; } = null!;
         public virtual SpaceUnit SpaceUnit { get; set; } = null!;
         public bool IsDeleted { get; set; } = false;
+        public DateTime CreatedAt { get; set; }
     }
 }

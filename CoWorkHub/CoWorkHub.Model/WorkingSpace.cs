@@ -10,6 +10,5 @@ namespace CoWorkHub.Model
         public string Description { get; set; } = null!;
         public string Address { get; set; } = null!;
         public bool? IsDeleted { get; set; } = false;
-        public List<Model.SpaceUnit> SpaceUnits { get; set; } = new List<Model.SpaceUnit>();
     }
 }

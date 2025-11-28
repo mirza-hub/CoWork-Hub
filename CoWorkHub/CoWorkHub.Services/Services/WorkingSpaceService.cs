@@ -39,8 +39,11 @@ namespace CoWorkHub.Services.Services
             if (!string.IsNullOrWhiteSpace(search.AddressFTS))
                 query = query.Where(x => x.Address.ToLower().Contains(search.AddressFTS.ToLower()));
 
-            if (search.IsSpaceUnitIncluded == true)
-                query = query.Include(x => x.SpaceUnits);
+            //if (search.IsSpaceUnitIncluded == true)
+            //    query = query.Include(x => x.SpaceUnits)
+            //        .ThenInclude(xu=>xu.SpaceUnitResources)
+            //        .ThenInclude(xuz=>xuz.Resources)
+            //        .Include(y=>y.SpaceUnits).ThenInclude(yu=>yu.WorkspaceType);
 
             return query;
         }
@@ -67,7 +70,9 @@ namespace CoWorkHub.Services.Services
             base.BeforeUpdate(request, entity);
 
             var existingWorkingSpace = Context.WorkingSpaces
-               .FirstOrDefault(x => x.Name.ToLower() == request.Name.ToLower());
+               .FirstOrDefault(x => 
+               x.Name.ToLower() == request.Name.ToLower() &&
+               x.WorkingSpacesId != entity.WorkingSpacesId);
 
             if (existingWorkingSpace != null)
             {

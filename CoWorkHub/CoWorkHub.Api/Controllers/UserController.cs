@@ -30,13 +30,13 @@ namespace CoWorkHub.Api.Controllers
             return base.Insert(request);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,User")]
         public override User Update(int id, UserUpdateRequest request)
         {
             return base.Update(id, request);
         }
 
-        [Authorize(Roles ="Admin")]
+        [Authorize(Roles ="Admin,User")]
         public override void Delete(int id)
         {
             base.Delete(id);

@@ -8,7 +8,7 @@ namespace CoWorkHub.Model.SearchObjects
     {
         public int? SpaceUnitId { get; set; }
         public int? ResourceId { get; set; }
-        public bool IncludeSpaceUnit { get; set; } = false;
-        public bool IncludeResource { get; set; } = false;
+        //public bool IncludeSpaceUnit { get; set; } = false;
+        //public bool IncludeResource { get; set; } = false;
     }
 }
