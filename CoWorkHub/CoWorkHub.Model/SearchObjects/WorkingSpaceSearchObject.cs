@@ -9,6 +9,5 @@ namespace CoWorkHub.Model.SearchObjects
         public string? NameFTS { get; set; }
         public int? CityId { get; set; }
         public string? AddressFTS { get; set; }
-        public bool? IsSpaceUnitIncluded { get; set; }
     }
 }

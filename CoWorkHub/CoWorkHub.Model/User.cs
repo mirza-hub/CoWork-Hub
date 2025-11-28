@@ -12,7 +12,7 @@ namespace CoWorkHub.Model
         public string Email { get; set; } = null!;
         public string Username { get; set; } = null!;
         public string PhoneNumber { get; set; } = null!;
-        public string? ProfileImageUrl { get; set; }
+        public string? ProfileImageBase64 { get; set; }
         public int CityId { get; set; }
         public bool IsActive { get; set; }
         public bool? IsDeleted { get; set; } = false;

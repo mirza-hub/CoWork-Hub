@@ -10,6 +10,5 @@ namespace CoWorkHub.Model
         public int SpaceUnitId { get; set; }
         public int ResourcesId { get; set; }
         public virtual Resource Resources { get; set; } = null!;
-        public virtual SpaceUnit SpaceUnit { get; set; } = null!;
     }
 }

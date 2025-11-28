@@ -18,7 +18,7 @@ public partial class User : ISoftDeletable
 
     public string PhoneNumber { get; set; } = null!;
 
-    public string? ProfileImageUrl { get; set; }
+    public string? ProfileImageBase64 { get; set; }
 
     public string PasswordSalt { get; set; } = null!;
 

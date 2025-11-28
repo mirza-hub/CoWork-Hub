@@ -16,14 +16,17 @@ abstract class BaseProvider<T> with ChangeNotifier {
     );
   }
 
+  T fromJson(dynamic data) {
+    throw UnimplementedError();
+  }
+
   Future<PagedResult<T>> get({
     dynamic filter,
     int? page,
     int? pageSize,
     String? orderBy,
     String? sortDirection,
-    String? includeTables,
-    required T Function(Object? json) fromJsonT,
+    // required T Function(Object? json) fromJsonT,
   }) async {
     var url = "$baseUrl$_endpoint";
     Map<String, dynamic> queryParams = {};
@@ -40,7 +43,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
       var resultList = (data['resultList'] as List)
-          .map((e) => fromJsonT(e))
+          .map((e) => fromJson(e))
           .toList();
       return PagedResult<T>(
         resultList: resultList,
@@ -56,14 +59,26 @@ abstract class BaseProvider<T> with ChangeNotifier {
     }
   }
 
-  Future<T> insert(dynamic request, T Function(Object? json) fromJsonT) async {
+  Future<T?> getById(int id) async {
+    var url = "$baseUrl$_endpoint/$id";
+
+    var response = await http.get(Uri.parse(url), headers: createHeaders());
+
+    if (isValidResponse(response)) {
+      return fromJson(jsonDecode(response.body));
+    }
+
+    return null;
+  }
+
+  Future<T> insert(dynamic request) async {
     var response = await http.post(
       Uri.parse("$baseUrl$_endpoint"),
       headers: createHeaders(),
       body: jsonEncode(request),
     );
     if (isValidResponse(response)) {
-      return fromJsonT(jsonDecode(response.body));
+      return fromJson(jsonDecode(response.body));
     }
     throw Exception("Insert failed");
   }
@@ -71,7 +86,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
   Future<T> update(
     int id,
     dynamic request,
-    T Function(Object? json) fromJsonT,
+    // T Function(Object? json) fromJsonT,
   ) async {
     var response = await http.put(
       Uri.parse("$baseUrl$_endpoint/$id"),
@@ -79,7 +94,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
       body: jsonEncode(request),
     );
     if (isValidResponse(response)) {
-      return fromJsonT(jsonDecode(response.body));
+      return fromJson(jsonDecode(response.body));
     }
     throw Exception("Update failed");
   }

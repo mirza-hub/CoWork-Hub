@@ -33,11 +33,11 @@ namespace CoWorkHub.Services.Services
             if (search.ResourceId.HasValue)
                 query = query.Where(x => x.ResourcesId == search.ResourceId);
 
-            if (search.IncludeSpaceUnit)
-                query = query.Include(x => x.SpaceUnit);
+            //if (search.IncludeSpaceUnit)
+            //    query = query.Include(x => x.SpaceUnit);
 
-            if (search.IncludeResource)
-                query = query.Include(x => x.Resources);
+            //if (search.IncludeResource)
+            //    query = query.Include(x => x.Resources);
 
             return query;
 

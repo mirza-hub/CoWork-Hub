@@ -31,7 +31,9 @@ namespace CoWorkHub.Services.Services
             base.BeforeInsert(request, entity);
 
             var existingWorkspaceType = Context.WorkspaceTypes
-                .FirstOrDefault(x => x.TypeName.ToLower() == request.TypeName.ToLower());
+                .FirstOrDefault(x => 
+                x.TypeName.ToLower() == request.TypeName.ToLower() &&
+                x.WorkspaceTypeId != entity.WorkspaceTypeId);
 
             if (existingWorkspaceType != null)
             {
