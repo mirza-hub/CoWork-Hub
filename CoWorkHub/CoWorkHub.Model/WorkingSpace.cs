@@ -10,5 +10,6 @@ namespace CoWorkHub.Model
         public string Description { get; set; } = null!;
         public string Address { get; set; } = null!;
         public bool? IsDeleted { get; set; } = false;
+        public virtual City City { get; set; } = null!;
     }
 }

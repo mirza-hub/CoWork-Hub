@@ -77,6 +77,12 @@ namespace CoWorkHub.Services.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
                     b.Property<string>("PostalCode")
                         .IsRequired()
                         .HasMaxLength(10)

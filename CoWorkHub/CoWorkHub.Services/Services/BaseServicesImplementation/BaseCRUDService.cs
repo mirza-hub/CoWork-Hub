@@ -37,7 +37,7 @@ namespace CoWorkHub.Services.Services.BaseServicesImplementation
             var entity = set.Find(id);
 
             if (entity == null)
-                throw new UserException("Entity not found.");
+                throw new UserException("Entitet nije pronađen.");
 
             Mapper.Map(request, entity);
 
@@ -58,7 +58,7 @@ namespace CoWorkHub.Services.Services.BaseServicesImplementation
             var entity = Context.Set<TDbEntity>().Find(id);
 
             if (entity == null)
-                throw new UserException("Entity not found.");
+                throw new UserException("Entiten nije pronađen.");
 
             BeforeDelete(entity);
 

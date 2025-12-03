@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:coworkhub_mobile/models/city.dart';
 
 part 'working_space.g.dart';
 
@@ -10,6 +11,7 @@ class WorkingSpace {
   String description;
   String address;
   bool? isDeleted;
+  City? city;
 
   WorkingSpace({
     required this.workingSpacesId,
@@ -18,6 +20,7 @@ class WorkingSpace {
     required this.description,
     required this.address,
     this.isDeleted,
+    this.city,
   });
 
   factory WorkingSpace.fromJson(Map<String, dynamic> json) =>

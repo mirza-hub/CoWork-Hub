@@ -14,6 +14,10 @@ public partial class City : ISoftDeletable
 
     public string PostalCode { get; set; } = null!;
 
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
     public virtual Country Country { get; set; } = null!;
 
     public virtual ICollection<User> Users { get; set; } = new List<User>();

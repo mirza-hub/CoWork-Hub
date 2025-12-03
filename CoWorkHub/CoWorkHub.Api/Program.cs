@@ -7,11 +7,12 @@ using CoWorkHub.Services.ReservationStateMachine;
 using CoWorkHub.Services.Seed;
 using CoWorkHub.Services.Services;
 using CoWorkHub.Services.WorkingSpaceStateMachine;
+using FluentValidation;
 using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,8 @@ builder.Services.AddTransient<IReservationService, ReservationService>();
 builder.Services.AddTransient<IReviewService, ReviewService>();
 builder.Services.AddTransient<ISpaceUnitService, SpaceUnitService>();
 builder.Services.AddTransient<ISpaceUnitResourceService, SpaceUnitResourceService>();
+builder.Services.AddTransient<ISpaceUnitImageService, SpaceUnitImageService>();
+builder.Services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
 //state machines
 //Reservation
@@ -118,6 +121,8 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseAuthorization();
 

@@ -3,6 +3,11 @@
         android:label="coworkhub_mobile"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyD1sY_jgJI8_ZvJeW8K1AFSOuGaJRLGRGk"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

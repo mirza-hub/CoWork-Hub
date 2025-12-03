@@ -13,6 +13,9 @@ WorkingSpace _$WorkingSpaceFromJson(Map<String, dynamic> json) => WorkingSpace(
   description: json['description'] as String,
   address: json['address'] as String,
   isDeleted: json['isDeleted'] as bool?,
+  city: json['city'] == null
+      ? null
+      : City.fromJson(json['city'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$WorkingSpaceToJson(WorkingSpace instance) =>
@@ -23,4 +26,5 @@ Map<String, dynamic> _$WorkingSpaceToJson(WorkingSpace instance) =>
       'description': instance.description,
       'address': instance.address,
       'isDeleted': instance.isDeleted,
+      'city': instance.city,
     };

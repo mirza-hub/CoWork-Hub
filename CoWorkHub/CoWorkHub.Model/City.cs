@@ -9,5 +9,7 @@ namespace CoWorkHub.Model
         public int CityId { get; set; }
         public string CityName { get; set; } = null!;
         public string PostalCode { get; set; } = null!;
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
     }
 }

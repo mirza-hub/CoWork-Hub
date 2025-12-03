@@ -20,7 +20,7 @@ namespace CoWorkHub.Services.Services
     {
         public BaseSpaceUnitState BaseSpaceUnitState { get; set; }
 
-        public SpaceUnitService(_210095Context context, IMapper mapper, BaseSpaceUnitState baseSpaceUnitStat) 
+        public SpaceUnitService(_210095Context context, IMapper mapper, BaseSpaceUnitState baseSpaceUnitStat)
             : base(context, mapper)
         {
             BaseSpaceUnitState = baseSpaceUnitStat;
@@ -33,11 +33,16 @@ namespace CoWorkHub.Services.Services
             if (search.WorkingSpaceId.HasValue)
                 query = query.Where(x => x.WorkingSpaceId == search.WorkingSpaceId);
 
-            if (search.WorkspaceTypeId.HasValue)
-                query = query.Where(x => x.WorkspaceTypeId == search.WorkspaceTypeId);
+            query = query.Where(x => x.StateMachine == "active");
 
             if (!string.IsNullOrWhiteSpace(search.Name))
                 query = query.Where(x => x.Name.Contains(search.Name));
+
+            if (search.WorkspaceTypeId.HasValue)
+                query = query.Where(x => x.WorkspaceTypeId == search.WorkspaceTypeId);
+
+            if (search.CityId.HasValue)
+                query = query.Where(x => x.WorkingSpace.CityId == search.CityId);
 
             if (search.PriceFrom.HasValue)
                 query = query.Where(x => x.PricePerDay >= search.PriceFrom);
@@ -51,15 +56,40 @@ namespace CoWorkHub.Services.Services
             if (search.CapacityTo.HasValue)
                 query = query.Where(x => x.Capacity <= search.CapacityTo);
 
+            if (search.From != null && search.To != null)
+            {
+                var from = search.From.Value;
+                var to = search.To.Value;
+                var requestedPeopleCount = search.PeopleCount ?? 1;
+
+                query = query.Where(su =>
+                    su.WorkspaceTypeId == 1 ? ((Context.Reservations.Where(r =>
+                        r.SpaceUnitId == su.SpaceUnitId &&
+                        !r.IsDeleted &&
+                        r.StartDate < to &&
+                        r.EndDate > from
+                    ).Sum(r => (int?)r.PeopleCount) ?? 0) + requestedPeopleCount <= su.Capacity) 
+                    : ((su.Capacity - (Context.Reservations.Where(r =>
+                    r.SpaceUnitId == su.SpaceUnitId &&
+                    !r.IsDeleted &&
+                    r.StartDate < to &&
+                    r.EndDate > from)
+                .Sum(r => (int?)r.PeopleCount) ?? 0)) >= requestedPeopleCount));
+            }
+
             if (search.IncludeWorkingSpace)
-                query = query.Include(x => x.WorkingSpace);
+                query = query.Include(x => x.WorkingSpace)
+                    .ThenInclude(r => r.City);
 
             if (search.IncludeWorkspaceType)
                 query = query.Include(x => x.WorkspaceType);
 
             if (search.IncludeResources)
                 query = query.Include(x => x.SpaceUnitResources)
-                             .ThenInclude(r => r.Resources);
+                    .ThenInclude(r => r.Resources);
+
+            if (search.IncludeImages)
+                query = query.Include(x => x.SpaceUnitImages);
 
             return query;
         }
