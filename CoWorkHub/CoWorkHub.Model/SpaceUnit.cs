@@ -18,5 +18,6 @@ namespace CoWorkHub.Model
         public virtual WorkingSpace WorkingSpace { get; set; } = null!;
         public virtual ICollection<SpaceUnitResources> SpaceUnitResources { get; set; } = new List<SpaceUnitResources>();
         public virtual WorkspaceType WorkspaceType { get; set; } = null!;
+        public virtual ICollection<SpaceUnitImage> SpaceUnitImages { get; set; } = new List<SpaceUnitImage>();
     }
 }

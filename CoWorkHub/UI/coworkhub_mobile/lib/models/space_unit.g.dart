@@ -25,6 +25,9 @@ SpaceUnit _$SpaceUnitFromJson(Map<String, dynamic> json) => SpaceUnit(
   workspaceType: json['workspaceType'] == null
       ? null
       : WorkspaceType.fromJson(json['workspaceType'] as Map<String, dynamic>),
+  spaceUnitImages: (json['spaceUnitImages'] as List<dynamic>)
+      .map((e) => SpaceUnitImage.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$SpaceUnitToJson(SpaceUnit instance) => <String, dynamic>{
@@ -37,7 +40,10 @@ Map<String, dynamic> _$SpaceUnitToJson(SpaceUnit instance) => <String, dynamic>{
   'pricePerDay': instance.pricePerDay,
   'stateMachine': instance.stateMachine,
   'isDeleted': instance.isDeleted,
-  'workingSpace': instance.workingSpace,
-  'spaceUnitResources': instance.spaceUnitResources,
-  'workspaceType': instance.workspaceType,
+  'workingSpace': instance.workingSpace?.toJson(),
+  'spaceUnitResources': instance.spaceUnitResources
+      .map((e) => e.toJson())
+      .toList(),
+  'workspaceType': instance.workspaceType?.toJson(),
+  'spaceUnitImages': instance.spaceUnitImages.map((e) => e.toJson()).toList(),
 };

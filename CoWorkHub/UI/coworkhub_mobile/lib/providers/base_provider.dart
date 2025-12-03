@@ -12,7 +12,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
     _endpoint = endpoint;
     baseUrl = const String.fromEnvironment(
       "baseUrl",
-      defaultValue: "https://10.0.2.2:7015/",
+      // defaultValue: "https://localhost:7015/",
+      defaultValue: "http://localhost:5084/",
+      // defaultValue: "http://10.0.2.2:5084/",
     );
   }
 
@@ -77,26 +79,58 @@ abstract class BaseProvider<T> with ChangeNotifier {
       headers: createHeaders(),
       body: jsonEncode(request),
     );
+
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
+    } else {
+      throw response;
     }
-    throw Exception("Insert failed");
+
+    // Ako je server vratio JSON sa greškama
+    // try {
+    //   var body = jsonDecode(response.body);
+
+    //   if (body is Map && body["errors"] != null) {
+    //     // Uzmi prvu poruku iz "errors"
+    //     var errors = body["errors"] as Map<String, dynamic>;
+    //     var firstKey = errors.keys.first;
+    //     var firstError = errors[firstKey][0];
+
+    //     throw Exception(firstError.toString());
+    //   }
+    // } catch (_) {
+    //   // ako parsing error — ignoriraj
+    // }
+
+    // throw Exception("Greška na serveru (${response.statusCode})");
   }
 
-  Future<T> update(
-    int id,
-    dynamic request,
-    // T Function(Object? json) fromJsonT,
-  ) async {
+  Future<T> update(int id, dynamic request) async {
     var response = await http.put(
       Uri.parse("$baseUrl$_endpoint/$id"),
       headers: createHeaders(),
       body: jsonEncode(request),
     );
+
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
     }
-    throw Exception("Update failed");
+
+    // Ako backend šalje errors JSON
+    try {
+      var body = jsonDecode(response.body);
+
+      if (body is Map && body["errors"] != null) {
+        var errors = body["errors"] as Map<String, dynamic>;
+        var firstKey = errors.keys.first;
+        var firstError = errors[firstKey][0];
+        throw Exception(firstError.toString());
+      }
+    } catch (_) {
+      // ignoriraj parsing greške
+    }
+
+    throw Exception("Greška na serveru (${response.statusCode})");
   }
 
   Future<void> delete(int id) async {

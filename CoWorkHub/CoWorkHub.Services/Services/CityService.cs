@@ -10,8 +10,13 @@ namespace CoWorkHub.Services.Services
 {
     public class CityService : BaseCRUDService<Model.City, CitySearchObject, Database.City, CityInsertRequest, CityUpdateRequest>, ICityService
     {
-        public CityService(_210095Context context, IMapper mapper)
-            : base(context, mapper) { }
+        private readonly IGeoLocationService _geoLocationService;
+
+        public CityService(_210095Context context, IMapper mapper, IGeoLocationService geoLocationService)
+            : base(context, mapper) 
+        {
+            _geoLocationService = geoLocationService;
+        }
 
         public override IQueryable<City> AddFilter(CitySearchObject search, IQueryable<City> query)
         {
@@ -40,6 +45,13 @@ namespace CoWorkHub.Services.Services
 
                 if (existingCity.PostalCode.Equals(request.PostalCode, StringComparison.OrdinalIgnoreCase))
                     throw new UserException("This postal code is already assigned.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.CityName))
+            {
+                var coordinates = _geoLocationService.GetCoordinatesAsync(request.CityName).Result;
+                entity.Latitude = coordinates.lat;
+                entity.Longitude = coordinates.lon;
             }
         }
     }

@@ -39,6 +39,9 @@ namespace CoWorkHub.Services.Services
             if (!string.IsNullOrWhiteSpace(search.AddressFTS))
                 query = query.Where(x => x.Address.ToLower().Contains(search.AddressFTS.ToLower()));
 
+            if (search.IsCityIncluded == true)
+                query = query.Include(x => x.City);
+
             //if (search.IsSpaceUnitIncluded == true)
             //    query = query.Include(x => x.SpaceUnits)
             //        .ThenInclude(xu=>xu.SpaceUnitResources)

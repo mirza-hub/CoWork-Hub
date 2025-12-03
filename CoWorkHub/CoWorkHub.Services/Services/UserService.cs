@@ -51,17 +51,29 @@ namespace CoWorkHub.Services.Services
             base.BeforeInsert(request, entity);
 
             if (request.Password != request.PasswordConfirm)
-                throw new UserException("Password and onfirmation password must match.");
+                throw new UserException("Lozinka i lozinka potvrda se moraju podudarati");
 
             if (Context.Users.Any(x => x.Username.ToLower() == request.Username.ToLower()))
-                throw new UserException("User with this username is already registered.");
+                throw new UserException("Korisnik sa ovim korisničkim imenom je već registrovan");
 
             if (Context.Users.Any(x => x.Email.ToLower() == request.Email.ToLower()))
-                throw new UserException("User with this email is already registered.");
+                throw new UserException("Korisnik sa ovim emailom je već registrovan");
 
             entity.CreatedAt = DateTime.UtcNow;
             entity.PasswordSalt = _passwordService.GenerateSalt();
             entity.PasswordHash = _passwordService.GenerateHash(entity.PasswordSalt, request.Password);
+        }
+
+        public override void AfterInsert(UserInsertRequest request, User entity)
+        {
+            var roles = Context.Roles.FirstOrDefault(x=>x.RoleName== "User");
+            var newUserRole = Context.UserRoles.Add(new Database.UserRole
+            {
+                UserId = entity.UsersId,
+                RoleId = roles.RolesId
+            });
+
+            Context.SaveChanges();
         }
 
         public Model.User Login(string username, string password)
@@ -91,7 +103,7 @@ namespace CoWorkHub.Services.Services
             {
                 if (request.Password != request.PasswordConfirm)
                 {
-                    throw new UserException("Password and confirmation password must match.");
+                    throw new UserException("Lozinka i lozinka potvrda se moraju podudarati");
                 }
 
                 entity.PasswordSalt = _passwordService.GenerateSalt();
@@ -105,7 +117,7 @@ namespace CoWorkHub.Services.Services
 
                 if (existingUserByEmail != null)
                 {
-                    throw new UserException("User with this email already exists.");
+                    throw new UserException("Korisnik sa ovim emailom je već registrovan");
                 }
             }
 
@@ -116,7 +128,7 @@ namespace CoWorkHub.Services.Services
 
                 if (existingUserByUsername != null)
                 {
-                    throw new UserException("User with this username already exists.");
+                    throw new UserException("Korisnik sa ovim korisničkim imenom je već registrovan");
                 }
             }
 
