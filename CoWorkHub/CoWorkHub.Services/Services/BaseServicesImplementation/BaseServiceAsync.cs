@@ -2,6 +2,7 @@
 using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Database;
+using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Services.BaseServicesImplementation
 {
-    public class BaseServiceAsync<TModel, TSearch, TDbEntity> : IServiceAsync<TModel, TSearch> where TSearch : BaseSearchObject where TDbEntity : class where TModel : class
+    public class BaseServiceAsync<TModel, TSearch, TDbEntity> : IServiceAsync<TModel, TSearch> where TSearch : BaseSearchObject where TDbEntity : class, ISoftDeletable where TModel : class
     {
         public _210095Context Context { get; }
         public IMapper Mapper { get; }
@@ -115,9 +116,13 @@ namespace CoWorkHub.Services.Services.BaseServicesImplementation
 
         public virtual IQueryable<TDbEntity> AddFilter(TSearch search, IQueryable<TDbEntity> query)
         {
+            if (search.IsDeleted.HasValue)
+            {
+                query = query.Where(x => x.IsDeleted == search.IsDeleted.Value);
+            }
+
             return query;
         }
-
 
         public virtual async Task<TModel> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {

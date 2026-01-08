@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Services
 {
-    public class SpaceUnitImageService : BaseCRUDServiceAsync<Model.SpaceUnitImage, SpaceUnitImageSearchObject, SpaceUnitImage, SpaceUnitImageInsert, SpaceUnitImageUpdate>, ISpaceUnitImageService
+    public class SpaceUnitImageService : BaseCRUDServiceAsync<Model.SpaceUnitImage, SpaceUnitImageSearchObject, SpaceUnitImage, SpaceUnitImageInsertRequest, SpaceUnitImageUpdateRequest>, ISpaceUnitImageService
     {
         private readonly IHostEnvironment _environment;
 
@@ -33,14 +33,14 @@ namespace CoWorkHub.Services.Services
             return query;
         }
 
-        public override async Task<Model.SpaceUnitImage> InsertAsync(SpaceUnitImageInsert request, CancellationToken cancellationToken = default)
+        public override async Task<Model.SpaceUnitImage> InsertAsync(SpaceUnitImageInsertRequest request, CancellationToken cancellationToken = default)
         {
             var result = await UploadBase64ImagesAsync(request, cancellationToken);
 
             return result.First();
         }
 
-        public async Task<List<Model.SpaceUnitImage>> UploadBase64ImagesAsync(SpaceUnitImageInsert request, CancellationToken cancellationToken = default)
+        public async Task<List<Model.SpaceUnitImage>> UploadBase64ImagesAsync(SpaceUnitImageInsertRequest request, CancellationToken cancellationToken = default)
         {
             var result = new List<Model.SpaceUnitImage>();
             if (request.Base64Images == null || request.Base64Images.Count == 0)

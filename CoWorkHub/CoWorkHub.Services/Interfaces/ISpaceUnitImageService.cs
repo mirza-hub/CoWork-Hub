@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Interfaces
 {
-    public interface ISpaceUnitImageService : ICRUDServiceAsync<Model.SpaceUnitImage, SpaceUnitImageSearchObject, SpaceUnitImageInsert, SpaceUnitImageUpdate>
+    public interface ISpaceUnitImageService : ICRUDServiceAsync<Model.SpaceUnitImage, SpaceUnitImageSearchObject, SpaceUnitImageInsertRequest, SpaceUnitImageUpdateRequest>
     {
-        Task<List<Model.SpaceUnitImage>> UploadBase64ImagesAsync(SpaceUnitImageInsert request, CancellationToken cancellationToken = default);
+        Task<List<Model.SpaceUnitImage>> UploadBase64ImagesAsync(SpaceUnitImageInsertRequest request, CancellationToken cancellationToken = default);
     }
 }

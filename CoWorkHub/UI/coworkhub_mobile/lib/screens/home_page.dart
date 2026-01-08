@@ -152,7 +152,7 @@ class _HomePageState extends State<HomePage> {
                             initialValue: selectedWorkspaceTypeId,
                             decoration: getDefaultInputDecoration(
                               label: 'Tip prostora',
-                              icon: Icons.business,
+                              icon: Icons.business_outlined,
                             ),
                             items: data
                                 .map(
@@ -193,7 +193,7 @@ class _HomePageState extends State<HomePage> {
                             initialValue: selectedCityId,
                             decoration: getDefaultInputDecoration(
                               label: 'Lokacija',
-                              icon: Icons.location_on,
+                              icon: Icons.location_on_outlined,
                             ),
                             items: data
                                 .map(
@@ -232,7 +232,7 @@ class _HomePageState extends State<HomePage> {
                           labelText: selectedDateRange != null
                               ? 'Datum'
                               : null, // label samo kad je datum izabran
-                          prefixIcon: const Icon(Icons.date_range),
+                          prefixIcon: const Icon(Icons.date_range_outlined),
                           border: const OutlineInputBorder(),
                           errorText: _submitted && selectedDateRange == null
                               ? 'Odaberite datum'
@@ -254,7 +254,7 @@ class _HomePageState extends State<HomePage> {
                               keyboardType: TextInputType.number,
                               decoration: getDefaultInputDecoration(
                                 label: 'Broj ljudi',
-                                icon: Icons.people,
+                                icon: Icons.people_outlined,
                               ),
                               style: const TextStyle(
                                 fontSize: 16,

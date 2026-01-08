@@ -4,15 +4,22 @@ import 'package:coworkhub_desktop/models/user.dart';
 import 'package:coworkhub_desktop/models/city.dart';
 import 'package:coworkhub_desktop/providers/city_provider.dart';
 import 'package:coworkhub_desktop/providers/role_provider.dart';
+import 'package:coworkhub_desktop/screens/users_screen.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
-import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
+import 'package:multi_select_flutter/dialog/multi_select_dialog_field.dart';
+import 'package:multi_select_flutter/util/multi_select_item.dart';
 
 class UserDetailsScreen extends StatefulWidget {
+  final void Function(Widget) onChangeScreen;
   final User user;
 
-  const UserDetailsScreen({super.key, required this.user});
+  const UserDetailsScreen({
+    super.key,
+    required this.user,
+    required this.onChangeScreen,
+  });
 
   @override
   State<UserDetailsScreen> createState() => _UserDetailsScreenState();
@@ -23,10 +30,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final RoleProvider roleProvider = RoleProvider();
 
   City? city;
-  Role? selectedRole;
+  List<Role> selectedRoles = [];
   String? profileImageBase64;
   bool loading = true;
   bool? activeValue;
+  bool isLoadingCity = true;
 
   List<Role> roles = [];
 
@@ -39,6 +47,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     activeValue = widget.user.isActive; // default active state
     _loadRoles();
     profileImageBase64 = widget.user.profileImageBase64;
+    if (widget.user.userRoles != null) {
+      selectedRoles = widget.user.userRoles!
+          .map((ur) => roles.firstWhere((r) => r.rolesId == ur.roleId))
+          .toList();
+    }
   }
 
   // ---------------------------------------------
@@ -48,10 +61,18 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     if (widget.user.cityId != null) {
       try {
         final result = await cityProvider.getById(widget.user.cityId);
-        setState(() => city = result);
+        setState(() {
+          city = result;
+          isLoadingCity = false; // Grad je učitan
+        });
       } catch (e) {
         print("Greška pri dohvaćanju grada: $e");
+        setState(
+          () => isLoadingCity = false,
+        ); // čak i ako je greška, prestani loader
       }
+    } else {
+      setState(() => isLoadingCity = false); // nema grada
     }
   }
 
@@ -60,21 +81,35 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   // ---------------------------------------------
   Future<void> _loadRoles() async {
     try {
-      final response = await roleProvider.get(
-        // fromJsonT: (json) => Role.fromJson(json as Map<String, dynamic>),
-      );
+      final response = await roleProvider.get();
+      final fetchedRoles = response.resultList;
 
       setState(() {
-        roles = response.resultList;
+        roles = fetchedRoles;
 
-        if (widget.user.userRoles != null &&
-            widget.user.userRoles!.isNotEmpty) {
-          final currentRoleId = widget.user.userRoles!.first.roleId;
+        selectedRoles = [];
 
-          selectedRole = roles.firstWhere(
-            (r) => r.rolesId == currentRoleId,
-            orElse: () => roles.first,
-          );
+        if (widget.user.userRoles != null) {
+          for (var ur in widget.user.userRoles!) {
+            // pokušaj pronaći među dostupnim rolama
+            final match = fetchedRoles
+                .where((r) => r.rolesId == ur.roleId)
+                .toList();
+
+            if (match.isNotEmpty) {
+              selectedRoles.add(match.first);
+            } else if (ur.role != null) {
+              // fallback: koristi rolu iz userRole
+              selectedRoles.add(
+                Role(
+                  rolesId: ur.roleId,
+                  roleName: ur.role!.roleName,
+                  description: ur.role!.description,
+                  isDeleted: ur.role!.isDeleted,
+                ),
+              );
+            }
+          }
         }
       });
     } catch (e) {
@@ -115,7 +150,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back, size: 28),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    widget.onChangeScreen(
+                      UsersScreen(onChangeScreen: widget.onChangeScreen),
+                    );
+                  },
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -205,7 +244,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       ),
                       _buildField("Kreiran profil", user.createdAt.toString()),
 
-                      _buildRoleDropdown(),
+                      _buildRolesMultiSelect(),
 
                       const SizedBox(height: 25),
 
@@ -227,7 +266,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               ),
                             ),
                             child: const Text(
-                              "Spasi",
+                              "Sačuvaj",
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.white,
@@ -268,21 +307,23 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            TextFormField(
-              initialValue: value,
-              enabled: enabled,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: enabled ? Colors.white : Colors.grey.shade200,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-              ),
-            ),
+            isLoadingCity
+                ? const CircularProgressIndicator()
+                : TextFormField(
+                    initialValue: value ?? "Nije odabrano",
+                    enabled: enabled,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: enabled ? Colors.white : Colors.grey.shade200,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                    ),
+                  ),
           ],
         ),
       ),
@@ -292,7 +333,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   // --------------------------------------------------------
   // ROLE DROPDOWN
   // --------------------------------------------------------
-  Widget _buildRoleDropdown() {
+  Widget _buildRolesMultiSelect() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: SizedBox(
@@ -301,7 +342,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Rola",
+              "Role",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -309,27 +350,26 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            DropdownButtonFormField<Role>(
-              isExpanded: true,
-              value: selectedRole,
-              items: roles.map((role) {
-                return DropdownMenuItem<Role>(
-                  value: role,
-                  child: Text(role.roleName),
-                );
-              }).toList(),
-              onChanged: (value) {
+
+            MultiSelectDialogField<Role>(
+              items: roles
+                  .map((role) => MultiSelectItem<Role>(role, role.roleName))
+                  .toList(),
+              initialValue: selectedRoles,
+              searchable: true,
+              title: const Text("Odaberi role"),
+              buttonText: const Text("Odaberi role"),
+              selectedColor: Colors.blue,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.grey.shade400),
+              ),
+
+              onConfirm: (values) {
                 setState(() {
-                  selectedRole = value;
+                  selectedRoles = List<Role>.from(values);
                 });
               },
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
             ),
           ],
         ),

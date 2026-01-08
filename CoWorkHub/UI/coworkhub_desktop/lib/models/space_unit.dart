@@ -2,10 +2,11 @@ import 'package:json_annotation/json_annotation.dart';
 import 'workspace_type.dart';
 import 'space_unit_resources.dart';
 import 'working_space.dart';
+import 'space_unit_image.dart';
 
 part 'space_unit.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class SpaceUnit {
   int spaceUnitId;
   int workingSpaceId;
@@ -19,6 +20,7 @@ class SpaceUnit {
   WorkingSpace? workingSpace;
   List<SpaceUnitResources> spaceUnitResources;
   WorkspaceType? workspaceType;
+  List<SpaceUnitImage> spaceUnitImages;
 
   SpaceUnit({
     required this.spaceUnitId,
@@ -33,9 +35,11 @@ class SpaceUnit {
     this.workingSpace,
     required this.spaceUnitResources,
     this.workspaceType,
+    required this.spaceUnitImages,
   });
 
   factory SpaceUnit.fromJson(Map<String, dynamic> json) =>
       _$SpaceUnitFromJson(json);
+
   Map<String, dynamic> toJson() => _$SpaceUnitToJson(this);
 }

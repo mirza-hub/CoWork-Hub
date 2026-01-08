@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:coworkhub_mobile/models/city.dart'; // tvoj model za gradove
-import 'package:coworkhub_mobile/providers/city_provider.dart'; // provider koji vraca gradove
+import 'package:coworkhub_mobile/models/city.dart';
+import 'package:coworkhub_mobile/providers/city_provider.dart';
 import 'package:coworkhub_mobile/providers/user_provider.dart';
 import 'package:coworkhub_mobile/screens/login_screen.dart';
 import 'package:flutter/gestures.dart';
@@ -337,7 +337,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: ElevatedButton(
                     onPressed: _loading ? null : _register,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1079CF),
+                      backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

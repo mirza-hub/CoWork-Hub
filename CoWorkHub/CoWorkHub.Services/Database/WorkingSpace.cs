@@ -16,6 +16,10 @@ public partial class WorkingSpace : ISoftDeletable
 
     public string Address { get; set; } = null!;
 
+    public double Latitude { get; set; }
+
+    public double Longitude { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public int CreatedBy { get; set; }

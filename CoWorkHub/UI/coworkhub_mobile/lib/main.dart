@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:coworkhub_mobile/layout/layout_screen.dart';
 import 'package:coworkhub_mobile/providers/city_provider.dart';
+import 'package:coworkhub_mobile/providers/payment_method_provider.dart';
+import 'package:coworkhub_mobile/providers/payment_provider.dart';
 import 'package:coworkhub_mobile/providers/reservation_provider.dart';
 import 'package:coworkhub_mobile/providers/resource_provider.dart';
 import 'package:coworkhub_mobile/providers/role_provider.dart';
@@ -17,10 +19,14 @@ import 'package:window_size/window_size.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  //await dotenv.load(fileName: ".env");
   if (Platform.isWindows) {
     setWindowTitle('Mobile Simulation');
-    setWindowMinSize(const Size(600, 900));
-    setWindowMaxSize(const Size(600, 900));
+    const width = 600.0;
+    const height = 900.0;
+
+    setWindowMinSize(const Size(width, height));
+    setWindowMaxSize(const Size(width, height));
   }
   runApp(
     MultiProvider(
@@ -35,6 +41,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => WorkingSpaceProvider()),
         ChangeNotifierProvider(create: (_) => WorkspaceTypeProvider()),
+        ChangeNotifierProvider(create: (_) => PaymentMethodProvider()),
+        ChangeNotifierProvider(create: (_) => PaymentProvider()),
       ],
       child: const MyApp(),
     ),

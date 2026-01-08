@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Services.Interfaces;
+﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,13 +41,13 @@ namespace CoWorkHub.Services.Services
             var result = JsonSerializer.Deserialize<List<NominatimResult>>(json);
 
             if (result == null || result.Count == 0)
-                throw new Exception($"Coordinates not found for city: {cityName}");
+                throw new UserException($"Coordinates not found for city: {cityName}");
 
             // Parsiranje lat/lon
             if (!double.TryParse(result[0].Lat, out double lat))
-                throw new Exception($"Invalid latitude returned for city: {cityName}");
+                throw new UserException($"Invalid latitude returned for city: {cityName}");
             if (!double.TryParse(result[0].Lon, out double lon))
-                throw new Exception($"Invalid longitude returned for city: {cityName}");
+                throw new UserException($"Invalid longitude returned for city: {cityName}");
 
             return (lat, lon);
         }

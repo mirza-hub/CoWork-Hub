@@ -10,81 +10,89 @@ namespace CoWorkHub.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class SpaceUnitController : BaseCRUDController<Model.SpaceUnit, SpaceUnitSearchObject, SpaceUnitInsertRequest, SpaceUnitUpdateRequest>
+    public class SpaceUnitController : BaseCRUDControllerAsync<Model.SpaceUnit, SpaceUnitSearchObject, SpaceUnitInsertRequest, SpaceUnitUpdateRequest>
     {
         public SpaceUnitController(ISpaceUnitService service)
             : base(service) { }
 
         [Authorize(Roles = "Admin")]
-        public override SpaceUnit Insert(SpaceUnitInsertRequest request)
+        public override async Task<SpaceUnit> Insert(SpaceUnitInsertRequest request, CancellationToken cancellationToken = default)
         {
-            return base.Insert(request);
+            return await base.Insert(request, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
-        public override SpaceUnit Update(int id, SpaceUnitUpdateRequest request)
+        public override async Task<SpaceUnit> Update(int id, SpaceUnitUpdateRequest request, CancellationToken cancellationToken = default)
         {
-            return base.Update(id, request);
+            return await base.Update(id, request, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
-        public override void Delete(int id)
+        public override async Task Delete(int id, CancellationToken cancellationToken = default)
         {
-            base.Delete(id);
+            await base.Delete(id, cancellationToken);
         }
 
         [AllowAnonymous]
-        public override PagedResult<SpaceUnit> GetList([FromQuery] SpaceUnitSearchObject searchObject)
+        public override async Task<PagedResult<SpaceUnit>> GetList([FromQuery] SpaceUnitSearchObject searchObject, CancellationToken cancellationToken = default)
         {
-            return base.GetList(searchObject);
+            return await base.GetList(searchObject, cancellationToken);
         }
 
         [AllowAnonymous]
-        public override SpaceUnit GetById(int id)
+        public override async Task<SpaceUnit> GetById(int id, CancellationToken cancellationToken = default)
         {
-            return base.GetById(id);
+            return await base.GetById(id, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/activate")]
-        public SpaceUnit Activate(int id)
+        public async Task<SpaceUnit> Activate(int id, CancellationToken cancellationToken)
         {
-            return (_service as ISpaceUnitService).Activate(id);
+            return await (_service as ISpaceUnitService).Activate(id, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/edit")]
-        public Model.SpaceUnit Edit(int id)
+        public async Task<SpaceUnit> Edit(int id, CancellationToken cancellationToken)
         {
-            return (_service as ISpaceUnitService).Edit(id);
+            return await(_service as ISpaceUnitService).Edit(id, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/hide")]
-        public Model.SpaceUnit Hide(int id)
+        public async Task<SpaceUnit> Hide(int id, CancellationToken cancellationToken)
         {
-            return (_service as ISpaceUnitService).Hide(id);
+            return await(_service as ISpaceUnitService).Hide(id, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/setMaintenance")]
-        public Model.SpaceUnit SetMaintenance(int id)
+        public async Task<SpaceUnit> SetMaintenance(int id, CancellationToken cancellationToken)
         {
-            return (_service as ISpaceUnitService).SetMaintenance(id);
+            return await (_service as ISpaceUnitService).SetMaintenance(id, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/restore")]
-        public Model.SpaceUnit Restore(int id)
+        public async Task<SpaceUnit> Restore(int id, CancellationToken cancellationToken)
         {
-            return (_service as ISpaceUnitService).Restore(id);
+            return await (_service as ISpaceUnitService).Restore(id, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpGet("{id}/allowedActions")]
-        public List<string> AllowedActions(int id)
+        public async Task<List<string>> AllowedActions(int id, CancellationToken cancellationToken)
         {
-            return (_service as ISpaceUnitService).AllowedActions(id);
+            return await (_service as ISpaceUnitService).AllowedActions(id, cancellationToken);
         }
+
+        //[AllowAnonymous]
+        //[HttpGet("availability")]
+        //public List<DayAvailability> GetAvailabilityForMonth([FromQuery] SpaceUnitSearchObject search)
+        //{
+        //    return (_service as ISpaceUnitService).GetAvailabilityForMonth(search);
+        //}
+
     }
 }

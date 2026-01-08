@@ -33,13 +33,13 @@ namespace CoWorkHub.Api.Controllers
             base.Delete(id);
         }
 
-        [Authorize]
+        [AllowAnonymous]
         public override PagedResult<Resource> GetList([FromQuery] ResourcesSearchObject searchObject)
         {
             return base.GetList(searchObject);
         }
 
-        [Authorize]
+        [AllowAnonymous]
         public override Resource GetById(int id)
         {
             return base.GetById(id);
