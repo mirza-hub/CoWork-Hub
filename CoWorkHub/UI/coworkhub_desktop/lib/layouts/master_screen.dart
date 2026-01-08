@@ -1,11 +1,17 @@
+import 'dart:convert';
+
 import 'package:coworkhub_desktop/main.dart';
+import 'package:coworkhub_desktop/models/extensions/user_image_extension.dart';
+import 'package:coworkhub_desktop/models/user.dart';
 import 'package:coworkhub_desktop/screens/reservation_screen.dart';
 import 'package:coworkhub_desktop/screens/users_screen.dart';
 import 'package:coworkhub_desktop/screens/working_space_screen.dart';
 import 'package:flutter/material.dart';
 
 class MasterScreen extends StatefulWidget {
-  const MasterScreen({super.key});
+  final User user;
+
+  const MasterScreen({super.key, required this.user});
 
   @override
   State<MasterScreen> createState() => _MasterScreenState();
@@ -139,16 +145,40 @@ class _MasterScreenState extends State<MasterScreen> {
                         ),
                       ),
 
-                      // Profile avatar
-                      InkWell(
-                        onTap: () {
-                          // Ovdje ćeš kasnije otvoriti user details
-                        },
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.grey.shade300,
-                          child: const Icon(Icons.person, color: Colors.white),
-                        ),
+                      // Right side: user name + avatar
+                      Row(
+                        children: [
+                          Text(
+                            "${widget.user.firstName} ${widget.user.lastName}",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          widget.user.getImageBytes() != null
+                              ? Container(
+                                  width: 43, // ista dimenzija kao radius*2
+                                  height: 43,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    image: DecorationImage(
+                                      image: MemoryImage(
+                                        widget.user.getImageBytes()!,
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: Colors.grey.shade300,
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ],
                       ),
                     ],
                   ),
@@ -262,7 +292,8 @@ class _MasterScreenState extends State<MasterScreen> {
                   MaterialPageRoute(builder: (_) => const LoginPage()),
                 );
               },
-              child: const Text("Da"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              child: const Text("Da", style: TextStyle(color: Colors.white)),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),

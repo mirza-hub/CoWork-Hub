@@ -10,7 +10,7 @@ namespace CoWorkHub.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class SpaceUnitImageController : BaseCRUDControllerAsync<Model.SpaceUnitImage, SpaceUnitImageSearchObject, SpaceUnitImageInsert, SpaceUnitImageUpdate>
+    public class SpaceUnitImageController : BaseCRUDControllerAsync<Model.SpaceUnitImage, SpaceUnitImageSearchObject, SpaceUnitImageInsertRequest, SpaceUnitImageUpdateRequest>
     {
         private readonly ISpaceUnitImageService _spaceUnitImageService;
 
@@ -21,41 +21,41 @@ namespace CoWorkHub.Api.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        public override Task<SpaceUnitImage> Insert(SpaceUnitImageInsert request, CancellationToken cancellationToken = default)
+        public override async Task<SpaceUnitImage> Insert(SpaceUnitImageInsertRequest request, CancellationToken cancellationToken = default)
         {
-            return base.Insert(request, cancellationToken);
+            return await base.Insert(request, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
-        public override Task<SpaceUnitImage> Update(int id, SpaceUnitImageUpdate request, CancellationToken cancellationToken = default)
+        public override async Task<SpaceUnitImage> Update(int id, SpaceUnitImageUpdateRequest request, CancellationToken cancellationToken = default)
         {
-            return base.Update(id, request, cancellationToken);
+            return await base.Update(id, request, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
-        public override Task Delete(int id, CancellationToken cancellationToken = default)
+        public override async Task Delete(int id, CancellationToken cancellationToken = default)
         {
-            return base.Delete(id, cancellationToken);
+            await base.Delete(id, cancellationToken);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost("uploadBase64")]
-        public async Task<ActionResult<List<Model.SpaceUnitImage>>> UploadBase64([FromBody] SpaceUnitImageInsert request)
+        public async Task<ActionResult<List<Model.SpaceUnitImage>>> UploadBase64([FromBody] SpaceUnitImageInsertRequest request)
         {
             var result = await _spaceUnitImageService.UploadBase64ImagesAsync(request);
             return Ok(result);
         }
 
         [AllowAnonymous]
-        public override Task<PagedResult<SpaceUnitImage>> GetList([FromQuery] SpaceUnitImageSearchObject searchObject, CancellationToken cancellationToken = default)
+        public override async Task<PagedResult<SpaceUnitImage>> GetList([FromQuery] SpaceUnitImageSearchObject searchObject, CancellationToken cancellationToken = default)
         {
-            return base.GetList(searchObject, cancellationToken);
+            return await base.GetList(searchObject, cancellationToken);
         }
 
         [AllowAnonymous]
-        public override Task<SpaceUnitImage> GetById(int id, CancellationToken cancellationToken = default)
+        public override async Task<SpaceUnitImage> GetById(int id, CancellationToken cancellationToken = default)
         {
-            return base.GetById(id, cancellationToken);
+            return await base.GetById(id, cancellationToken);
         }
     }
 }

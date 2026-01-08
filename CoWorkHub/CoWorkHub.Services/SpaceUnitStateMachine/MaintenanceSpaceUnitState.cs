@@ -19,53 +19,53 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             : base(context, mapper, serviceProvider)
         { }
 
-        public override Model.SpaceUnit Activate(int id)
+        public override async Task<Model.SpaceUnit> Activate(int id, CancellationToken cancellationToken)
         {
             var set = Context.Set<Database.SpaceUnit>();
 
-            var entity = set.Find(id);
+            var entity = await set.FindAsync(id, cancellationToken);
 
             if (entity == null)
             {
-                throw new UserException("Space unit not found.");
+                throw new UserException("Prostorna jedinica nije pronađena.");
             }
 
             entity.ModifiedAt = DateTime.UtcNow;
             entity.StateMachine = "active";
 
-            Context.SaveChanges();
+            await Context.SaveChangesAsync(cancellationToken);
 
             return Mapper.Map<Model.SpaceUnit>(entity);
         }
 
-        public override Model.SpaceUnit Hide(int id)
+        public override async Task<Model.SpaceUnit> Hide(int id, CancellationToken cancellationToken)
         {
             var set = Context.Set<Database.SpaceUnit>();
 
-            var entity = set.Find(id);
+            var entity = await set.FindAsync(id, cancellationToken);
 
             if (entity == null)
             {
-                throw new UserException("Space unit not found.");
+                throw new UserException("Prostorna jedinica nije pronađena.");
             }
 
             entity.ModifiedAt = DateTime.UtcNow;
             entity.StateMachine = "hidden";
 
-            Context.SaveChanges();
+            await Context.SaveChangesAsync(cancellationToken);
 
             return Mapper.Map<Model.SpaceUnit>(entity);
         }
 
-        public override void Delete(int id)
+        public override async Task Delete(int id, CancellationToken cancellationToken)
         {
             var set = Context.Set<SpaceUnit>();
 
-            var entity = set.Find(id);
+            var entity = await set.FindAsync(id, cancellationToken);
 
             if (entity == null)
             {
-                throw new UserException("Space unit not found.");
+                throw new UserException("Prostorna jedinica nije pronađena.");
             }
 
             entity.DeletedAt = DateTime.Now;
@@ -74,12 +74,17 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
 
             Context.Update(entity);
 
-            Context.SaveChanges();
+            await Context.SaveChangesAsync(cancellationToken);
         }
 
-        public override List<string> AllowedActions(Database.SpaceUnit entity)
+        public override Task<List<string>> AllowedActions(Database.SpaceUnit entity, CancellationToken cancellationToken)
         {
-            return new List<string>() { nameof(Activate), nameof(Hide), nameof(Delete) };
+            return Task.FromResult(new List<string>()
+            {
+                nameof(Activate),
+                nameof(Hide),
+                nameof(Delete)
+            });
         }
     }
 }

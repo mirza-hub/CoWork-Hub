@@ -19,47 +19,47 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             ServiceProvider = serviceProvider;
         }
 
-        public virtual Model.SpaceUnit Insert(SpaceUnitInsertRequest request)
+        public virtual Task<Model.SpaceUnit> Insert(SpaceUnitInsertRequest request, CancellationToken cancellationToken)
         {
             throw new UserException("Method not allowed.");
         }
 
-        public virtual Model.SpaceUnit Update(int id, SpaceUnitUpdateRequest request)
+        public virtual Task<Model.SpaceUnit> Update(int id, SpaceUnitUpdateRequest request, CancellationToken cancellationToken)
         {
             throw new UserException("Method not allowed.");
         }
 
-        public virtual Model.SpaceUnit Activate(int id)
+        public virtual Task<Model.SpaceUnit> Activate(int id, CancellationToken cancellationToken)
         {
             throw new UserException("Method not allowed.");
         }
 
-        public virtual Model.SpaceUnit Hide(int id)
+        public virtual Task<Model.SpaceUnit> Hide(int id, CancellationToken cancellationToken)
         {
             throw new UserException("Method not allowed.");
         }
 
-        public virtual Model.SpaceUnit Edit(int id)
+        public virtual Task<Model.SpaceUnit> Edit(int id, CancellationToken cancellationToken)
         {
             throw new UserException("Method not allowed.");
         }
 
-        public virtual Model.SpaceUnit SetMaintenance(int id)
+        public virtual Task<Model.SpaceUnit> SetMaintenance(int id, CancellationToken cancellationToken)
         {
             throw new UserException("Method not allowed.");
         }
 
-        public virtual void Delete(int id)
+        public virtual async Task Delete(int id, CancellationToken cancellationToken)
         {
             throw new UserException("Method not allowed.");
         }
 
-        public virtual Model.SpaceUnit Restore(int id)
+        public virtual Task<Model.SpaceUnit> Restore(int id, CancellationToken cancellationToken)
         {
             throw new UserException("Method not allowed.");
         }
 
-        public virtual List<string> AllowedActions(Database.SpaceUnit entity)
+        public virtual Task<List<string>> AllowedActions(Database.SpaceUnit entity, CancellationToken cancellationToken)
         {
             throw new UserException("Method not allowed.");
         }

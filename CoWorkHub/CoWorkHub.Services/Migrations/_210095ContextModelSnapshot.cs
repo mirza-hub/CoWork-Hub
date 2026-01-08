@@ -657,8 +657,8 @@ namespace CoWorkHub.Services.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("ProfileImageBase64")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<byte[]>("ProfileImage")
+                        .HasColumnType("varbinary(max)");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -754,6 +754,12 @@ namespace CoWorkHub.Services.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime");

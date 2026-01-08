@@ -2,53 +2,94 @@
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
+using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Services;
 using MapsterMapper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.WorkingSpaceStateMachine
 {
     public class InitialSpaceUnitState : BaseSpaceUnitState
     {
+        ISpaceUnitImageService _spaceUnitImageService;
+        ISpaceUnitResourceService _spaceUnitResourceService;
+
         public InitialSpaceUnitState(
             _210095Context context, 
             IMapper mapper, 
-            IServiceProvider serviceProvider) 
+            IServiceProvider serviceProvider,
+            ISpaceUnitImageService spaceUnitImageService,
+            ISpaceUnitResourceService spaceUnitResourceService
+            ) 
             : base(context, mapper, serviceProvider)
-        { }
+        {
+            _spaceUnitImageService = spaceUnitImageService;
+            _spaceUnitResourceService = spaceUnitResourceService;
+        }
 
-        public override Model.SpaceUnit Insert(SpaceUnitInsertRequest request)
+        public override async Task<Model.SpaceUnit> Insert(SpaceUnitInsertRequest request, CancellationToken cancellationToken)
         {
             var set = Context.Set<SpaceUnit>();
 
-            if (!Context.WorkingSpaces.Any(x => x.WorkingSpacesId == request.WorkingSpacesId))
-                throw new UserException("WorkingSpace does not exist.");
+            if (!Context.WorkingSpaces.Any(x => x.WorkingSpacesId == request.WorkingSpaceId))
+                throw new UserException("Prostor ne postoji.");
 
             bool exists = Context.SpaceUnits.Any(x =>
-                x.WorkingSpaceId == request.WorkingSpacesId &&
+                x.WorkingSpaceId == request.WorkingSpaceId &&
                 x.Name.ToLower() == request.Name.ToLower() && !x.IsDeleted);
 
             if (exists)
-                throw new UserException("A space unit with the same name already exists in this working space.");
+                throw new UserException("Prostorna jedinica već postoji.");
 
             if (!Context.WorkspaceTypes.Any(x => x.WorkspaceTypeId == request.WorkspaceTypeId))
-                throw new UserException("WorkspaceType does not exist.");
+                throw new UserException("Tip prostora ne postoji.");
 
             var entity = Mapper.Map<SpaceUnit>(request);
             entity.CreatedAt = DateTime.UtcNow;
             entity.StateMachine = "draft";
             set.Add(entity);
-            Context.SaveChanges();
+            await Context.SaveChangesAsync(cancellationToken);
+
+            if (request.Base64Images != null && request.Base64Images.Any())
+            {
+                    var imgRequest = new SpaceUnitImageInsertRequest
+                    {
+                        SpaceUnitId = entity.SpaceUnitId,
+                        Base64Images = request.Base64Images
+                    };
+
+                    await _spaceUnitImageService.UploadBase64ImagesAsync(imgRequest);
+            }
+
+            if (request.ResourcesList != null && request.ResourcesList.Any())
+            {
+                foreach (var res in request.ResourcesList)
+                {
+                    var resourceRequest = new SpaceUnitResourcesInsertRequest
+                    {
+                        SpaceUnitId = entity.SpaceUnitId,
+                        ResourcesId = res.ResourcesId
+                    };
+
+                    _spaceUnitResourceService.Insert(resourceRequest);
+                }
+            }
 
             return Mapper.Map<Model.SpaceUnit>(entity);
         }
 
-        public override List<string> AllowedActions(Database.SpaceUnit entity)
+        public override Task<List<string>> AllowedActions(Database.SpaceUnit entity, CancellationToken cancellationToken)
         {
-            return new List<string>() { nameof(Insert) };
+            return Task.FromResult(new List<string>()
+            {
+                nameof(Insert)
+            });
         }
     }
 }

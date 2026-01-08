@@ -1,9 +1,8 @@
+import 'package:another_flushbar/flushbar.dart';
 import 'package:coworkhub_desktop/models/user.dart';
 import 'package:coworkhub_desktop/providers/auth_provider.dart';
 import 'package:coworkhub_desktop/providers/user_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:quickalert/models/quickalert_type.dart';
-import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'layouts/master_screen.dart';
 
 void main() {
@@ -56,12 +55,17 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  bool _loading = false;
   bool _obscurePassword = true;
 
   String? _serverError;
 
   void _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
     setState(() {
+      _loading = true;
       _serverError = null;
     });
 
@@ -97,15 +101,21 @@ class _LoginPageState extends State<LoginPage> {
         AuthProvider.userRoles = user.userRoles;
 
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => MasterScreen()),
+          MaterialPageRoute(builder: (context) => MasterScreen(user: user)),
         );
       } catch (e) {
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          text: "Pogrešni kredencijali za prijavu u sistem",
-          title: "Greška",
-        );
+        Flushbar(
+          message: "Pogrešno korisničko ime ili lozinka",
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(10),
+          borderRadius: BorderRadius.circular(8),
+          flushbarPosition: FlushbarPosition.TOP,
+        ).show(context);
+      } finally {
+        if (mounted) {
+          setState(() => _loading = false);
+        }
       }
     }
   }
@@ -203,22 +213,22 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _login,
+                      onPressed: _loading ? null : _login,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(
-                          255,
-                          16,
-                          121,
-                          207,
-                        ),
+                        backgroundColor: Colors.blue,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
-                        'Prijava',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
+                      child: _loading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              'Prijava',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
                     ),
                   ),
                 ],

@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Services.Database;
+﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Services.Database;
 using MapsterMapper;
 using System;
 using System.Collections.Generic;
@@ -17,21 +18,35 @@ namespace CoWorkHub.Services.ReservationStateMachine
 
         public override Model.Reservation Cancel(int id)
         {
-            var set = Context.Set<Database.Reservation>();
+            var reservationSet = Context.Set<Database.Reservation>();
+            var paymentSet = Context.Set<Database.Payment>();
 
-            var entity = set.Find(id);
+            var reservation = reservationSet.Find(id);
 
-            if (entity == null)
+            if (reservation == null)
+                throw new UserException("Reservation not found.");
+
+            var today = DateTime.UtcNow.Date;
+            var startDate = reservation.StartDate.Date;
+
+            var daysUntilStart = (startDate - today).TotalDays;
+
+            if (daysUntilStart < 3)
+                throw new UserException("Reservation cannot be canceled less than 3 days before start.");
+
+            reservation.StateMachine = "canceled";
+            reservation.CanceledAt = DateTime.UtcNow;
+
+            var payment = paymentSet.FirstOrDefault(p => p.ReservationId == id);
+
+            if (payment != null)
             {
-                throw new Exception("Reservation not found.");
+                payment.StateMachine = "refunded";
             }
-
-            entity.StateMachine = "canceled";
-            entity.CanceledAt = DateTime.UtcNow;
 
             Context.SaveChanges();
 
-            return Mapper.Map<Model.Reservation>(entity);
+            return Mapper.Map<Model.Reservation>(reservation);
         }
 
         public override Model.Reservation Complete(int id)
@@ -42,7 +57,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
 
             if (entity == null)
             {
-                throw new Exception("Reservation not found.");
+                throw new UserException("Reservation not found.");
             }
 
             entity.StateMachine = "completed";

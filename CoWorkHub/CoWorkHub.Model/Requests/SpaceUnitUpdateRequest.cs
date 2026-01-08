@@ -11,5 +11,6 @@ namespace CoWorkHub.Model.Requests
         public int? Capacity { get; set; }
         public decimal? PricePerDay { get; set; }
         public int? WorkspaceTypeId { get; set; }
+        public List<Resource> ResourcesList { get; set; } = new List<Resource>();
     }
 }

@@ -5,13 +5,14 @@ using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 
 namespace CoWorkHub.Services.Interfaces
 {
-    public interface ISpaceUnitService : ICRUDService<Model.SpaceUnit, SpaceUnitSearchObject, SpaceUnitInsertRequest, SpaceUnitUpdateRequest>
+    public interface ISpaceUnitService : ICRUDServiceAsync<Model.SpaceUnit, SpaceUnitSearchObject, SpaceUnitInsertRequest, SpaceUnitUpdateRequest>
     {
-        public SpaceUnit Activate(int id);
-        public SpaceUnit Edit(int id);
-        public SpaceUnit Hide(int id);
-        public SpaceUnit SetMaintenance(int id);
-        public SpaceUnit Restore(int id);
-        public List<string> AllowedActions(int id);
+        public Task<SpaceUnit> Activate(int id, CancellationToken cancellationToken);
+        public Task<SpaceUnit> Edit(int id, CancellationToken cancellationToken);
+        public Task<SpaceUnit> Hide(int id, CancellationToken cancellationToken);
+        public Task<SpaceUnit> SetMaintenance(int id, CancellationToken cancellationToken);
+        public Task<SpaceUnit> Restore(int id, CancellationToken cancellationToken);
+        public Task<List<string>> AllowedActions(int id, CancellationToken cancellationToken);
+        //public Task<List<DayAvailability>> GetAvailabilityForMonth(SpaceUnitSearchObject search);
     }
 }

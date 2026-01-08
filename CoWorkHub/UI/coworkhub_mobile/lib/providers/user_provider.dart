@@ -12,18 +12,21 @@ class UserProvider extends BaseProvider<User> {
   }
 
   Future<User> login(String username, String password) async {
-    var url =
-        "${BaseProvider.baseUrl}User/login?username=$username&password=$password";
-    var uri = Uri.parse(url);
-    var headers = createHeaders();
-
     if (username.isEmpty || password.isEmpty) {
       throw Exception("Molimo unesite korisničko ime i lozinku.");
     }
 
-    var response = await http.post(uri, headers: headers);
+    var url =
+        "${BaseProvider.baseUrl}User/login?username=$username&password=$password";
+    var uri = Uri.parse(url);
+    // var headers = createHeaders();
 
-    if (response.body.isEmpty) {
+    var response = await http.post(
+      uri,
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.body.isEmpty || response.statusCode == 401) {
       throw Exception("Pogrešno korisničko ime ili lozinka.");
     }
 

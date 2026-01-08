@@ -447,7 +447,7 @@ public partial class _210095Context : DbContext
             entity.Property(e => e.ModifiedAt).HasColumnType("datetime");
             entity.Property(e => e.PasswordHash).HasMaxLength(200);
             entity.Property(e => e.PhoneNumber).HasMaxLength(50);
-            entity.Property(e => e.ProfileImageBase64).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.ProfileImage).HasColumnType("varbinary(max)");
             entity.Property(e => e.Username).HasMaxLength(50);
 
             entity.HasOne(d => d.City).WithMany(p => p.Users)

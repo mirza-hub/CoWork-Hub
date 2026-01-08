@@ -49,7 +49,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
             );
 
             if (conflictExists)
-                throw new Exception("The reservation conflicts with an existing reservation for this space.");
+                throw new UserException("The reservation conflicts with an existing reservation for this space.");
 
             Mapper.Map(request, entity);
             entity.TotalPrice = (decimal)request.PeopleCount * entity.SpaceUnit.PricePerDay;
@@ -72,9 +72,42 @@ namespace CoWorkHub.Services.ReservationStateMachine
             return Mapper.Map<Model.Reservation>(entity);
         }
 
+        public override Model.Reservation Cancel(int id)
+        {
+            var reservationSet = Context.Set<Database.Reservation>();
+            var paymentSet = Context.Set<Database.Payment>();
+
+            var reservation = reservationSet.Find(id);
+
+            if (reservation == null)
+                throw new UserException("Reservation not found.");
+
+            var today = DateTime.UtcNow.Date;
+            var startDate = reservation.StartDate.Date;
+
+            var daysUntilStart = (startDate - today).TotalDays;
+
+            if (daysUntilStart < 3)
+                throw new UserException("Reservation cannot be canceled less than 3 days before start.");
+
+            reservation.StateMachine = "canceled";
+            reservation.CanceledAt = DateTime.UtcNow;
+
+            var payment = paymentSet.FirstOrDefault(p => p.ReservationId == id);
+
+            if (payment != null)
+            {
+                payment.StateMachine = "refunded";
+            }
+
+            Context.SaveChanges();
+
+            return Mapper.Map<Model.Reservation>(reservation);
+        }
+
         public override List<string> AllowedActions(Reservation entity)
         {
-            return new List<string>() { nameof(Update), nameof(Confirm) };
+            return new List<string>() { nameof(Update), nameof(Confirm), nameof(Cancel) };
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CoWorkHub.Model.Requests
 {
-    public class SpaceUnitImageUpdate
+    public class SpaceUnitImageUpdateRequest
     {
         public string? Description { get; set; }
     }

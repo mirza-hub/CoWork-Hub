@@ -1,5 +1,13 @@
+import 'dart:async';
+
+import 'package:coworkhub_mobile/providers/auth_provider.dart';
 import 'package:coworkhub_mobile/providers/base_provider.dart';
+import 'package:coworkhub_mobile/providers/reservation_provider.dart';
+import 'package:coworkhub_mobile/screens/login_screen.dart';
+import 'package:coworkhub_mobile/screens/payment_method_screen.dart';
+import 'package:coworkhub_mobile/screens/space_unit_details_screen.dart';
 import 'package:coworkhub_mobile/screens/space_unit_map_screen.dart';
+import 'package:coworkhub_mobile/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -34,7 +42,6 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
   List<SpaceUnit> units = [];
   bool loading = false;
   bool hasMore = true;
-  int page = 1;
   String orderBy = "PricePerDay";
   String sortDirection = "ASC";
   String selectedSort = "";
@@ -42,6 +49,8 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
   dynamic filterCapacityTo;
   dynamic filterPriceFrom;
   dynamic filterPriceTo;
+  int page = 1;
+  int totalCount = 0;
 
   final ScrollController _scrollController = ScrollController();
 
@@ -68,8 +77,15 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
     });
   }
 
-  Future<void> fetchUnits() async {
-    if (loading || !hasMore) return;
+  Future<void> fetchUnits({bool reset = false}) async {
+    if (loading) return;
+
+    if (reset) {
+      units.clear();
+      page = 1;
+      hasMore = true;
+      totalCount = 0;
+    }
 
     setState(() => loading = true);
 
@@ -96,14 +112,19 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
 
     var result = await provider.get(filter: filter);
 
-    if (result.resultList.isEmpty) {
-      hasMore = false;
-    } else {
-      units.addAll(result.resultList);
-      page++;
-    }
+    setState(() {
+      if (reset) {
+        units = result.resultList;
+      } else {
+        units.addAll(result.resultList);
+      }
 
-    setState(() => loading = false);
+      totalCount = result.count!;
+      page++;
+      loading = false;
+
+      hasMore = units.length < totalCount;
+    });
   }
 
   void showSortOptions() {
@@ -113,6 +134,9 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
+        // privremena varijabla koja prati odabrani radio
+        String selectedSort = "$orderBy$sortDirection";
+
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Padding(
@@ -125,82 +149,96 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                     "Sortiraj po",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 20),
 
-                  // Cijena uzlazno
                   RadioListTile(
                     title: const Text("Cijena — manja prema većoj"),
-                    value: "price_asc",
-                    groupValue: "$orderBy$sortDirection",
+                    value: "PricePerDayASC",
+                    groupValue: selectedSort,
                     onChanged: (value) {
                       setModalState(() {
-                        orderBy = "PricePerDay";
-                        sortDirection = "ASC";
+                        selectedSort = value!;
                       });
                     },
                   ),
 
-                  // Cijena silazno
                   RadioListTile(
                     title: const Text("Cijena — veća prema manjoj"),
-                    value: "price_desc",
-                    groupValue: "$orderBy$sortDirection",
+                    value: "PricePerDayDESC",
+                    groupValue: selectedSort,
                     onChanged: (value) {
                       setModalState(() {
-                        orderBy = "PricePerDay";
-                        sortDirection = "DESC";
+                        selectedSort = value!;
                       });
                     },
                   ),
 
-                  // Naziv uzlazno
                   RadioListTile(
-                    title: const Text("Naziv — A → Z"),
-                    value: "name_asc",
-                    groupValue: "$orderBy$sortDirection",
+                    title: const Text("Naziv — A prema Z"),
+                    value: "NameASC",
+                    groupValue: selectedSort,
                     onChanged: (value) {
                       setModalState(() {
-                        orderBy = "Name";
-                        sortDirection = "ASC";
+                        selectedSort = value!;
                       });
                     },
                   ),
 
-                  // Naziv silazno
                   RadioListTile(
-                    title: const Text("Naziv — Z → A"),
-                    value: "name_desc",
-                    groupValue: "$orderBy$sortDirection",
+                    title: const Text("Naziv — Z prema A"),
+                    value: "NameDESC",
+                    groupValue: selectedSort,
                     onChanged: (value) {
                       setModalState(() {
-                        orderBy = "Name";
-                        sortDirection = "DESC";
+                        selectedSort = value!;
                       });
                     },
                   ),
 
                   const SizedBox(height: 20),
 
-                  ElevatedButton(
-                    onPressed: () {
-                      units.clear();
-                      page = 1;
-                      hasMore = true;
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // primijeni izabrani sort
+                            if (selectedSort == "PricePerDayASC") {
+                              orderBy = "PricePerDay";
+                              sortDirection = "ASC";
+                            } else if (selectedSort == "PricePerDayDESC") {
+                              orderBy = "PricePerDay";
+                              sortDirection = "DESC";
+                            } else if (selectedSort == "NameASC") {
+                              orderBy = "Name";
+                              sortDirection = "ASC";
+                            } else if (selectedSort == "NameDESC") {
+                              orderBy = "Name";
+                              sortDirection = "DESC";
+                            }
 
-                      Navigator.pop(context);
-                      fetchUnits();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                            units.clear();
+                            page = 1;
+                            hasMore = true;
+
+                            Navigator.pop(context);
+                            fetchUnits();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            "Primijeni",
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      "Primijeni",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                      const SizedBox(width: 10),
+                      const Expanded(child: SizedBox.shrink()),
+                    ],
                   ),
                 ],
               ),
@@ -211,8 +249,122 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
     );
   }
 
+  void _handleReserve(BuildContext context, SpaceUnit su) {
+    if (AuthProvider.isSignedIn != true || AuthProvider.userId == null) {
+      _showLoginRequiredDialog(context);
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Potvrda rezervacije"),
+        content: Text(
+          "Da li želite rezervisati prostor \"${su.name}\" "
+          "za odabrani period?",
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _createReservationAndProceed(context, su);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            child: const Text(
+              "Da",
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Ne"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _createReservationAndProceed(
+    BuildContext context,
+    SpaceUnit su,
+  ) async {
+    try {
+      final reservationProvider = context.read<ReservationProvider>();
+
+      final reservation = await reservationProvider.insert({
+        "spaceUnitId": su.spaceUnitId,
+        "startDate": widget.dateRange.start.toIso8601String(),
+        "endDate": widget.dateRange.end.toIso8601String(),
+        "peopleCount": widget.peopleCount,
+      });
+
+      // Ovdje push-ujemo PaymentMethodScreen i čekamo rezultat
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PaymentMethodScreen(
+            spaceUnit: su,
+            dateRange: widget.dateRange,
+            peopleCount: widget.peopleCount,
+            reservationId: reservation.reservationId,
+          ),
+        ),
+      );
+
+      if (result == true) {
+        showTopFlushBar(
+          context: context,
+          message: "Rezervacija je uspješno izvršena!",
+          backgroundColor: Colors.green,
+        );
+
+        fetchUnits(reset: true);
+      } else if (result == false) {
+        showTopFlushBar(
+          context: context,
+          message: "Rezervacija nije bila uspješna.",
+          backgroundColor: Colors.red,
+        );
+      }
+    } catch (e) {
+      showTopFlushBar(
+        context: context,
+        message: "Greška pri rezervaciji: $e",
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
+  void _showLoginRequiredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Prijava potrebna"),
+        content: const Text(
+          "Morate biti prijavljeni da biste izvršili rezervaciju.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Odustani"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
+            },
+            child: const Text("Prijavite se"),
+          ),
+        ],
+      ),
+    );
+  }
+
   void showFilterOptions() {
-    // koristi trenutne vrijednosti filtera kao inicijalne
+    // privremene varijable filtera
     int? tempCapacityFrom = filterCapacityFrom;
     int? tempCapacityTo = filterCapacityTo;
     double? tempPriceFrom = filterPriceFrom;
@@ -256,10 +408,13 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                   TextField(
                     controller: capacityFromController,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    textAlign: TextAlign.left,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
                     decoration: const InputDecoration(
                       labelText: "Kapacitet od",
+                      prefixIcon: Icon(Icons.people_outlined),
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (val) {
@@ -272,10 +427,13 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                   TextField(
                     controller: capacityToController,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    textAlign: TextAlign.left,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
                     decoration: const InputDecoration(
                       labelText: "Kapacitet do",
+                      prefixIcon: Icon(Icons.people_outlined),
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (val) {
@@ -288,10 +446,13 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                   TextField(
                     controller: priceFromController,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    textAlign: TextAlign.left,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
                     decoration: const InputDecoration(
                       labelText: "Cijena od (KM)",
+                      prefixIcon: Icon(Icons.attach_money_outlined),
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (val) {
@@ -304,10 +465,13 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                   TextField(
                     controller: priceToController,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    textAlign: TextAlign.left,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
                     decoration: const InputDecoration(
                       labelText: "Cijena do (KM)",
+                      prefixIcon: Icon(Icons.attach_money_outlined),
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (val) {
@@ -316,32 +480,87 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        filterCapacityFrom = tempCapacityFrom;
-                        filterCapacityTo = tempCapacityTo;
-                        filterPriceFrom = tempPriceFrom;
-                        filterPriceTo = tempPriceTo;
+                  // Dugmad Primijeni + Resetiraj
+                  Row(
+                    children: [
+                      // Primijeni
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              filterCapacityFrom = tempCapacityFrom;
+                              filterCapacityTo = tempCapacityTo;
+                              filterPriceFrom = tempPriceFrom;
+                              filterPriceTo = tempPriceTo;
 
-                        units.clear();
-                        page = 1;
-                        hasMore = true;
-                      });
+                              units.clear();
+                              page = 1;
+                              hasMore = true;
+                            });
 
-                      Navigator.pop(context);
-                      fetchUnits();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                            Navigator.pop(context);
+                            fetchUnits();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            "Primijeni",
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      "Primijeni",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                      const SizedBox(width: 10),
+
+                      // Resetiraj
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              // resetuj filter varijable
+                              filterCapacityFrom = null;
+                              filterCapacityTo = null;
+                              filterPriceFrom = null;
+                              filterPriceTo = null;
+
+                              // reset privremenih varijabli u sheet-u
+                              tempCapacityFrom = null;
+                              tempCapacityTo = null;
+                              tempPriceFrom = null;
+                              tempPriceTo = null;
+
+                              // očisti TextField kontrole
+                              capacityFromController.text = "";
+                              capacityToController.text = "";
+                              priceFromController.text = "";
+                              priceToController.text = "";
+
+                              // resetuj listu i paginaciju
+                              units.clear();
+                              page = 1;
+                              hasMore = true;
+                            });
+
+                            // automatski primijeni i zatvori sheet
+                            Navigator.pop(context);
+                            fetchUnits();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[300],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            "Resetiraj",
+                            style: TextStyle(fontSize: 16, color: Colors.black),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -500,7 +719,15 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
               ],
             ),
           ),
-
+          if (!loading && units.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Text(
+                "Prikazano ${units.length} od $totalCount rezultata",
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+            ),
           // LISTA
           Expanded(
             child: loading && units.isEmpty
@@ -508,7 +735,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                 : units.isEmpty
                 ? const Center(
                     child: Text(
-                      "Nema podataka",
+                      "Nema slobodnih jedinica",
                       style: TextStyle(
                         fontSize: 18,
                         color: Colors.grey,
@@ -519,7 +746,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.only(top: 10),
-                    itemCount: units.length + 1,
+                    itemCount: units.length + (hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == units.length) {
                         return loading
@@ -534,159 +761,181 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
 
                       final su = units[index];
 
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 5,
-                              offset: Offset(0, 2),
+                      return InkWell(
+                        onTap: () {
+                          // Klik na cijelu karticu vodi na detalje
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SpaceUnitDetailsScreen(
+                                spaceUnitId: su.spaceUnitId,
+                                dateRange: widget.dateRange,
+                                peopleCount: widget.peopleCount,
+                              ),
                             ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            // IMAGE
-                            Container(
-                              width: 150,
-                              height: 180,
-                              child: su.spaceUnitImages.isNotEmpty
-                                  ? ClipRRect(
-                                      borderRadius:
-                                          const BorderRadius.horizontal(
-                                            left: Radius.circular(12),
-                                          ),
-                                      child: Image.network(
-                                        "${BaseProvider.baseUrl}${su.spaceUnitImages.first.imagePath}",
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (c, o, s) =>
-                                            const Icon(Icons.broken_image),
+                          );
+                        },
+                        child: Container(
+                          margin: EdgeInsets.fromLTRB(
+                            16,
+                            index == 0 ? 0 : 8,
+                            16,
+                            8,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 5,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              // IMAGE
+                              Container(
+                                width: 110,
+                                height: 240,
+                                child: su.spaceUnitImages.isNotEmpty
+                                    ? ClipRRect(
+                                        borderRadius:
+                                            const BorderRadius.horizontal(
+                                              left: Radius.circular(12),
+                                            ),
+                                        child: Image.network(
+                                          "${BaseProvider.baseUrl}${su.spaceUnitImages.first.imagePath}",
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (c, o, s) =>
+                                              const Icon(Icons.broken_image),
+                                        ),
+                                      )
+                                    : const Icon(Icons.image, size: 30),
+                              ),
+
+                              // INFO
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        su.name,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    )
-                                  : const Icon(Icons.image, size: 40),
-                            ),
 
-                            // INFO
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      su.name,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.location_on,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          "${widget.cityName} • ${widget.workspaceTypeName}",
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey[700],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.people,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          "Kapacitet: ${su.capacity}",
-                                          style: const TextStyle(fontSize: 13),
-                                        ),
-                                      ],
-                                    ),
-
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      su.description ?? " nema opisa.",
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      "${su.pricePerDay.toStringAsFixed(2)} KM / dan",
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blueAccent,
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 10),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                      const SizedBox(height: 4),
+                                      Row(
                                         children: [
-                                          ElevatedButton(
-                                            onPressed: () {},
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.grey[300],
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                            child: const Text(
-                                              "Detalji",
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.black,
-                                              ),
-                                            ),
+                                          const Icon(
+                                            Icons.location_on,
+                                            size: 16,
+                                            color: Colors.grey,
                                           ),
-                                          const SizedBox(width: 10),
-                                          ElevatedButton(
-                                            onPressed: () {},
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.blue,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                            child: const Text(
-                                              "Rezerviši",
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.white,
-                                              ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "${widget.cityName} • ${widget.workspaceTypeName}",
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[700],
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ],
+
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.people,
+                                            size: 16,
+                                            color: Colors.grey,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "Kapacitet: ${su.capacity}",
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        su.description ?? " nema opisa.",
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "${su.pricePerDay.toStringAsFixed(2)} KM / dan",
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blueAccent,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 10),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Row(
+                                          children: [
+                                            // PRVA polovina prazna
+                                            const Expanded(child: SizedBox()),
+
+                                            const SizedBox(width: 10),
+
+                                            // DRUGA polovina dugme "Rezerviši"
+                                            Expanded(
+                                              child: ElevatedButton(
+                                                onPressed: () {
+                                                  _handleReserve(context, su);
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 11,
+                                                      ),
+                                                  minimumSize: const Size(
+                                                    0,
+                                                    40,
+                                                  ),
+                                                  backgroundColor: Colors.blue,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: const Text(
+                                                  "Rezerviši",
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     },

@@ -12,7 +12,8 @@ abstract class BaseProvider<T> with ChangeNotifier {
     _endpoint = endpoint;
     baseUrl = const String.fromEnvironment(
       "baseUrl",
-      defaultValue: "https://localhost:7015/",
+      defaultValue: "http://localhost:5084/",
+      //defaultValue: "http://10.0.2.2:5084/",
     );
   }
 
@@ -79,8 +80,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
     );
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
+    } else {
+      throw response;
     }
-    throw Exception("Insert failed");
   }
 
   Future<T> update(
@@ -95,8 +97,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
     );
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
+    } else {
+      throw response;
     }
-    throw Exception("Update failed");
   }
 
   Future<void> delete(int id) async {

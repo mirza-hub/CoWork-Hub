@@ -8,7 +8,7 @@ class SpaceUnitResources {
   int spaceResourcesId;
   int spaceUnitId;
   int resourcesId;
-  Resource resources;
+  Resource? resources;
 
   SpaceUnitResources({
     required this.spaceResourcesId,

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:coworkhub_desktop/models/city.dart';
 import 'package:coworkhub_desktop/models/working_space.dart';
 import 'package:coworkhub_desktop/providers/city_provider.dart';
@@ -7,6 +6,7 @@ import 'package:coworkhub_desktop/providers/working_space_provider.dart';
 import 'package:coworkhub_desktop/screens/working_space_details_screen.dart';
 import 'package:coworkhub_desktop/screens/working_space_form_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:another_flushbar/flushbar.dart';
 
 class WorkingSpacesScreen extends StatefulWidget {
   final void Function(Widget) onChangeScreen;
@@ -93,6 +93,24 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
     super.dispose();
   }
 
+  void showSuccessFlushbar(String message) {
+    Flushbar(
+      margin: const EdgeInsets.all(8),
+      borderRadius: BorderRadius.circular(8),
+      message: message,
+      icon: const Icon(Icons.check_circle, color: Colors.white),
+      backgroundColor: Colors.green,
+      duration: const Duration(seconds: 3),
+      flushbarPosition: FlushbarPosition.TOP,
+      mainButton: TextButton(
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        child: const Text("OK", style: TextStyle(color: Colors.white)),
+      ),
+    ).show(context);
+  }
+
   void _openFilterDialog() {
     showDialog(
       context: context,
@@ -105,7 +123,7 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<int>(
-                value: selectedCity,
+                initialValue: selectedCity,
                 items: [
                   const DropdownMenuItem(
                     value: null,
@@ -123,7 +141,7 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<bool>(
-                value: selectedDeleted,
+                initialValue: selectedDeleted,
                 items: const [
                   DropdownMenuItem(value: null, child: Text("Svi")),
                   DropdownMenuItem(value: false, child: Text("Neobrisani")),
@@ -143,7 +161,11 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                 _loadSpaces();
                 Navigator.pop(context);
               },
-              child: const Text("Primijeni"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              child: const Text(
+                "Primijeni",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -230,7 +252,7 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                 icon: const Icon(Icons.filter_list),
                 label: const Text("Filteri"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
+                  backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -248,14 +270,15 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                     ),
                   );
                 },
-                icon: const Icon(Icons.add),
-                label: const Text("Kreiraj novi"),
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: Text(
+                  "Kreiraj novi",
+                  style: TextStyle(color: Colors.white),
+                ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
@@ -274,116 +297,132 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                       style: TextStyle(fontSize: 16),
                     ),
                   )
-                : SingleChildScrollView(
-                    child: DataTable(
-                      headingRowColor: WidgetStateProperty.resolveWith<Color?>((
-                        Set<WidgetState> states,
-                      ) {
-                        return const Color.fromARGB(255, 243, 242, 242);
-                      }),
-                      sortColumnIndex: sortColumn == "WorkingSpacesId"
-                          ? 0
-                          : sortColumn == "Name"
-                          ? 1
-                          : null,
-                      sortAscending: sortDirection == "asc",
-                      columns: [
-                        DataColumn(
-                          label: const Text("ID"),
-                          numeric: true,
-                          onSort: (columnIndex, ascending) {
-                            _onSort("WorkingSpacesId");
-                          },
-                        ),
-                        DataColumn(
-                          label: const Text("Naziv"),
-                          onSort: (columnIndex, ascending) => _onSort("Name"),
-                        ),
-                        DataColumn(label: const Text("Adresa")),
-                        DataColumn(label: const Text("Opis")),
-                        DataColumn(label: const Text("Aktivan")),
-                        DataColumn(label: const Text("Akcije")),
-                      ],
-                      rows: spaces
-                          .map(
-                            (ws) => DataRow(
-                              cells: [
-                                DataCell(Text(ws.workingSpacesId.toString())),
-                                DataCell(Text(ws.name)),
-                                DataCell(Text(ws.address)),
-                                DataCell(Text(ws.description)),
-                                DataCell(
-                                  Text(ws.isDeleted == true ? "Ne" : "Da"),
-                                ),
-
-                                DataCell(
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        onPressed: () {
-                                          widget.onChangeScreen(
-                                            WorkingSpaceDetailsScreen(
-                                              space: ws,
-                                              onChangeScreen:
-                                                  widget.onChangeScreen,
-                                            ),
-                                          );
-                                        },
-                                        icon: const Icon(Icons.info_outline),
-                                      ),
-                                      IconButton(
-                                        onPressed: () async {
-                                          bool?
-                                          confirm = await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: const Text(
-                                                "Potvrda brisanja",
-                                              ),
-                                              content: const Text(
-                                                "Da li želite obrisati ovaj zapis?",
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                        context,
-                                                        true,
-                                                      ),
-                                                  child: const Text("Da"),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                        context,
-                                                        false,
-                                                      ),
-                                                  child: const Text("Ne"),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-
-                                          if (confirm == true) {
-                                            await provider.delete(
-                                              ws.workingSpacesId,
-                                            );
-                                            _loadSpaces();
-                                          }
-                                        },
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ],
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: constraints.maxWidth,
+                          ),
+                          child: DataTable(
+                            headingRowColor:
+                                MaterialStateProperty.resolveWith<Color?>((
+                                  Set<MaterialState> states,
+                                ) {
+                                  return const Color.fromARGB(
+                                    255,
+                                    243,
+                                    242,
+                                    242,
+                                  );
+                                }),
+                            sortColumnIndex: sortColumn == "WorkingSpacesId"
+                                ? 0
+                                : sortColumn == "Name"
+                                ? 1
+                                : null,
+                            sortAscending: sortDirection == "asc",
+                            columns: [
+                              DataColumn(
+                                label: const Text("ID"),
+                                numeric: true,
+                                onSort: (columnIndex, ascending) {
+                                  _onSort("WorkingSpacesId");
+                                },
+                              ),
+                              DataColumn(
+                                label: const Text("Naziv"),
+                                onSort: (columnIndex, ascending) =>
+                                    _onSort("Name"),
+                              ),
+                              DataColumn(label: const Text("Adresa")),
+                              DataColumn(label: const Text("Opis")),
+                              DataColumn(label: const Text("Aktivan")),
+                              DataColumn(label: const Text("Akcije")),
+                            ],
+                            rows: spaces.map((ws) {
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text(ws.workingSpacesId.toString())),
+                                  DataCell(Text(ws.name)),
+                                  DataCell(Text(ws.address)),
+                                  DataCell(Text(ws.description)),
+                                  DataCell(
+                                    Text(ws.isDeleted == true ? "Ne" : "Da"),
                                   ),
-                                ),
-                              ],
-                            ),
-                          )
-                          .toList(),
-                    ),
+                                  DataCell(
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {
+                                            widget.onChangeScreen(
+                                              WorkingSpaceDetailsScreen(
+                                                space: ws,
+                                                onChangeScreen:
+                                                    widget.onChangeScreen,
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(Icons.info_outline),
+                                        ),
+                                        IconButton(
+                                          onPressed: () async {
+                                            bool?
+                                            confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text(
+                                                  "Potvrda brisanja",
+                                                ),
+                                                content: const Text(
+                                                  "Da li želite obrisati ovaj zapis?",
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                          context,
+                                                          true,
+                                                        ),
+                                                    child: const Text("Da"),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                          context,
+                                                          false,
+                                                        ),
+                                                    child: const Text("Ne"),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (confirm == true) {
+                                              await provider.delete(
+                                                ws.workingSpacesId,
+                                              );
+                                              _loadSpaces();
+                                              showSuccessFlushbar(
+                                                "Uspješno brisanje",
+                                              );
+                                            }
+                                          },
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      );
+                    },
                   ),
           ),
           const Divider(

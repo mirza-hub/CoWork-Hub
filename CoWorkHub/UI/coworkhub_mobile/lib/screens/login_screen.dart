@@ -1,4 +1,5 @@
 import 'package:another_flushbar/flushbar.dart';
+import 'package:coworkhub_mobile/layout/layout_screen.dart';
 import 'package:coworkhub_mobile/models/user.dart';
 import 'package:coworkhub_mobile/providers/auth_provider.dart';
 import 'package:coworkhub_mobile/providers/user_provider.dart';
@@ -31,10 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
       AuthProvider.password = _passwordCtrl.text;
 
       var provider = UserProvider();
-      User user = await provider.login(
-        AuthProvider.username!,
-        AuthProvider.password!,
-      );
+      User user = await provider.login(_usernameCtrl.text, _passwordCtrl.text);
 
       if (user.isDeleted == true) {
         throw Exception("Vaš korisnički račun ne postoji.");
@@ -55,8 +53,14 @@ class _LoginScreenState extends State<LoginScreen> {
       AuthProvider.userRoles = user.userRoles;
       AuthProvider.isSignedIn = true;
 
-      // if (!mounted) return;
-      Navigator.pushReplacementNamed(context, "/home"); // Home layout screen
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => LayoutScreen(user: user)),
+          );
+        });
+      }
     } catch (e) {
       Flushbar(
         message: "Pogrešno korisničko ime ili lozinka",
@@ -137,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _loading ? null : _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1079CF),
+                      backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -198,7 +202,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 35),
+                const SizedBox(height: 25),
+
+                GestureDetector(
+                  onTap: () {
+                    // Guest mode — user = null
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LayoutScreen(user: null),
+                      ),
+                    );
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.only(top: 16),
+                    child: Text(
+                      "Nastavi kao gost",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

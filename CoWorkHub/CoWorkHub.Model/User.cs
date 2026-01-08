@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace CoWorkHub.Model
 {
@@ -12,6 +13,8 @@ namespace CoWorkHub.Model
         public string Email { get; set; } = null!;
         public string Username { get; set; } = null!;
         public string PhoneNumber { get; set; } = null!;
+        [JsonIgnore]
+        public byte[]? ProfileImage { get; set; }
         public string? ProfileImageBase64 { get; set; }
         public int CityId { get; set; }
         public bool IsActive { get; set; }

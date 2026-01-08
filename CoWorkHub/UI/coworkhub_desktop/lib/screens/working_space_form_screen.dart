@@ -4,6 +4,7 @@ import 'package:coworkhub_desktop/screens/working_space_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:coworkhub_desktop/models/working_space.dart';
 import 'package:coworkhub_desktop/providers/working_space_provider.dart';
+import 'package:another_flushbar/flushbar.dart';
 
 class WorkingSpaceFormScreen extends StatefulWidget {
   final WorkingSpace? workspace;
@@ -74,17 +75,11 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
     if (isEdit) {
       // UPDATE
       await provider.update(widget.workspace!.workingSpacesId, request);
-      await showSuccessDialog(context, "Prostor je uspješno ažuriran.");
+      _showSuccessFlushbar("Prostor je uspješno ažuriran.");
     } else {
       // CREATE
       await provider.insert(request);
-      await showSuccessDialog(context, "Prostor je uspješno kreiran.");
-
-      _nameController.clear();
-      _addressController.clear();
-      _descriptionController.clear();
-      _cityId = null;
-
+      _showSuccessFlushbar("Prostor je uspješno kreiran.");
       setState(() {});
     }
   }
@@ -203,9 +198,9 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                           child: ElevatedButton(
                             onPressed: _save,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3B82F6),
+                              backgroundColor: Colors.blue,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: Text(
@@ -229,24 +224,35 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
     );
   }
 
-  Future<void> showSuccessDialog(BuildContext context, String message) async {
-    return showDialog(
-      context: context,
-      barrierDismissible: false, // mora kliknuti OK
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Uspješno"),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // zatvori popup
-              },
-              child: const Text("OK"),
-            ),
-          ],
-        );
+  void _showSuccessFlushbar(String message) {
+    late final Flushbar flush;
+
+    flush = Flushbar(
+      message: message,
+      duration: const Duration(
+        seconds: 3,
+      ), // ili null ako želiš da čekamo user klik
+      backgroundColor: Colors.green,
+      flushbarPosition: FlushbarPosition.TOP,
+      mainButton: TextButton(
+        onPressed: () {
+          flush.dismiss(); // korisnik može ručno zatvoriti flushbar
+        },
+        child: const Text("OK", style: TextStyle(color: Colors.white)),
+      ),
+      onStatusChanged: (status) {
+        if (status == FlushbarStatus.DISMISSED && !isEdit) {
+          // Očisti formu samo ako je CREATE, ne UPDATE
+          _nameController.clear();
+          _addressController.clear();
+          _descriptionController.clear();
+          _cityId = null;
+
+          setState(() {}); // refresh forme
+        }
       },
     );
+
+    flush.show(context);
   }
 }

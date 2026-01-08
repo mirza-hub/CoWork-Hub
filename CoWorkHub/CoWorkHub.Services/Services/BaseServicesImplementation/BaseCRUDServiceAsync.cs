@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace CoWorkHub.Services.Services.BaseServicesImplementation
 {
-    public class BaseCRUDServiceAsync<TModel, TSearch, TDbEntity, TInsert, TUpdate> : BaseServiceAsync<TModel, TSearch, TDbEntity> where TModel : class where TSearch : BaseSearchObject where TDbEntity : class
+    public class BaseCRUDServiceAsync<TModel, TSearch, TDbEntity, TInsert, TUpdate> : BaseServiceAsync<TModel, TSearch, TDbEntity> where TModel : class where TSearch : BaseSearchObject where TDbEntity : class, ISoftDeletable
     {
         public BaseCRUDServiceAsync(_210095Context context, IMapper mapper) 
             : base(context, mapper) { }

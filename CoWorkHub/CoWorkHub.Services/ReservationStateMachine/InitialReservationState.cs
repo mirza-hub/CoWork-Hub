@@ -64,10 +64,26 @@ namespace CoWorkHub.Services.ReservationStateMachine
             }
 
             var entity = Mapper.Map<Reservation>(request);
+            var numberOfDays = (request.EndDate - request.StartDate).Days;
+
+            if (numberOfDays <= 0)
+                throw new UserException("Reservation must be at least 1 day.");
+
             entity.UsersId = (int)_currentUserService.GetUserId();
             entity.StateMachine = "pending";
             entity.CreatedAt = DateTime.UtcNow;
-            entity.TotalPrice = request.PeopleCount * spaceUnit.PricePerDay;
+            decimal totalPrice;
+
+            if (spaceUnit.WorkspaceTypeId == 1) // Open space
+            {
+                totalPrice = request.PeopleCount * spaceUnit.PricePerDay * numberOfDays;
+            }
+            else
+            {
+                totalPrice = spaceUnit.PricePerDay * numberOfDays;
+            }
+
+            entity.TotalPrice = totalPrice;
 
             set.Add(entity);
             Context.SaveChanges();

@@ -6,6 +6,6 @@ namespace CoWorkHub.Model.SearchObjects
 {
     public class PaymentMethodSearchObject : BaseSearchObject
     {
-        public string PaymentMethodNameGTE { get; set; } = null!;
+        public string? PaymentMethodNameGTE { get; set; } = null!;
     }
 }

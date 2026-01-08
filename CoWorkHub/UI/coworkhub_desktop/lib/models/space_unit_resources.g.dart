@@ -11,7 +11,9 @@ SpaceUnitResources _$SpaceUnitResourcesFromJson(Map<String, dynamic> json) =>
       spaceResourcesId: (json['spaceResourcesId'] as num).toInt(),
       spaceUnitId: (json['spaceUnitId'] as num).toInt(),
       resourcesId: (json['resourcesId'] as num).toInt(),
-      resources: Resource.fromJson(json['resources'] as Map<String, dynamic>),
+      resources: json['resources'] == null
+          ? null
+          : Resource.fromJson(json['resources'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$SpaceUnitResourcesToJson(SpaceUnitResources instance) =>

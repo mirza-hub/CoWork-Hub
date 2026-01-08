@@ -19,6 +19,17 @@ class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
   void initState() {
     super.initState();
 
+    // DEBUG PRINTOVI
+    print("UNITS COUNT = ${widget.units.length}");
+    for (var su in widget.units) {
+      print(
+        "Unit: ${su.name} | LAT: ${su.workingSpace?.city?.latitude} | LNG: ${su.workingSpace?.city?.longitude}",
+      );
+    }
+
+    // Postojeći print (broj markera prije dodavanja)
+    print('Markers count BEFORE adding: ${_markers.length}');
+
     // Kreiraj markere za sve SpaceUnit
     for (var su in widget.units) {
       if (su.workingSpace?.city?.latitude != null &&
@@ -54,13 +65,18 @@ class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
             },
           ),
         );
+
+        print("➕ Added marker for ${su.name}");
+      } else {
+        print("⚠ Skipping unit ${su.name} — nema koordinata!");
       }
     }
+
+    print('Markers count AFTER adding: ${_markers.length}');
   }
 
   @override
   Widget build(BuildContext context) {
-    // Default centar mape (prvi marker ili Beograd)
     LatLng center =
         widget.units.isNotEmpty &&
             widget.units[0].workingSpace?.city?.latitude != null
@@ -68,7 +84,7 @@ class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
             widget.units[0].workingSpace!.city!.latitude!,
             widget.units[0].workingSpace!.city!.longitude!,
           )
-        : const LatLng(44.787197, 20.457273); // Beograd
+        : const LatLng(44.787197, 20.457273); // Default: Beograd
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mapa prostorija')),
@@ -78,7 +94,7 @@ class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
         onMapCreated: (controller) {
           _mapController = controller;
 
-          // Automatski zum da svi markeri budu vidljivi
+          // Automatski zum na sve markere
           if (_markers.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               LatLngBounds bounds = _computeBounds(_markers);
@@ -92,7 +108,6 @@ class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
     );
   }
 
-  // Funkcija za izračunavanje bounds svih markera
   LatLngBounds _computeBounds(Set<Marker> markers) {
     if (markers.isEmpty) {
       return LatLngBounds(southwest: LatLng(0, 0), northeast: LatLng(0, 0));

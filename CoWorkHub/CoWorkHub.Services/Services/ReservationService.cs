@@ -27,6 +27,9 @@ namespace CoWorkHub.Services.Services
         {
             query = base.AddFilter(search, query);
 
+            if (search.UserId != null)
+                query = query.Where(u => u.UsersId == search.UserId);
+
             if (!string.IsNullOrWhiteSpace(search?.UserFullName))
             {
                 var fullName = search.UserFullName.ToLower().Trim();
@@ -36,13 +39,21 @@ namespace CoWorkHub.Services.Services
             }
 
             if (!string.IsNullOrWhiteSpace(search?.SpaceUnitName))
-                query = query.Where(r => r.SpaceUnit.Name.ToLower().StartsWith(search.SpaceUnitName.ToLower()));
+                query = query.Where(r => r.SpaceUnit.Name.ToLower().Contains(search.SpaceUnitName.ToLower()));
 
-            if (search.DateFrom.HasValue)
-                query = query.Where(r => r.EndDate >= search.DateFrom.Value);
+            if (!string.IsNullOrEmpty(search.StateMachine))
+                query = query.Where(r => r.StateMachine == search.StateMachine);
+
+            if (search.OnlyActive == true)
+            {
+                query = query.Where(r => r.EndDate >= DateTime.UtcNow && (r.StateMachine == "pending" || r.StateMachine=="confirmed"));
+            }
+
+            if (search!.DateFrom.HasValue)
+                query = query.Where(r => r.StartDate >= search.DateFrom.Value);
 
             if (search.DateTo.HasValue)
-                query = query.Where(r => r.StartDate <= search.DateTo.Value);
+                query = query.Where(r => r.EndDate <= search.DateTo.Value);
 
             if (search.PriceFrom.HasValue)
                 query = query.Where(r => r.TotalPrice >= search.PriceFrom.Value);
@@ -50,8 +61,11 @@ namespace CoWorkHub.Services.Services
             if (search.PriceTo.HasValue)
                 query = query.Where(r => r.TotalPrice <= search.PriceTo.Value);
 
-            if (!string.IsNullOrEmpty(search.StateMachineGTE))
-                query = query.Where(r => r.StateMachine.StartsWith(search.StateMachineGTE));
+            if (search.PeopleFrom.HasValue)
+                query = query.Where(r => r.PeopleCount >= search.PeopleFrom.Value);
+
+            if (search.PeopleTo.HasValue)
+                query = query.Where(r => r.PeopleCount <= search.PeopleTo.Value);
 
             if (search.IncludeUser)
                 query = query.Include(r => r.Users);

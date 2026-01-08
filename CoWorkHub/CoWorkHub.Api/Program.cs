@@ -3,6 +3,7 @@ using CoWorkHub.Api.Filters;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.RabbitMqService;
 using CoWorkHub.Services.ReservationStateMachine;
 using CoWorkHub.Services.Seed;
 using CoWorkHub.Services.Services;
@@ -30,6 +31,8 @@ builder.Services.AddTransient<IReviewService, ReviewService>();
 builder.Services.AddTransient<ISpaceUnitService, SpaceUnitService>();
 builder.Services.AddTransient<ISpaceUnitResourceService, SpaceUnitResourceService>();
 builder.Services.AddTransient<ISpaceUnitImageService, SpaceUnitImageService>();
+builder.Services.AddTransient<IPaymentService, PaymentService>();
+
 builder.Services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
 //state machines
@@ -52,6 +55,8 @@ builder.Services.AddTransient<DeletedSpaceUnitState>();
 
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IRabbitMqService, RabbitMqService>();
+builder.Services.AddScoped<IWorkingSpaceImageService, WorkingSpaceImagesService>();
 
 builder.Services.AddControllers(x =>
 {
@@ -78,6 +83,8 @@ builder.Services.AddSwaggerGen(c =>
     } });
 
 });
+
+//DotNetEnv.Env.Load();
 
 var connectionString = builder.Configuration.GetConnectionString("CoWorkHubConnection");
 builder.Services.AddDbContext<_210095Context>(options =>

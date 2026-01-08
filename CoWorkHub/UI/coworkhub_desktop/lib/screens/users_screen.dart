@@ -29,7 +29,9 @@ class _UsersScreenState extends State<UsersScreen> {
   String? selectedCityId;
   String selectedActive = "true";
   String selectedDeleted = "false";
-
+  String? sortColumn;
+  bool sortAscending = true;
+  String? sortDirection;
   int page = 1;
   int pageSize = 10;
   int totalPages = 1;
@@ -90,11 +92,15 @@ class _UsersScreenState extends State<UsersScreen> {
       flt["cityId"] = selectedCityId;
     }
 
+    flt["IsUserRolesIncluded"] = true;
+
     try {
       final result = await _userProvider.get(
         filter: flt,
         page: page,
         pageSize: pageSize,
+        orderBy: sortColumn,
+        sortDirection: sortDirection,
         // fromJsonT: (json) => User.fromJson(json as Map<String, dynamic>),
       );
       setState(() {
@@ -111,7 +117,7 @@ class _UsersScreenState extends State<UsersScreen> {
   Future<void> loadCities() async {
     try {
       final result = await cityProvider.get(
-        filter: {'retrieveAll': true},
+        filter: {'RetrieveAll': true},
         // fromJsonT: (json) => City.fromJson(json as Map<String, dynamic>),
       );
 
@@ -145,6 +151,16 @@ class _UsersScreenState extends State<UsersScreen> {
       page = 1;
       _fetchUsers();
     });
+  }
+
+  void _onSort(String column) {
+    if (sortColumn == column) {
+      sortDirection = sortDirection == "asc" ? "desc" : "asc";
+    } else {
+      sortColumn = column;
+      sortDirection = "asc";
+    }
+    _fetchUsers();
   }
 
   void _openFilterDialog() {
@@ -196,7 +212,7 @@ class _UsersScreenState extends State<UsersScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Active status"),
+                    const Text("Aktivnost"),
                     DropdownButton<String>(
                       isExpanded: true,
                       value: selectedActive,
@@ -228,6 +244,17 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
 
           actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _fetchUsers();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              child: const Text(
+                "Potvrdi",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
             TextButton(
               onPressed: () {
                 // RESET FILTER
@@ -240,13 +267,6 @@ class _UsersScreenState extends State<UsersScreen> {
                 _fetchUsers();
               },
               child: const Text("Resetiraj"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _fetchUsers();
-              },
-              child: const Text("Potvrdi"),
             ),
           ],
         );
@@ -272,9 +292,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   decoration: InputDecoration(
                     labelText: "Pretraži...",
                     prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    border: OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -287,9 +305,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   decoration: InputDecoration(
                     labelText: "Email",
                     prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    border: OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -299,7 +315,7 @@ class _UsersScreenState extends State<UsersScreen> {
                 icon: const Icon(Icons.filter_list),
                 label: const Text("Filteri"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
+                  backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -311,122 +327,120 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
           const SizedBox(height: 20),
 
-          // TABELA
+          // ------------------- TABELA -------------------
+          // ------------------- TABELA -------------------
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Column(
-                children: [
-                  // HEADER
-                  Container(
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(6),
-                      ),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : users.isEmpty
+                ? const Center(
+                    child: Text(
+                      "Nema podataka za prikazivanje",
+                      style: TextStyle(fontSize: 16),
                     ),
-                    child: Row(
-                      children: const [
-                        _HeaderCell("ID", flex: 2),
-                        _HeaderCell("Ime", flex: 2),
-                        _HeaderCell("Prezime", flex: 2),
-                        _HeaderCell("Email", flex: 3),
-                        _HeaderCell("Username", flex: 2),
-                        _HeaderCell("Status", flex: 2),
-                        _HeaderCell("Akcije", flex: 2),
-                      ],
-                    ),
-                  ),
-
-                  // BODY
-                  isLoading
-                      ? const Expanded(
-                          child: Center(child: CircularProgressIndicator()),
-                        )
-                      : users.isEmpty
-                      ? const Expanded(
-                          child: Center(
-                            child: Text("Nema podataka za prikaz."),
+                  )
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: constraints.maxWidth,
                           ),
-                        )
-                      : Expanded(
-                          child: ListView.separated(
-                            itemCount: users.length,
-                            separatorBuilder: (_, _) =>
-                                Divider(color: Colors.grey.shade300, height: 1),
-                            itemBuilder: (context, index) {
-                              final u = users[index];
-
-                              return InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          UserDetailsScreen(user: u),
-                                    ),
+                          child: DataTable(
+                            headingRowColor:
+                                MaterialStateProperty.resolveWith<Color?>((
+                                  Set<MaterialState> states,
+                                ) {
+                                  return const Color.fromARGB(
+                                    255,
+                                    243,
+                                    242,
+                                    242,
                                   );
-                                },
-                                child: SizedBox(
-                                  height: 50,
-                                  child: Row(
-                                    children: [
-                                      _TableCell(u.usersId.toString(), flex: 2),
-                                      _TableCell(u.firstName, flex: 2),
-                                      _TableCell(u.lastName, flex: 2),
-                                      _TableCell(u.email, flex: 3),
-                                      _TableCell(u.username, flex: 2),
+                                }),
 
-                                      // STATUS
-                                      Expanded(
-                                        flex: 2,
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              width: 10,
-                                              height: 10,
-                                              decoration: BoxDecoration(
-                                                color: u.isActive
-                                                    ? Colors.green
-                                                    : Colors.red,
-                                                shape: BoxShape.circle,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              u.isActive
-                                                  ? "Aktivni"
-                                                  : "Neaktivni",
-                                              style: TextStyle(
-                                                color: u.isActive
-                                                    ? Colors.green
-                                                    : Colors.red,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
+                            sortColumnIndex: sortColumn == "UsersId"
+                                ? 0
+                                : sortColumn == "FirstName"
+                                ? 1
+                                : sortColumn == "LastName"
+                                ? 2
+                                : sortColumn == "Email"
+                                ? 3
+                                : sortColumn == "Username"
+                                ? 4
+                                : null,
+                            sortAscending: sortDirection == "asc",
+                            columns: [
+                              DataColumn(
+                                label: Text("ID"),
+                                numeric: true,
+                                onSort: (columnIndex, ascending) {
+                                  _onSort("UsersId");
+                                },
+                              ),
+
+                              DataColumn(
+                                label: Text("Ime"),
+                                onSort: (columnIndex, ascending) =>
+                                    _onSort("FirstName"),
+                              ),
+                              DataColumn(
+                                label: Text("Prezime"),
+                                onSort: (columnIndex, ascending) =>
+                                    _onSort("LastName"),
+                              ),
+                              DataColumn(
+                                label: Text("Email"),
+                                onSort: (columnIndex, ascending) =>
+                                    _onSort("Email"),
+                              ),
+                              DataColumn(
+                                label: Text("Username"),
+                                onSort: (columnIndex, ascending) =>
+                                    _onSort("Username"),
+                              ),
+                              DataColumn(label: Text("Status")),
+                              DataColumn(label: Text("Akcije")),
+                            ],
+                            rows: users
+                                .map(
+                                  (user) => DataRow(
+                                    cells: [
+                                      DataCell(Text(user.usersId.toString())),
+                                      DataCell(Text(user.firstName)),
+                                      DataCell(Text(user.lastName)),
+                                      DataCell(Text(user.email)),
+                                      DataCell(Text(user.username)),
+                                      DataCell(
+                                        Text(
+                                          user.isActive
+                                              ? "Aktivan"
+                                              : "Neaktivan",
                                         ),
                                       ),
-
-                                      // AKCIJE
-                                      Expanded(
-                                        flex: 2,
-                                        child: Row(
+                                      DataCell(
+                                        Row(
                                           children: [
                                             IconButton(
-                                              icon: const Icon(Icons.edit),
+                                              icon: const Icon(
+                                                Icons.info_outline,
+                                              ),
                                               onPressed: () {
                                                 widget.onChangeScreen(
-                                                  UserDetailsScreen(user: u),
+                                                  UserDetailsScreen(
+                                                    user: user,
+                                                    onChangeScreen:
+                                                        widget.onChangeScreen,
+                                                  ),
                                                 );
                                               },
                                             ),
                                             IconButton(
-                                              icon: const Icon(Icons.delete),
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
+                                              ),
                                               onPressed: () {},
                                             ),
                                           ],
@@ -434,81 +448,69 @@ class _UsersScreenState extends State<UsersScreen> {
                                       ),
                                     ],
                                   ),
-                                ),
-                              );
-                            },
+                                )
+                                .toList(),
                           ),
                         ),
-                  // FOOTER (PAGINATION)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 15,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: const BorderRadius.vertical(
-                        bottom: Radius.circular(6),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // ITEMS PER PAGE
-                        Row(
-                          children: [
-                            const Text("Prikaži:"),
-                            const SizedBox(width: 10),
-                            DropdownButton<int>(
-                              value: pageSize,
-                              items: const [
-                                DropdownMenuItem(value: 10, child: Text("10")),
-                                DropdownMenuItem(value: 20, child: Text("20")),
-                                DropdownMenuItem(value: 50, child: Text("50")),
-                              ],
-                              onChanged: (v) {
-                                setState(() {
-                                  pageSize = v!;
-                                  _fetchUsers();
-                                });
-                              },
-                            ),
-                          ],
-                        ),
+                      );
+                    },
+                  ),
+          ),
 
-                        // PAGINATION
-                        // Pagination
-                        Row(
-                          children: [
-                            TextButton(
-                              onPressed: page > 1
-                                  ? () async {
-                                      setState(() => page--);
-                                      await _fetchUsers(); // fetch za prethodnu stranicu
-                                    }
-                                  : null,
-                              child: const Text("Prev"),
-                            ),
-                            Text(
-                              "Stranica $page / $totalPages",
-                            ), // prikaži i ukupan broj stranica
-                            TextButton(
-                              onPressed: page < totalPages
-                                  ? () async {
-                                      setState(() => page++);
-                                      await _fetchUsers(); // fetch za sljedeću stranicu
-                                    }
-                                  : null,
-                              child: const Text("Next"),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+          const Divider(
+            color: Colors.grey, // ista boja kao header, možeš prilagoditi
+            thickness: 1,
+            height: 1,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Text("Prikaži:"),
+                  const SizedBox(width: 10),
+                  DropdownButton<int>(
+                    value: pageSize,
+                    items: const [
+                      DropdownMenuItem(value: 5, child: Text("5")),
+                      DropdownMenuItem(value: 10, child: Text("10")),
+                      DropdownMenuItem(value: 20, child: Text("20")),
+                      DropdownMenuItem(value: 50, child: Text("50")),
+                    ],
+                    onChanged: (v) {
+                      pageSize = v!;
+                      page = 1;
+                      _fetchUsers();
+                    },
                   ),
                 ],
               ),
-            ),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: page > 1
+                        ? () async {
+                            setState(() => page--);
+                            await _fetchUsers();
+                          }
+                        : null,
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  Text(
+                    "${users.isEmpty ? 0 : page} / ${totalPages == 0 ? 0 : totalPages}",
+                  ),
+                  IconButton(
+                    onPressed: page < totalPages
+                        ? () async {
+                            setState(() => page++);
+                            await _fetchUsers();
+                          }
+                        : null,
+                    icon: const Icon(Icons.arrow_forward),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
