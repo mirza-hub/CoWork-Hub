@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -149,6 +150,35 @@ namespace CoWorkHub.Services.Services
                           && !r.IsDeleted);
 
             return hasReviewed;
+        }
+
+        public async Task HandleReservationStates()
+        {
+            var today = DateTime.UtcNow.Date;
+
+            // Plaćene i završene rezervacije → Completed
+            var confirmedReservations = await Context.Reservations
+                .Where(r => r.StateMachine == "confirmed" && r.EndDate < today)
+                .ToListAsync();
+
+            foreach (var r in confirmedReservations)
+            {
+                r.StateMachine = "completed";
+            }
+
+            // Neplaćene i dan prije starta → Canceled
+            var pendingReservations = await Context.Reservations
+                .Where(r => r.StateMachine == "pending" &&
+                      (r.EndDate < today || r.StartDate.AddDays(-1) <= today))
+                .ToListAsync();
+
+
+            foreach (var r in pendingReservations)
+            {
+                r.StateMachine = "canceled";
+            }
+
+            await Context.SaveChangesAsync();
         }
     }
 }

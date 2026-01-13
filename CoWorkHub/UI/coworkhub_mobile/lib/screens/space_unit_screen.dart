@@ -896,7 +896,24 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                                             const Expanded(child: SizedBox()),
 
                                             const SizedBox(width: 10),
+                                            //                                             Row(
+                                            //                                               children: [
+                                            //                                                 HoverInfo(
+                                            //                                                   info: """
+                                            // Pravila rezervacija:
+                                            // Ako rezervišete i ne platite, dan prije starta vaša rezervacija se otkazuje.
+                                            // Ako rezervišete i platite, možete otkazati do 2 dana prije starta.
+                                            // """,
+                                            //                                                   child: const Icon(
+                                            //                                                     Icons.info_outline,
+                                            //                                                     color: Colors.blueAccent,
+                                            //                                                     size: 20,
+                                            //                                                   ),
+                                            //                                                 ),
+                                            //                                               ],
+                                            //                                             ),
 
+                                            // const SizedBox(width: 10),
                                             // DRUGA polovina dugme "Rezerviši"
                                             Expanded(
                                               child: ElevatedButton(
@@ -946,6 +963,62 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class HoverInfo extends StatefulWidget {
+  final Widget child;
+  final String info;
+
+  const HoverInfo({required this.child, required this.info, Key? key})
+    : super(key: key);
+
+  @override
+  State<HoverInfo> createState() => _HoverInfoState();
+}
+
+class _HoverInfoState extends State<HoverInfo> {
+  OverlayEntry? _overlayEntry;
+
+  void _showOverlay(BuildContext context) {
+    final renderBox = context.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: offset.dx,
+        top: offset.dy - 120, // prikazuje iznad dugmeta
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 250,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
+            ),
+            child: Text(widget.info, style: const TextStyle(fontSize: 13)),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _hideOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => _showOverlay(context),
+      onExit: (_) => _hideOverlay(),
+      child: widget.child,
     );
   }
 }

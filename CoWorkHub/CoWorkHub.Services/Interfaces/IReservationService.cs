@@ -19,5 +19,6 @@ namespace CoWorkHub.Services.Interfaces
         public Model.Reservation Complete(int id);
         public List<string> AllowedActions(int id);
         public ActionResult<bool> HasReviewed(int reservationId);
+        public Task HandleReservationStates();
     }
 }

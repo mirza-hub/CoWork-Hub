@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoWorkHub.Services", "CoWor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoWorkHub.Subscriber", "CoWorkHub.Subscriber\CoWorkHub.Subscriber.csproj", "{D4A36F8E-D72D-4C84-9F56-D67C692499F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoWorkHub.Worker", "CoWorkHub.Worker\CoWorkHub.Worker.csproj", "{7B49DA10-BFC8-4CC7-B864-3D0D4B8BFE04}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{D4A36F8E-D72D-4C84-9F56-D67C692499F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4A36F8E-D72D-4C84-9F56-D67C692499F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4A36F8E-D72D-4C84-9F56-D67C692499F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B49DA10-BFC8-4CC7-B864-3D0D4B8BFE04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B49DA10-BFC8-4CC7-B864-3D0D4B8BFE04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B49DA10-BFC8-4CC7-B864-3D0D4B8BFE04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B49DA10-BFC8-4CC7-B864-3D0D4B8BFE04}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
