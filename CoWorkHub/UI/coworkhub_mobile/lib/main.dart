@@ -1,16 +1,20 @@
 import 'dart:io';
 
 import 'package:coworkhub_mobile/layout/layout_screen.dart';
+import 'package:coworkhub_mobile/models/working_space.dart';
+import 'package:coworkhub_mobile/models/working_space_image.dart';
 import 'package:coworkhub_mobile/providers/city_provider.dart';
 import 'package:coworkhub_mobile/providers/payment_method_provider.dart';
 import 'package:coworkhub_mobile/providers/payment_provider.dart';
 import 'package:coworkhub_mobile/providers/reservation_provider.dart';
 import 'package:coworkhub_mobile/providers/resource_provider.dart';
+import 'package:coworkhub_mobile/providers/review_provider.dart';
 import 'package:coworkhub_mobile/providers/role_provider.dart';
 import 'package:coworkhub_mobile/providers/space_unit_image_provider.dart';
 import 'package:coworkhub_mobile/providers/space_unit_provider.dart';
 import 'package:coworkhub_mobile/providers/space_unit_resources_provider.dart';
 import 'package:coworkhub_mobile/providers/user_provider.dart';
+import 'package:coworkhub_mobile/providers/working_space_image_provider.dart';
 import 'package:coworkhub_mobile/providers/working_space_provider.dart';
 import 'package:coworkhub_mobile/providers/workspace_type_provider.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +47,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => WorkspaceTypeProvider()),
         ChangeNotifierProvider(create: (_) => PaymentMethodProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
+        ChangeNotifierProvider(create: (_) => ReviewProvider()),
+        ChangeNotifierProvider(create: (_) => WorkingSpaceImageProvider()),
       ],
       child: const MyApp(),
     ),

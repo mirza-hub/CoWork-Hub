@@ -1,10 +1,12 @@
 ﻿using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.ReservationStateMachine;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -16,11 +18,17 @@ namespace CoWorkHub.Services.Services
 {
     public class ReservationService : BaseCRUDService<Model.Reservation, ReservationSearchObject, Database.Reservation, ReservationInsertRequest, ReservationUpdateRequest>, IReservationService
     {
+        private readonly ICurrentUserService _currentUserService;
+
         public BaseReservationState BaseReservationState { get; set; }
-        public ReservationService(_210095Context context, IMapper mapper, BaseReservationState baseReservationState) 
+        public ReservationService(_210095Context context,
+            IMapper mapper,
+            BaseReservationState baseReservationState,
+            ICurrentUserService currentUserService) 
             : base(context, mapper)
         {
             BaseReservationState = baseReservationState;
+            _currentUserService = currentUserService;
         }
 
         public override IQueryable<Reservation> AddFilter(ReservationSearchObject search, IQueryable<Reservation> query)
@@ -40,6 +48,12 @@ namespace CoWorkHub.Services.Services
 
             if (!string.IsNullOrWhiteSpace(search?.SpaceUnitName))
                 query = query.Where(r => r.SpaceUnit.Name.ToLower().Contains(search.SpaceUnitName.ToLower()));
+
+            if (search.OnlyInactive == true)
+            {
+                query = query.Where(r =>
+                    r.EndDate < DateTime.UtcNow || r.StateMachine == "canceled");
+            }
 
             if (!string.IsNullOrEmpty(search.StateMachine))
                 query = query.Where(r => r.StateMachine == search.StateMachine);
@@ -123,6 +137,18 @@ namespace CoWorkHub.Services.Services
                 var state = BaseReservationState.CreateState(entity.StateMachine);
                 return state.AllowedActions(entity);
             }
+        }
+
+        public ActionResult<bool> HasReviewed(int reservationId)
+        {
+            int userId = (int)_currentUserService.GetUserId();
+
+            bool hasReviewed = Context.Reviews
+                .Any(r => r.ReservationId == reservationId
+                          && r.Reservation!.UsersId == userId
+                          && !r.IsDeleted);
+
+            return hasReviewed;
         }
     }
 }

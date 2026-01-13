@@ -606,6 +606,14 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
         break;
       case "confirmed":
         text = "POTVRĐENO";
+        color = Colors.blueAccent;
+        break;
+      case "canceled":
+        text = "OTKAZANO";
+        color = Colors.red;
+        break;
+      case "completed":
+        text = "ZAVRŠENO";
         color = Colors.green;
         break;
       default:
@@ -768,6 +776,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                             MaterialPageRoute(
                               builder: (_) => SpaceUnitDetailsScreen(
                                 spaceUnitId: su.spaceUnitId,
+                                spaceUnit: su,
                               ),
                             ),
                           );

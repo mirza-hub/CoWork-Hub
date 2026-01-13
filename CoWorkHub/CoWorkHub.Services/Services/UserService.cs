@@ -32,6 +32,9 @@ namespace CoWorkHub.Services.Services
         {
             query = base.AddFilter(search, query);
 
+            if (search.UsersId.HasValue)
+                query = query.Where(x => x.UsersId == search.UsersId.Value);
+
             if (!string.IsNullOrWhiteSpace(search?.FTS))
                 query = query.Where(x => x.FirstName.ToLower().StartsWith(search.FTS.ToLower()) 
                 || x.LastName.ToLower().StartsWith(search.FTS.ToLower()) 
@@ -175,6 +178,15 @@ namespace CoWorkHub.Services.Services
                 {
                     throw new UserException("Korisnik sa ovim korisničkim imenom je već registrovan");
                 }
+            }
+
+            if (string.IsNullOrEmpty(request.ProfileImageBase64))
+            {
+                entity.ProfileImage = null;
+            }
+            else
+            {
+                entity.ProfileImage = Convert.FromBase64String(request.ProfileImageBase64);
             }
 
             entity.ModifiedAt = DateTime.UtcNow;

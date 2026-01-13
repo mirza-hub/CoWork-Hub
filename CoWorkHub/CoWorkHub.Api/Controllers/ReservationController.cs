@@ -40,6 +40,12 @@ namespace CoWorkHub.Api.Controllers
             return base.GetList(searchObject);
         }
 
+        [HttpGet("{reservationId}/has-reviewed")]
+        public ActionResult<bool> HasReviewed(int reservationId)
+        {
+            return (_service as IReservationService).HasReviewed(reservationId);
+        }
+
         [Authorize(Roles = "Admin,User")]
         public override Reservation GetById(int id)
         {

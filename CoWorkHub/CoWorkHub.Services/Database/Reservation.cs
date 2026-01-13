@@ -34,6 +34,10 @@ public partial class Reservation : ISoftDeletable
 
     //public virtual WorkingSpace WorkingSpaces { get; set; } = null!;
 
+    //public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+
+    public virtual Review? Review { get; set; }
+
     public virtual SpaceUnit SpaceUnit { get; set; } = null!;
 
     public DateTime? DeletedAt { get; set; }

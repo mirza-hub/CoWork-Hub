@@ -30,6 +30,13 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- Za kameru -->
+	<key>NSCameraUsageDescription</key>
+	<string>Ova aplikacija traži pristup kameri da biste mogli napraviti profilnu sliku.</string>
+
+	<!-- Za galeriju / foto biblioteku -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ova aplikacija traži pristup galeriji da biste mogli odabrati profilnu sliku.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

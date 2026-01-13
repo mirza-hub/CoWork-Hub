@@ -339,15 +339,11 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Prijava potrebna"),
+        title: const Text("Potrebna prijava"),
         content: const Text(
           "Morate biti prijavljeni da biste izvršili rezervaciju.",
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Odustani"),
-          ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
@@ -356,7 +352,15 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
               );
             },
-            child: const Text("Prijavite se"),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            child: const Text(
+              "Prijavite se",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Odustani"),
           ),
         ],
       ),
@@ -589,7 +593,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                 ),
               ],
             ),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 5),
+            padding: const EdgeInsets.fromLTRB(16, 40, 13, 5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -763,7 +767,6 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
 
                       return InkWell(
                         onTap: () {
-                          // Klik na cijelu karticu vodi na detalje
                           Navigator.push(
                             context,
                             MaterialPageRoute(
