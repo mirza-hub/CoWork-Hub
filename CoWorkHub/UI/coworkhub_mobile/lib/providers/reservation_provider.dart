@@ -110,4 +110,17 @@ class ReservationProvider extends BaseProvider<Reservation> {
       throw Exception('Greška prilikom dohvaćanja dozvoljenih akcija');
     }
   }
+
+  Future<bool> hasReviewed(int reservationId) async {
+    final url =
+        "${BaseProvider.baseUrl}Reservation/$reservationId/has-reviewed";
+
+    final response = await http.get(Uri.parse(url), headers: createHeaders());
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as bool;
+    }
+
+    throw Exception('Ne mogu provjeriti recenziju');
+  }
 }

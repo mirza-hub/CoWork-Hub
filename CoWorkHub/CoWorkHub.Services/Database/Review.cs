@@ -8,9 +8,7 @@ public partial class Review : ISoftDeletable
 {
     public int ReviewsId { get; set; }
 
-    public int UsersId { get; set; }
-
-    public int SpaceUnitId { get; set; }
+    public int ReservationId { get; set; }
 
     public byte Rating { get; set; }
 
@@ -26,9 +24,7 @@ public partial class Review : ISoftDeletable
 
     public virtual User? DeletedByNavigation { get; set; }
 
-    public virtual User Users { get; set; } = null!;
-
-    public virtual SpaceUnit SpaceUnit { get; set; } = null!;
+    public virtual Reservation? Reservation { get; set; }
 
     public bool IsDeleted { get; set; } = false;
 }

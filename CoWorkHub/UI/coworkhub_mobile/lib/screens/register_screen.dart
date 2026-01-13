@@ -142,8 +142,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!regex.hasMatch(value)) {
       return 'Ne smije sadržavati brojeve ili specijalne znakove';
     }
-    if (value.length > 15) {
-      return 'Ne smije biti duže od 15 karaktera';
+    if (value.length > 10) {
+      return 'Ne smije biti duže od 10 karaktera';
     }
     return null;
   }
@@ -160,18 +160,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (value.length < 3) {
       return 'Korisničko ime mora imati najmanje 3 karaktera';
     }
-    if (value.length > 15) {
-      return 'Ne smije biti duže od 15 karaktera';
+    if (value.length > 10) {
+      return 'Korisničko ime ne smije biti duže od 10 karaktera';
     }
     return null;
   }
 
   String? _validatePhone(String? value) {
-    if (value == null || value.isEmpty) return 'Telefon je obavezan';
+    if (value == null || value.isEmpty) return 'Broj telefona je obavezan';
     final regex = RegExp(r'^\+?[0-9]{6,15}$');
     if (!regex.hasMatch(value)) return 'Neispravan format telefona';
     if (value.length > 10) {
-      return 'Ne smije biti duže od 10 karaktera';
+      return 'Broj telefona ne smije biti duže od 10 karaktera';
     }
     return null;
   }
@@ -179,6 +179,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Lozinka je obavezna';
     if (value.length < 4) return 'Lozinka mora imati najmanje 6 karaktera';
+    if (value.length > 10) return 'Lozinka ne smije imati više od 10 karaktera';
     return null;
   }
 

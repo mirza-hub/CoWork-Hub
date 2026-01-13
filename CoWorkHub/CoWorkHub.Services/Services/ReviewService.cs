@@ -1,4 +1,6 @@
-﻿using CoWorkHub.Model.Requests;
+﻿using CoWorkHub.Model;
+using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
@@ -6,6 +8,7 @@ using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Scaffolding.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,15 +29,15 @@ namespace CoWorkHub.Services.Services
             _currentUserService = currentUserService;
         }
 
-        public override IQueryable<Review> AddFilter(ReviewSearchObject search, IQueryable<Review> query)
+        public override IQueryable<Database.Review> AddFilter(ReviewSearchObject search, IQueryable<Database.Review> query)
         {
             query = base.AddFilter(search, query);
 
-            if (search.UserId.HasValue)
-                query = query.Where(x => x.UsersId == search.UserId.Value);
+            if (search.ReservationId.HasValue)
+                query = query.Where(r => r.ReservationId == search.ReservationId.Value);
 
             if (search.SpaceUnitId.HasValue)
-                query = query.Where(x => x.SpaceUnitId == search.SpaceUnitId.Value);
+                query = query.Where(r => r.Reservation.SpaceUnitId == search.SpaceUnitId.Value);
 
             if (search.RatingFrom.HasValue)
                 query = query.Where(x => x.Rating >= search.RatingFrom.Value);
@@ -48,73 +51,88 @@ namespace CoWorkHub.Services.Services
             if (search.CreatedTo.HasValue)
                 query = query.Where(x => x.CreatedAt <= search.CreatedTo.Value);
 
-            if (search.IncludeUser)
-                query = query.Include(x => x.Users);
+            if (search.IncludeReservation)
+                query = query.Include(r => r.Reservation);
 
-            if (search.IncludeSpaceUnit)
-                query = query.Include(x => x.SpaceUnit);
+            if (search.IncludeReservationSpaceUnit)
+                query = query
+                    .Include(r => r.Reservation)
+                    .ThenInclude(res => res.SpaceUnit);
 
             return query;
         }
 
-        public override void BeforeInsert(ReviewInsertRequest request, Review entity)
+        public override void BeforeInsert(ReviewInsertRequest request, Database.Review entity)
         {
             base.BeforeInsert(request, entity);
 
             // 1. Rating mora biti izmedju 1 i 5
             if (request.Rating < 1 || request.Rating > 5)
-                throw new Exception("Rating must be between 1 and 5.");
+                throw new UserException("Ocjena mora biti između 1 i 5.");
 
             // 2. Komentar ne smije biti prazan
             if (string.IsNullOrWhiteSpace(request.Comment))
-                throw new Exception("Comment is required.");
+                throw new UserException("Komentar je obavezan.");
 
-            // 3. User smije ostaviti samo jednu recenziju za isti SpaceUnit
-            bool alreadyReviewed = Context.Set<Review>().Any(r =>
-                r.UsersId == request.UsersId &&
-                r.SpaceUnitId == request.SpaceUnitId &&
+            int userId = (int)_currentUserService.GetUserId();
+
+            // 3. User smije ostaviti samo jednu recenziju za istu Rezervaciju
+            bool alreadyReviewed = Context.Set<Database.Review>().Any(r =>
+                r.ReservationId == request.ReservationId &&
                 !r.IsDeleted);
 
             if (alreadyReviewed)
-                throw new Exception("You have already reviewed this space.");
+                throw new UserException("Već ste ocijenili ovu rezervaciju.");
 
             // 4. User mora imati zavrsenu rezervaciju (completed)
-            bool hasCompletedReservation = Context.Set<Reservation>().Any(r =>
-                r.UsersId == request.UsersId &&
-                r.SpaceUnitId == request.SpaceUnitId &&
+            var reservation = Context.Set<Database.Reservation>()
+                .FirstOrDefault(r =>
+                r.ReservationId == request.ReservationId &&
+                r.UsersId == userId &&
                 r.EndDate < DateTime.Now &&
                 r.StateMachine == "completed" &&
                 !r.IsDeleted);
 
-            if (!hasCompletedReservation)
-                throw new Exception("You can only review spaces you have previously used.");
+            if (reservation == null)
+                throw new UserException("Moguće je ocijeniti samo završene rezervacije.");
 
             entity.CreatedAt = DateTime.UtcNow;
         }
 
-        public override void BeforeUpdate(ReviewUpdateRequest request, Review entity)
+        public override void BeforeUpdate(ReviewUpdateRequest request, Database.Review entity)
         {
             base.BeforeUpdate(request, entity);
 
             if (entity == null || entity.IsDeleted)
-                throw new Exception("Review not found.");
+                throw new UserException("Recenzija nije pronađena.");
 
             // 2. User može update-ati samo svoj review
-            // request.UsersId ne treba i ne smije se koristiti!
-            int loggedUserId = (int)_currentUserService.GetUserId(); // ili kako već dohvaćaš usera
-            if (entity.UsersId != loggedUserId)
-                throw new Exception("You are not allowed to edit this review.");
+            int loggedUserId = (int)_currentUserService.GetUserId();
+            var reservation = Context.Set<Database.Reservation>()
+                .FirstOrDefault(r =>
+                r.ReservationId == entity.ReservationId &&
+                !r.IsDeleted);
+
+            if (reservation.UsersId != loggedUserId)
+                throw new UserException("Nije moguće urediti ovu rezervaciju.");
 
             // 3. Validacija ratinga
             if (request.Rating.HasValue && (request.Rating < 1 || request.Rating > 5))
-                throw new Exception("Rating must be between 1 and 5.");
+                throw new UserException("Ocjena mora biti između 1 i 5.");
 
             // 4. Validacija komentara
             if (request.Comment != null && string.IsNullOrWhiteSpace(request.Comment))
-                throw new Exception("Comment cannot be empty.");
+                throw new UserException("Komentar ne može biti prazan.");
 
             // 5. Update vremena
             entity.ModifiedAt = DateTime.Now;
+        }
+
+        public override void BeforeDelete(Database.Review entity)
+        {
+            base.BeforeDelete(entity);
+
+            entity.DeletedBy = _currentUserService.GetUserId();
         }
     }
 }

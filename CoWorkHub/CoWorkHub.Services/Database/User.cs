@@ -44,8 +44,6 @@ public partial class User : ISoftDeletable
 
     public virtual ICollection<Review> ReviewDeletedByNavigations { get; set; } = new List<Review>();
 
-    public virtual ICollection<Review> ReviewUsers { get; set; } = new List<Review>();
-
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 
     public virtual ICollection<SpaceUnitResource> SpaceUnitResourceCreatedByNavigations { get; set; } = new List<SpaceUnitResource>();

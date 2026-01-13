@@ -114,23 +114,25 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
+    } else {
+      throw response;
     }
 
-    // Ako backend šalje errors JSON
-    try {
-      var body = jsonDecode(response.body);
+    // // Ako backend šalje errors JSON
+    // try {
+    //   var body = jsonDecode(response.body);
 
-      if (body is Map && body["errors"] != null) {
-        var errors = body["errors"] as Map<String, dynamic>;
-        var firstKey = errors.keys.first;
-        var firstError = errors[firstKey][0];
-        throw Exception(firstError.toString());
-      }
-    } catch (_) {
-      // ignoriraj parsing greške
-    }
+    //   if (body is Map && body["errors"] != null) {
+    //     var errors = body["errors"] as Map<String, dynamic>;
+    //     var firstKey = errors.keys.first;
+    //     var firstError = errors[firstKey][0];
+    //     throw Exception(firstError.toString());
+    //   }
+    // } catch (_) {
+    //   // ignoriraj parsing greške
+    // }
 
-    throw Exception("Greška na serveru (${response.statusCode})");
+    // throw Exception("Greška na serveru (${response.statusCode})");
   }
 
   Future<void> delete(int id) async {

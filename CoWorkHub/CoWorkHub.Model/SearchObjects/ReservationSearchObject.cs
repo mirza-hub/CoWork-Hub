@@ -18,6 +18,7 @@ namespace CoWorkHub.Model.SearchObjects
         public string? StateMachine { get; set; }
         public bool IncludeSpaceUnit { get; set; } = false;
         public bool OnlyActive { get; set; } = false;
+        public bool OnlyInactive { get; set; } = false;
         public bool IncludeUser { get; set; } = false;
     }
 }

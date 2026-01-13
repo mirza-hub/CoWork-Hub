@@ -6,6 +6,7 @@ namespace CoWorkHub.Model.SearchObjects
 {
     public class UserSearchObject : BaseSearchObject
     {
+        public int? UsersId { get; set; }
         public string? FTS { get; set; }
         public string? Email { get; set; }
         public int? CityId { get; set; }

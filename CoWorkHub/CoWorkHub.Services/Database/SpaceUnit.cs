@@ -39,8 +39,6 @@ namespace CoWorkHub.Services.Database
 
         public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
 
-        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
-
         public virtual ICollection<SpaceUnitResource> SpaceUnitResources { get; set; } = new List<SpaceUnitResource>();
 
         public virtual ICollection<SpaceUnitImage> SpaceUnitImages { get; set; } = new List<SpaceUnitImage>();

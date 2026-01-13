@@ -259,17 +259,11 @@ public partial class _210095Context : DbContext
             entity.Property(e => e.IsDeleted)
                 .HasDefaultValue(false);
 
-            entity.HasOne(d => d.Users)
-                .WithMany(p => p.ReviewUsers)
-                .HasForeignKey(d => d.UsersId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Review_User");
+            entity.HasOne(r => r.Reservation)
+                .WithOne(res => res.Review)
+                .HasForeignKey<Review>(r => r.ReservationId)
+        .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(d => d.SpaceUnit)
-                .WithMany(p => p.Reviews)
-                .HasForeignKey(d => d.SpaceUnitId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Review_SpaceUnit");
 
             entity.HasOne(d => d.DeletedByNavigation)
                 .WithMany(u => u.ReviewDeletedByNavigations)
@@ -337,12 +331,6 @@ public partial class _210095Context : DbContext
                 .HasForeignKey(p => p.SpaceUnitId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_SpaceUnit_Reservations");
-
-            entity.HasMany(d => d.Reviews)
-                .WithOne(p => p.SpaceUnit)
-                .HasForeignKey(p => p.SpaceUnitId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("FK_SpaceUnit_Reviews");
 
             entity.HasMany(d => d.SpaceUnitResources)
                 .WithOne(p => p.SpaceUnit)

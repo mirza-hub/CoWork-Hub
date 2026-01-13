@@ -42,13 +42,13 @@ namespace CoWorkHub.Api.Controllers
             base.Delete(id);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public override PagedResult<User> GetList([FromQuery] UserSearchObject searchObject)
         {
             return base.GetList(searchObject);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public override User GetById(int id)
         {
             return base.GetById(id);
