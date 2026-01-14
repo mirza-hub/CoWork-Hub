@@ -1,10 +1,12 @@
 import 'package:coworkhub_desktop/models/city.dart';
 import 'package:coworkhub_desktop/providers/city_provider.dart';
 import 'package:coworkhub_desktop/screens/working_space_screen.dart';
+import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:coworkhub_desktop/models/working_space.dart';
 import 'package:coworkhub_desktop/providers/working_space_provider.dart';
 import 'package:another_flushbar/flushbar.dart';
+import 'package:flutter/services.dart';
 
 class WorkingSpaceFormScreen extends StatefulWidget {
   final WorkingSpace? workspace;
@@ -75,11 +77,19 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
     if (isEdit) {
       // UPDATE
       await provider.update(widget.workspace!.workingSpacesId, request);
-      _showSuccessFlushbar("Prostor je uspješno ažuriran.");
+      showTopFlushBar(
+        context: context,
+        message: "Prostor je uspješno ažuriran",
+        backgroundColor: Colors.green,
+      );
     } else {
       // CREATE
       await provider.insert(request);
-      _showSuccessFlushbar("Prostor je uspješno kreiran.");
+      showTopFlushBar(
+        context: context,
+        message: "Prostor je uspješno kreiran",
+        backgroundColor: Colors.green,
+      );
       setState(() {});
     }
   }
@@ -136,6 +146,12 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                           labelText: "Naziv",
                           border: OutlineInputBorder(),
                         ),
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(40),
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[a-zA-Z0-9\s\-]'),
+                          ),
+                        ],
                         validator: (v) =>
                             v == null || v.isEmpty ? "Naziv je obavezan" : null,
                       ),
@@ -148,6 +164,7 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                           labelText: "Adresa",
                           border: OutlineInputBorder(),
                         ),
+                        inputFormatters: [LengthLimitingTextInputFormatter(30)],
                         validator: (v) => v == null || v.isEmpty
                             ? "Adresa je obavezna"
                             : null,
@@ -162,6 +179,9 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                           labelText: "Opis",
                           border: OutlineInputBorder(),
                         ),
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(200),
+                        ],
                         validator: (v) =>
                             v == null || v.isEmpty ? "Opis je obavezan" : null,
                       ),

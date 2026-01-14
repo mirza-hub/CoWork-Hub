@@ -7,6 +7,7 @@ using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading;
 
 namespace CoWorkHub.Api.Controllers
 {
@@ -34,6 +35,13 @@ namespace CoWorkHub.Api.Controllers
         public override User Update(int id, UserUpdateRequest request)
         {
             return base.Update(id, request);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}/update_for_admin")]
+        public Model.User UpdateForAdmin(int id, UserAdminUpdateRequest request)
+        {
+            return (_service as IUserService).UpdateForAdmin(id, request);
         }
 
         [Authorize(Roles ="Admin,User")]

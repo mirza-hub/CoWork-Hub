@@ -1,7 +1,7 @@
-import 'package:another_flushbar/flushbar.dart';
 import 'package:coworkhub_desktop/models/user.dart';
 import 'package:coworkhub_desktop/providers/auth_provider.dart';
 import 'package:coworkhub_desktop/providers/user_provider.dart';
+import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'layouts/master_screen.dart';
 
@@ -104,15 +104,21 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (context) => MasterScreen(user: user)),
         );
       } catch (e) {
-        Flushbar(
+        // Flushbar(
+        //   message: "Pogrešno korisničko ime ili lozinka",
+        //   backgroundColor: Colors.red,
+        //   duration: const Duration(seconds: 3),
+        //   margin: const EdgeInsets.all(10),
+        //   borderRadius: BorderRadius.circular(8),
+        //   flushbarPosition: FlushbarPosition.TOP,
+        // ).show(context);
+
+        showTopFlushBar(
+          context: context,
           message: "Pogrešno korisničko ime ili lozinka",
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-          margin: const EdgeInsets.all(10),
-          borderRadius: BorderRadius.circular(8),
-          flushbarPosition: FlushbarPosition.TOP,
-        ).show(context);
-      } finally {
+        );
+
         if (mounted) {
           setState(() => _loading = false);
         }

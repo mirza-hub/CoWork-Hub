@@ -35,7 +35,7 @@ namespace CoWorkHub.Services.Services
             if (existingCountry != null)
             {
                 if (existingCountry.CountryName.Equals(request.CountryName, StringComparison.OrdinalIgnoreCase))
-                    throw new UserException("A country with this name already exists in the database.");
+                    throw new UserException("Država sa tim imenom već postoji u bazi");
             }
         }
 
@@ -48,7 +48,7 @@ namespace CoWorkHub.Services.Services
 
             if (existingCountry != null)
             {
-                throw new UserException("Another country with this name already exists in the database.");
+                throw new UserException("Država sa tim imenom već postoji u bazi");
             }
         }
     }

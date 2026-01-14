@@ -34,4 +34,21 @@ class UserProvider extends BaseProvider<User> {
       throw Exception("Greška prilikom login-a.");
     }
   }
+
+  Future<User> updateForAdmin(int id, Map<String, dynamic> request) async {
+    var url = "${BaseProvider.baseUrl}User/$id/update_for_admin";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var body = jsonEncode(request);
+
+    var response = await http.put(uri, headers: headers, body: body);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Greška prilikom ažuriranja korisnika.");
+    }
+  }
 }

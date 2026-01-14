@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:coworkhub_desktop/models/city.dart';
 import 'package:coworkhub_desktop/providers/city_provider.dart';
 import 'package:coworkhub_desktop/screens/user_details_screen.dart';
+import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
-import '../models/user.dart'; // ovo je tvoj User model
+import '../models/user.dart';
 import '../providers/user_provider.dart';
 
 class UsersScreen extends StatefulWidget {
@@ -167,108 +168,124 @@ class _UsersScreenState extends State<UsersScreen> {
     showDialog(
       context: context,
       builder: (_) {
-        return AlertDialog(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Filteri",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        String? tempCity = selectedCityId;
+        String tempActive = selectedActive;
+        String tempDeleted = selectedDeleted;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Filteri",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  InkWell(
+                    child: const Icon(Icons.close, size: 22),
+                    onTap: () => Navigator.pop(context),
+                  ),
+                ],
               ),
-              InkWell(
-                child: const Icon(Icons.close, size: 22),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          content: SizedBox(
-            width: 500,
-            child: GridView(
-              shrinkWrap: true,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                childAspectRatio: 3,
-              ),
-              children: [
-                // City
-                Column(
+              content: SizedBox(
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text("Grad"),
                     DropdownButton<String>(
                       isExpanded: true,
-                      value: selectedCityId,
+                      value: tempCity,
                       items: cityOptions,
                       onChanged: (val) {
-                        setState(() => selectedCityId = val);
+                        setDialogState(() => tempCity = val);
                       },
                     ),
-                  ],
-                ),
+                    const SizedBox(height: 12),
 
-                // Active
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
                     const Text("Aktivnost"),
                     DropdownButton<String>(
                       isExpanded: true,
-                      value: selectedActive,
+                      value: tempActive,
                       items: activeOptions,
                       onChanged: (val) {
-                        setState(() => selectedActive = val!);
+                        setDialogState(() => tempActive = val!);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    const Text("Obrisani"),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: tempDeleted,
+                      items: deletedOptions,
+                      onChanged: (val) {
+                        setDialogState(() => tempDeleted = val!);
                       },
                     ),
                   ],
                 ),
-
-                // Deleted
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              actions: [
+                Row(
                   children: [
-                    const Text("Obrisani"),
-                    DropdownButton<String>(
-                      isExpanded: true,
-                      value: selectedDeleted,
-                      items: deletedOptions,
-                      onChanged: (val) {
-                        setState(() => selectedDeleted = val!);
-                      },
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // kada potvrdiš, prenesi vrijednosti u glavni state
+                          setState(() {
+                            selectedCityId = tempCity;
+                            selectedActive = tempActive;
+                            selectedDeleted = tempDeleted;
+                            page = 1; // resetuj na prvu stranicu
+                          });
+                          Navigator.pop(context);
+                          _fetchUsers(); // refresh liste
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "Primijeni",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedCityId = null;
+                            selectedActive = "true";
+                            selectedDeleted = "false";
+                            page = 1;
+                          });
+                          Navigator.pop(context);
+                          _fetchUsers();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[300],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "Resetiraj",
+                          style: TextStyle(fontSize: 16, color: Colors.black),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ],
-            ),
-          ),
-
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _fetchUsers();
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: const Text(
-                "Potvrdi",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // RESET FILTER
-                setState(() {
-                  selectedCityId = null;
-                  selectedActive = "true";
-                  selectedDeleted = "false";
-                });
-                Navigator.pop(context);
-                _fetchUsers();
-              },
-              child: const Text("Resetiraj"),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -292,6 +309,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   decoration: InputDecoration(
                     labelText: "Pretraži...",
                     prefixIcon: const Icon(Icons.search),
+                    labelStyle: TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -305,6 +323,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   decoration: InputDecoration(
                     labelText: "Email",
                     prefixIcon: const Icon(Icons.search),
+                    labelStyle: TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -328,7 +347,6 @@ class _UsersScreenState extends State<UsersScreen> {
           const SizedBox(height: 20),
 
           // ------------------- TABELA -------------------
-          // ------------------- TABELA -------------------
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -336,7 +354,11 @@ class _UsersScreenState extends State<UsersScreen> {
                 ? const Center(
                     child: Text(
                       "Nema podataka za prikazivanje",
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   )
                 : LayoutBuilder(
@@ -436,13 +458,78 @@ class _UsersScreenState extends State<UsersScreen> {
                                                 );
                                               },
                                             ),
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.delete,
-                                                color: Colors.red,
+                                            if (!user.isDeleted!)
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete,
+                                                  color: Colors.red,
+                                                ),
+                                                onPressed: () async {
+                                                  final confirmed = await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (context) => AlertDialog(
+                                                      title: const Text(
+                                                        "Potvrda brisanja",
+                                                      ),
+                                                      content: const Text(
+                                                        "Da li ste sigurni da želite obrisati korisnika?",
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.of(
+                                                                context,
+                                                              ).pop(true),
+                                                          style:
+                                                              ElevatedButton.styleFrom(
+                                                                backgroundColor:
+                                                                    Colors.blue,
+                                                              ),
+                                                          child: const Text(
+                                                            "Da",
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.of(
+                                                                context,
+                                                              ).pop(false),
+                                                          child: const Text(
+                                                            "Ne",
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+
+                                                  if (confirmed == true) {
+                                                    try {
+                                                      await _userProvider
+                                                          .delete(user.usersId);
+                                                      showTopFlushBar(
+                                                        context: context,
+                                                        message:
+                                                            "Korisnik uspješno obrisan",
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                      );
+                                                      await _fetchUsers();
+                                                    } catch (e) {
+                                                      showTopFlushBar(
+                                                        context: context,
+                                                        message:
+                                                            "Brisanje nije uspjelo",
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      );
+                                                    }
+                                                  }
+                                                },
                                               ),
-                                              onPressed: () {},
-                                            ),
                                           ],
                                         ),
                                       ),

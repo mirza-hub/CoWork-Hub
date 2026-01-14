@@ -1,20 +1,24 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:coworkhub_desktop/models/resource.dart';
+import 'package:coworkhub_desktop/models/review.dart';
 import 'package:coworkhub_desktop/models/space_unit.dart';
 import 'package:coworkhub_desktop/models/space_unit_image.dart';
 import 'package:coworkhub_desktop/models/working_space.dart';
 import 'package:coworkhub_desktop/models/workspace_type.dart';
 import 'package:coworkhub_desktop/providers/base_provider.dart';
 import 'package:coworkhub_desktop/providers/resource_provider.dart';
+import 'package:coworkhub_desktop/providers/review_provider.dart';
 import 'package:coworkhub_desktop/providers/space_unit_image_provider.dart';
 import 'package:coworkhub_desktop/providers/space_unit_provider.dart';
 import 'package:coworkhub_desktop/providers/space_unit_resources_provider.dart';
 import 'package:coworkhub_desktop/providers/workspace_type_provider.dart';
 import 'package:coworkhub_desktop/screens/working_space_details_screen.dart';
+import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:another_flushbar/flushbar.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 class SpaceUnitFormScreen extends StatefulWidget {
@@ -59,6 +63,15 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
   late SpaceUnitImageProvider _imageProvider;
   late SpaceUnit? _currentSpaceUnit;
 
+  Map<String, String> actionDisplayNames = {
+    'activate': 'Aktiviraj',
+    'delete': 'Obriši',
+    'hide': 'Sakrij',
+    'setmaintenance': 'Održavanje',
+    'edit': 'Uredi',
+    'restore': 'Vrati',
+  };
+
   bool _loadingResources = true;
   bool _loadingWorkspaceTypes = true;
   bool _loadingImages = true;
@@ -76,7 +89,7 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
     _currentSpaceUnit = widget.spaceUnit;
 
@@ -164,6 +177,7 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
     final filter = {
       'SpaceUnitId': _currentSpaceUnit!.spaceUnitId,
       'RetrieveAll': true,
+      'IsDeleted': false,
     };
     try {
       final images = await _imageProvider.get(filter: filter);
@@ -328,7 +342,11 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
       );
 
       await _loadImages();
-      _showSuccessFlushbar("Slike uspješno dodane!");
+      showTopFlushBar(
+        context: context,
+        message: "Slike uspješno dodane",
+        backgroundColor: Colors.green,
+      );
     } catch (e) {
       String message = "Greška prilikom odabira slika.";
 
@@ -351,6 +369,15 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
         flushbarPosition: FlushbarPosition.TOP,
       ).show(context);
     }
+  }
+
+  void _openImageViewer(int initialIndex) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            ImageViewer(images: _images, initialIndex: initialIndex),
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -402,7 +429,11 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
         });
         await _loadImages();
         await _loadAllowedActions();
-        await _showSuccessFlushbar("Prostorna jedinica uspješno ažurirana.");
+        showTopFlushBar(
+          context: context,
+          message: "Prostorna jedinica uspješno ažurirana",
+          backgroundColor: Colors.green,
+        );
       } catch (e) {
         String message = "Greška prilikom ažuriranja prostornih jedinica.";
 
@@ -614,16 +645,19 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
         ),
         TabBar(
           controller: _tabController,
-          labelColor: Colors.black,
+          labelColor: Colors.blue,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: Colors.blue,
           tabs: const [
             Tab(text: "Podaci"),
             Tab(text: "Slike"),
+            Tab(text: "Recenzije"),
           ],
         ),
         Expanded(
           child: TabBarView(
             controller: _tabController,
-            children: [_buildDataTab(), _buildImagesTab()],
+            children: [_buildDataTab(), _buildImagesTab(), _buildReviewsTab()],
           ),
         ),
       ],
@@ -637,20 +671,41 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
         key: _formKey,
         child: ListView(
           children: [
-            _buildInput(_nameController, "Naziv"),
+            _buildInput(
+              _nameController,
+              "Naziv",
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(40),
+                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s\-]')),
+              ],
+            ),
             const SizedBox(height: 16),
-            _buildInput(_descriptionController, "Opis", maxLines: 3),
+            _buildInput(
+              _descriptionController,
+              "Opis",
+              maxLines: 3,
+              inputFormatters: [LengthLimitingTextInputFormatter(200)],
+            ),
             const SizedBox(height: 16),
             _buildInput(
               _capacityController,
               "Kapacitet",
               keyboard: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
             ),
             const SizedBox(height: 16),
             _buildInput(
               _priceController,
               "Cijena po danu (KM)",
-              keyboard: TextInputType.number,
+              keyboard: TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+              ],
             ),
             const SizedBox(height: 16),
             _loadingWorkspaceTypes
@@ -795,7 +850,7 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                       ),
                     ),
                     child: Text(
-                      action,
+                      actionDisplayNames[action.toLowerCase()] ?? action,
                       style: const TextStyle(fontSize: 14, color: Colors.white),
                     ),
                   );
@@ -859,7 +914,11 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                 ? const Center(
                     child: Text(
                       "Nema slika za prikaz",
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   )
                 : GridView.builder(
@@ -868,43 +927,159 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                           crossAxisCount: 4,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
+                          childAspectRatio: 1,
                         ),
                     itemCount: _images.length + _selectedImagesBytes.length,
                     itemBuilder: (_, index) {
-                      if (index < _images.length) {
+                      bool isNetworkImage = index < _images.length;
+                      Widget imageWidget;
+                      if (isNetworkImage) {
                         final url =
                             "${BaseProvider.baseUrl}${_images[index].imagePath}";
-                        return _buildImageTile(
-                          child: Image.network(
-                            url,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            },
-                            errorBuilder: (_, __, ___) =>
-                                const Icon(Icons.broken_image),
-                          ),
+                        imageWidget = Image.network(
+                          url,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.broken_image),
                         );
                       } else {
-                        // Tek dodana slika iz memorije
                         final bytes =
                             _selectedImagesBytes[index - _images.length];
-                        return _buildImageTile(
-                          child: Image.memory(
-                            bytes,
-                            fit: BoxFit.cover,
-                            gaplessPlayback: true,
-                          ),
+                        imageWidget = Image.memory(
+                          bytes,
+                          fit: BoxFit.cover,
+                          gaplessPlayback: true,
                         );
                       }
+
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                _openImageViewer(index);
+                              },
+                              child: imageWidget,
+                            ),
+                            if (isEditableForm)
+                              Positioned(
+                                top: 1,
+                                right: 1,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    shape: BoxShape.rectangle,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
+                                      size: 30,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () async {
+                                      bool? confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text("Potvrda brisanja"),
+                                          content: const Text(
+                                            "Da li ste sigurni da želite obrisati ovu sliku?",
+                                          ),
+                                          actions: [
+                                            ElevatedButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.blue,
+                                              ),
+                                              child: const Text(
+                                                "Da",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text("Ne"),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+
+                                      if (confirm != true) return;
+
+                                      try {
+                                        if (isNetworkImage) {
+                                          await _imageProvider.delete(
+                                            _images[index].imageId!,
+                                          );
+                                          await _loadImages();
+                                        } else {
+                                          // Briši iz memorije (samo kreiranje)
+                                          setState(() {
+                                            _selectedImagesBytes.removeAt(
+                                              index - _images.length,
+                                            );
+                                          });
+                                        }
+
+                                        showTopFlushBar(
+                                          context: context,
+                                          message: "Slika je obrisana",
+                                          backgroundColor: Colors.green,
+                                        );
+                                      } catch (e) {
+                                        showTopFlushBar(
+                                          context: context,
+                                          message:
+                                              "Greška pri brisanju slike: $e",
+                                          backgroundColor: Colors.red,
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
                     },
                   ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildReviewsTab() {
+    if (!isEdit) {
+      return const Center(
+        child: Text(
+          "Recenzije su dostupne tek nakon kreiranja prostorne jedinice.",
+          style: TextStyle(
+            fontSize: 18,
+            color: Colors.grey,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
+    return AdminReviewsTab(
+      spaceUnitId: _currentSpaceUnit!.spaceUnitId!,
+      highlightedReservationId: null,
     );
   }
 
@@ -923,17 +1098,37 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
     String label, {
     TextInputType keyboard = TextInputType.text,
     int maxLines = 1,
+    int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: c,
       maxLines: maxLines,
+      maxLength: maxLength,
       readOnly: !isEditableForm,
       keyboardType: keyboard,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
       ),
-      validator: (v) => v == null || v.isEmpty ? "$label je obavezan" : null,
+      validator: (v) {
+        if (v == null || v.isEmpty) return "$label je obavezan";
+
+        if (label == "Naziv" && !RegExp(r'^[a-zA-Z0-9\s\-]+$').hasMatch(v)) {
+          return "Naziv može sadržavati samo slova, brojeve i crticu (-)";
+        }
+
+        if (label == "Kapacitet" && int.tryParse(v) == null) {
+          return "Kapacitet mora biti broj";
+        }
+
+        if (label == "Cijena po danu (KM)" && double.tryParse(v) == null) {
+          return "Cijena mora biti broj";
+        }
+
+        return null;
+      },
     );
   }
 
@@ -1094,6 +1289,278 @@ class _LocalImageViewerState extends State<_LocalImageViewer> {
       body: Stack(
         children: [
           Center(child: imageWidget),
+          Positioned(
+            left: 16,
+            top: 0,
+            bottom: 0,
+            child: IconButton(
+              iconSize: 48,
+              color: Colors.white,
+              icon: const Icon(Icons.arrow_back),
+              onPressed: _prev,
+            ),
+          ),
+          Positioned(
+            right: 16,
+            top: 0,
+            bottom: 0,
+            child: IconButton(
+              iconSize: 48,
+              color: Colors.white,
+              icon: const Icon(Icons.arrow_forward),
+              onPressed: _next,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AdminReviewsTab extends StatefulWidget {
+  final int spaceUnitId;
+  final int? highlightedReservationId;
+
+  const AdminReviewsTab({
+    super.key,
+    required this.spaceUnitId,
+    this.highlightedReservationId,
+  });
+
+  @override
+  State<AdminReviewsTab> createState() => _AdminReviewsTabState();
+}
+
+class _AdminReviewsTabState extends State<AdminReviewsTab> {
+  List<Review> reviews = [];
+  bool loading = false;
+  int page = 1;
+  bool hasMore = true;
+  final int pageSize = 10;
+
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    _fetchReviews();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent &&
+        !loading &&
+        hasMore) {
+      page++;
+      _fetchReviews();
+    }
+  }
+
+  Future<void> _fetchReviews({bool reset = false}) async {
+    if (loading) return;
+
+    if (reset) {
+      reviews.clear();
+      page = 1;
+      hasMore = true;
+    }
+
+    setState(() => loading = true);
+
+    final ReviewProvider provider = ReviewProvider();
+
+    final filter = {
+      "SpaceUnitId": widget.spaceUnitId,
+      "IncludeReservation": true,
+      "Page": page,
+      "PageSize": pageSize,
+      "IsDeleted": false,
+    };
+
+    try {
+      final result = await provider.get(filter: filter);
+
+      setState(() {
+        if (reset) {
+          reviews = result.resultList;
+        } else {
+          reviews.addAll(result.resultList);
+        }
+
+        loading = false;
+        if (result.resultList.length < pageSize) hasMore = false;
+      });
+    } catch (e) {
+      setState(() => loading = false);
+      showTopFlushBar(
+        context: context,
+        message: "Greška pri dohvaćanju recenzija: $e",
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return reviews.isEmpty && !loading
+        ? const Center(
+            child: Text(
+              "Nema recenzija za prikaz",
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          )
+        : ListView.separated(
+            controller: _scrollController,
+            itemCount: reviews.length + (hasMore ? 1 : 0),
+            separatorBuilder: (_, __) =>
+                const Divider(height: 1, color: Colors.grey),
+            itemBuilder: (context, index) {
+              if (index == reviews.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              final r = reviews[index];
+              final isHighlighted =
+                  widget.highlightedReservationId != null &&
+                  r.reservation?.reservationId ==
+                      widget.highlightedReservationId;
+
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isHighlighted ? Colors.blue[50] : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: isHighlighted
+                      ? Border.all(color: Colors.blue, width: 1.5)
+                      : null,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "${r.reservation?.users?.firstName} ${r.reservation?.users?.lastName}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          "${r.createdAt.day}.${r.createdAt.month}.${r.createdAt.year}",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: List.generate(
+                        5,
+                        (i) => Icon(
+                          i < r.rating ? Icons.star : Icons.star_border,
+                          color: Colors.orange,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(r.comment, style: const TextStyle(fontSize: 14)),
+                  ],
+                ),
+              );
+            },
+          );
+  }
+}
+
+class ImageViewer extends StatefulWidget {
+  final List<SpaceUnitImage> images;
+  final int initialIndex;
+
+  const ImageViewer({
+    required this.images,
+    required this.initialIndex,
+    super.key,
+  });
+
+  @override
+  State<ImageViewer> createState() => _ImageViewerState();
+}
+
+class _ImageViewerState extends State<ImageViewer> {
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
+
+  void _next() {
+    if (_currentIndex < widget.images.length - 1)
+      setState(() => _currentIndex++);
+  }
+
+  void _prev() {
+    if (_currentIndex > 0) setState(() => _currentIndex--);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl =
+        "${BaseProvider.baseUrl}${widget.images[_currentIndex].imagePath}";
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          "${_currentIndex + 1} / ${widget.images.length}",
+          style: const TextStyle(color: Colors.white, fontSize: 18),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white, size: 28),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          Center(
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const Center(child: CircularProgressIndicator());
+              },
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.broken_image, color: Colors.white, size: 50),
+            ),
+          ),
           Positioned(
             left: 16,
             top: 0,

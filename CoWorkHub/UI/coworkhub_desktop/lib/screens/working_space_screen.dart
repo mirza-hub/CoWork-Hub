@@ -116,7 +116,8 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
       context: context,
       builder: (context) {
         int? selectedCity = filterCityId;
-        bool? selectedDeleted = filterIsDeleted;
+        bool? selectedDeleted = filterIsDeleted ?? false;
+
         return AlertDialog(
           title: const Text("Filteri"),
           content: Column(
@@ -144,8 +145,8 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                 initialValue: selectedDeleted,
                 items: const [
                   DropdownMenuItem(value: null, child: Text("Svi")),
-                  DropdownMenuItem(value: false, child: Text("Neobrisani")),
                   DropdownMenuItem(value: true, child: Text("Obrisani")),
+                  DropdownMenuItem(value: false, child: Text("Neobrisani")),
                 ],
                 onChanged: (v) => selectedDeleted = v,
                 decoration: const InputDecoration(labelText: "Obrisan"),
@@ -153,23 +154,57 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
             ],
           ),
           actions: [
-            ElevatedButton(
-              onPressed: () {
-                filterCityId = selectedCity;
-                filterIsDeleted = selectedDeleted;
-                page = 1;
-                _loadSpaces();
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: const Text(
-                "Primijeni",
-                style: TextStyle(color: Colors.white),
+            SizedBox(
+              width: 120,
+              child: ElevatedButton(
+                onPressed: () {
+                  filterCityId = selectedCity;
+                  filterIsDeleted = selectedDeleted;
+                  page = 1;
+                  _loadSpaces();
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  "Primijeni",
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
               ),
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Otkaži"),
+            SizedBox(
+              width: 120,
+              height: 33,
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    filterCityId = null;
+                    filterIsDeleted = false;
+                    page = 1;
+                  });
+                  _loadSpaces();
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[300],
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  "Resetiraj",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             ),
           ],
         );
@@ -294,7 +329,11 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                 ? const Center(
                     child: Text(
                       "Nema podataka za prikazivanje",
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   )
                 : LayoutBuilder(
@@ -365,54 +404,65 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                                           },
                                           icon: const Icon(Icons.info_outline),
                                         ),
-                                        IconButton(
-                                          onPressed: () async {
-                                            bool?
-                                            confirm = await showDialog<bool>(
-                                              context: context,
-                                              builder: (context) => AlertDialog(
-                                                title: const Text(
-                                                  "Potvrda brisanja",
-                                                ),
-                                                content: const Text(
-                                                  "Da li želite obrisati ovaj zapis?",
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          context,
-                                                          true,
-                                                        ),
-                                                    child: const Text("Da"),
+                                        if (ws.isDeleted != true)
+                                          IconButton(
+                                            onPressed: () async {
+                                              bool?
+                                              confirm = await showDialog<bool>(
+                                                context: context,
+                                                builder: (context) => AlertDialog(
+                                                  title: const Text(
+                                                    "Potvrda brisanja",
                                                   ),
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          context,
-                                                          false,
-                                                        ),
-                                                    child: const Text("Ne"),
+                                                  content: const Text(
+                                                    "Da li želite obrisati ovaj zapis?",
                                                   ),
-                                                ],
-                                              ),
-                                            );
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                            context,
+                                                            true,
+                                                          ),
+                                                      style:
+                                                          ElevatedButton.styleFrom(
+                                                            backgroundColor:
+                                                                Colors.blue,
+                                                          ),
+                                                      child: const Text(
+                                                        "Da",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                            context,
+                                                            false,
+                                                          ),
+                                                      child: const Text("Ne"),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
 
-                                            if (confirm == true) {
-                                              await provider.delete(
-                                                ws.workingSpacesId,
-                                              );
-                                              _loadSpaces();
-                                              showSuccessFlushbar(
-                                                "Uspješno brisanje",
-                                              );
-                                            }
-                                          },
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.red,
+                                              if (confirm == true) {
+                                                await provider.delete(
+                                                  ws.workingSpacesId,
+                                                );
+                                                _loadSpaces();
+                                                showSuccessFlushbar(
+                                                  "Uspješno brisanje",
+                                                );
+                                              }
+                                            },
+                                            icon: const Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
+                                            ),
                                           ),
-                                        ),
                                       ],
                                     ),
                                   ),

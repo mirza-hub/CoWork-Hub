@@ -5,6 +5,7 @@ using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace CoWorkHub.Services.Services
 {
@@ -27,6 +28,9 @@ namespace CoWorkHub.Services.Services
                 query = query.Where(x => x.CityName.ToLower().StartsWith(search.CityNameGTE.ToLower()));
             }
 
+            if (search.IsCountryIncluded)
+                query = query.Include(x => x.Country);
+
             return query;
         }
 
@@ -41,17 +45,45 @@ namespace CoWorkHub.Services.Services
             if (existingCity != null)
             {
                 if (existingCity.CityName.Equals(request.CityName, StringComparison.OrdinalIgnoreCase))
-                    throw new UserException("A city with this name already exists in the database.");
+                    throw new UserException("Grad sa tim imenom već postoji u bazi.");
 
                 if (existingCity.PostalCode.Equals(request.PostalCode, StringComparison.OrdinalIgnoreCase))
-                    throw new UserException("This postal code is already assigned.");
+                    throw new UserException("Ovaj poštanski broj je već zauzet.");
             }
+
+            entity.Latitude = 0;
+            entity.Longitude = 0;
 
             if (!string.IsNullOrWhiteSpace(request.CityName))
             {
-                var coordinates = _geoLocationService.GetCoordinatesAsync(request.CityName).Result;
-                entity.Latitude = coordinates.lat;
-                entity.Longitude = coordinates.lon;
+                try
+                {
+                    var coordinates = _geoLocationService.GetCoordinatesAsync(request.CityName).Result;
+                    entity.Latitude = coordinates.lat;
+                    entity.Longitude = coordinates.lon;
+                }
+                catch (AggregateException ex) when (ex.InnerException is UserException)
+                {
+                    // Grad nije pronađen → ostaje 0,0
+                }
+
+            }
+
+        }
+
+        public override void BeforeUpdate(CityUpdateRequest request, City entity)
+        {
+            var existingCity = Context.Cities
+                .FirstOrDefault(x => x.CityName.ToLower() == request.CityName.ToLower()
+                       || x.PostalCode.ToLower() == request.PostalCode.ToLower());
+
+            if (existingCity != null)
+            {
+                if (existingCity.CityName.Equals(request.CityName, StringComparison.OrdinalIgnoreCase))
+                    throw new UserException("Grad sa tim imenom već postoji u bazi.");
+
+                if (existingCity.PostalCode.Equals(request.PostalCode, StringComparison.OrdinalIgnoreCase))
+                    throw new UserException("Ovaj poštanski broj je već zauzet.");
             }
         }
     }

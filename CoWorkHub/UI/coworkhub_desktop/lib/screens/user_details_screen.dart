@@ -4,12 +4,12 @@ import 'package:coworkhub_desktop/models/user.dart';
 import 'package:coworkhub_desktop/models/city.dart';
 import 'package:coworkhub_desktop/providers/city_provider.dart';
 import 'package:coworkhub_desktop/providers/role_provider.dart';
+import 'package:coworkhub_desktop/providers/user_provider.dart';
 import 'package:coworkhub_desktop/screens/users_screen.dart';
+import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:multi_select_flutter/dialog/multi_select_dialog_field.dart';
-import 'package:multi_select_flutter/util/multi_select_item.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   final void Function(Widget) onChangeScreen;
@@ -28,6 +28,7 @@ class UserDetailsScreen extends StatefulWidget {
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final CityProvider cityProvider = CityProvider();
   final RoleProvider roleProvider = RoleProvider();
+  final UserProvider _userProvider = UserProvider();
 
   City? city;
   List<Role> selectedRoles = [];
@@ -45,13 +46,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     super.initState();
     _loadCity();
     activeValue = widget.user.isActive; // default active state
-    _loadRoles();
+    _loadRoles(); // selectedRoles će se postaviti nakon učitavanja
     profileImageBase64 = widget.user.profileImageBase64;
-    if (widget.user.userRoles != null) {
-      selectedRoles = widget.user.userRoles!
-          .map((ur) => roles.firstWhere((r) => r.rolesId == ur.roleId))
-          .toList();
-    }
+
+    // OVO IZBACI/UKLONI
+    // if (widget.user.userRoles != null) {
+    //   selectedRoles = widget.user.userRoles!
+    //       .map((ur) => roles.firstWhere((r) => r.rolesId == ur.roleId))
+    //       .toList();
+    // }
   }
 
   // ---------------------------------------------
@@ -199,36 +202,52 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       // -----------------------------------------
                       // PROFILE IMAGE
                       // -----------------------------------------
-                      GestureDetector(
-                        onTap: _pickImage,
-                        child: Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey.shade300),
-                            color: Colors.grey.shade200,
-                            image:
-                                (profileImageBase64 != null &&
-                                    profileImageBase64!.isNotEmpty)
-                                ? DecorationImage(
-                                    image: MemoryImage(
-                                      base64Decode(profileImageBase64!),
-                                    ),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
+                      Column(
+                        children: [
+                          GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              width: 160,
+                              height: 160,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey.shade300),
+                                color: Colors.grey.shade200,
+                                image:
+                                    (profileImageBase64 != null &&
+                                        profileImageBase64!.isNotEmpty)
+                                    ? DecorationImage(
+                                        image: MemoryImage(
+                                          base64Decode(profileImageBase64!),
+                                        ),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                              child:
+                                  (profileImageBase64 == null ||
+                                      profileImageBase64!.isEmpty)
+                                  ? const Icon(
+                                      Icons.person,
+                                      size: 100,
+                                      color: Colors.grey,
+                                    )
+                                  : null,
+                            ),
                           ),
-                          child:
-                              (profileImageBase64 == null ||
-                                  profileImageBase64!.isEmpty)
-                              ? const Icon(
-                                  Icons.person,
-                                  size: 100,
-                                  color: Colors.grey,
-                                )
-                              : null,
-                        ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: _pickImage,
+                            child: const Text(
+                              "Odaberite drugu sliku",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 20),
@@ -244,7 +263,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       ),
                       _buildField("Kreiran profil", user.createdAt.toString()),
 
-                      _buildRolesMultiSelect(),
+                      _buildRoleToggles(),
 
                       const SizedBox(height: 25),
 
@@ -256,9 +275,52 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           width: 150,
                           height: 40,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // TODO: backend update
+                            onPressed: () async {
+                              try {
+                                // 1️⃣ Pripremi listu RolesId
+                                List<int> rolesId = selectedRoles
+                                    .map((r) => r.rolesId)
+                                    .toList();
+
+                                // 2️⃣ Kreiraj request
+                                final request = {
+                                  "ProfileImageBase64": profileImageBase64,
+                                  "IsActive": activeValue,
+                                  "RolesId": rolesId,
+                                };
+
+                                // 3️⃣ Pozovi provider
+                                final updatedUser = await _userProvider
+                                    .updateForAdmin(
+                                      widget.user.usersId,
+                                      request,
+                                    );
+                                showTopFlushBar(
+                                  context: context,
+                                  message: "Korisnik je uspješno ažuriran",
+                                  backgroundColor: Colors.green,
+                                );
+
+                                // setState(() {
+                                //   widget.user.isActive =
+                                //       activeValue ?? widget.user.isActive;
+                                //   widget.user.profileImageBase64 =
+                                //       profileImageBase64;
+                                // });
+
+                                // 5️⃣ Obavijesti korisnika
+                              } catch (e, stack) {
+                                debugPrint("UPDATE ERROR: $e");
+                                debugPrint(stack.toString());
+
+                                showTopFlushBar(
+                                  context: context,
+                                  message: e.toString(),
+                                  backgroundColor: Colors.red,
+                                );
+                              }
                             },
+
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
                               shape: RoundedRectangleBorder(
@@ -331,9 +393,65 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   // --------------------------------------------------------
-  // ROLE DROPDOWN
+  // ROLE TOGGLES (Admin/User) - barem jedna mora biti izabrana
   // --------------------------------------------------------
-  Widget _buildRolesMultiSelect() {
+  Widget _buildRoleToggles() {
+    bool isAdminSelected = selectedRoles.any(
+      (role) => role.roleName.toLowerCase() == "admin",
+    );
+    bool isUserSelected = selectedRoles.any(
+      (role) => role.roleName.toLowerCase() == "user",
+    );
+
+    void toggleRole(String roleName) {
+      setState(() {
+        // Ako pokušavaš isključiti posljednju izabranu rolu, ignoriraj
+        if (roleName.toLowerCase() == "admin") {
+          if (isAdminSelected) {
+            if (selectedRoles.length > 1) {
+              selectedRoles.removeWhere(
+                (role) => role.roleName.toLowerCase() == "admin",
+              );
+            }
+            // inače ne radimo ništa
+          } else {
+            selectedRoles.add(
+              roles.firstWhere(
+                (role) => role.roleName.toLowerCase() == "admin",
+                orElse: () => Role(
+                  rolesId: 0,
+                  roleName: "Admin",
+                  description: "",
+                  isDeleted: false,
+                ),
+              ),
+            );
+          }
+        } else if (roleName.toLowerCase() == "user") {
+          if (isUserSelected) {
+            if (selectedRoles.length > 1) {
+              selectedRoles.removeWhere(
+                (role) => role.roleName.toLowerCase() == "user",
+              );
+            }
+            // inače ne radimo ništa
+          } else {
+            selectedRoles.add(
+              roles.firstWhere(
+                (role) => role.roleName.toLowerCase() == "user",
+                orElse: () => Role(
+                  rolesId: 0,
+                  roleName: "User",
+                  description: "",
+                  isDeleted: false,
+                ),
+              ),
+            );
+          }
+        }
+      });
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: SizedBox(
@@ -350,26 +468,62 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               ),
             ),
             const SizedBox(height: 6),
-
-            MultiSelectDialogField<Role>(
-              items: roles
-                  .map((role) => MultiSelectItem<Role>(role, role.roleName))
-                  .toList(),
-              initialValue: selectedRoles,
-              searchable: true,
-              title: const Text("Odaberi role"),
-              buttonText: const Text("Odaberi role"),
-              selectedColor: Colors.blue,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey.shade400),
-              ),
-
-              onConfirm: (values) {
-                setState(() {
-                  selectedRoles = List<Role>.from(values);
-                });
-              },
+            Row(
+              children: [
+                // Admin toggle
+                GestureDetector(
+                  onTap: () => toggleRole("Admin"),
+                  child: Container(
+                    width: 80,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isAdminSelected
+                          ? Colors.lightBlue[300]
+                          : Colors.white,
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      "Admin",
+                      style: TextStyle(
+                        color: isAdminSelected ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // User toggle
+                GestureDetector(
+                  onTap: () => toggleRole("User"),
+                  child: Container(
+                    width: 80,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isUserSelected
+                          ? Colors.lightBlue[300]
+                          : Colors.white,
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      "User",
+                      style: TextStyle(
+                        color: isUserSelected ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

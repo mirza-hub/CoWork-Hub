@@ -11,5 +11,7 @@ namespace CoWorkHub.Model
         public string PostalCode { get; set; } = null!;
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public int CountryId { get; set; }
+        public virtual Country Country { get; set; } = null!;
     }
 }
