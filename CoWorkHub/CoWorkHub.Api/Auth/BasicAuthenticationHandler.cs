@@ -42,7 +42,8 @@ namespace CoWorkHub.Api.Auth
                 var claims = new List<Claim>()
                 {
                     new Claim(ClaimTypes.Name, user.FirstName),
-                    new Claim(ClaimTypes.NameIdentifier, user.Username)
+                    new Claim(ClaimTypes.NameIdentifier, user.Username),
+                    new Claim("UserId", user.UsersId.ToString()),
                 };
 
                 foreach(var role in user.UserRoles)

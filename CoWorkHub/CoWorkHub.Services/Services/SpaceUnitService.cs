@@ -74,7 +74,7 @@ namespace CoWorkHub.Services.Services
                                     r.EndDate > from
                                 )
                                 .Sum(r => (int?)r.PeopleCount) ?? 0
-                            ) + requestedPeopleCount <= su.Capacity
+                            ) + requestedPeopleCount > su.Capacity
                         )
                         : !Context.Reservations.Any(r =>
                             r.SpaceUnitId == su.SpaceUnitId &&

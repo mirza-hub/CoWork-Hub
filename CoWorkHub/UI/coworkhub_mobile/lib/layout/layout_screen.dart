@@ -148,7 +148,7 @@ class _LayoutScreenState extends State<LayoutScreen> {
                             currentUser = null;
                             AuthProvider.isSignedIn = false;
                             AuthProvider.userId = null;
-                            _currentScreen = const HomePage();
+                            _currentScreen = HomePage(key: UniqueKey());
                             _activeItem = "Početna";
                             isSidebarOpen = false;
                           });

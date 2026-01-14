@@ -298,7 +298,14 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
         "peopleCount": widget.peopleCount,
       });
 
-      // Ovdje push-ujemo PaymentMethodScreen i čekamo rezultat
+      showTopFlushBar(
+        context: context,
+        message: "Rezervacija je uspješno izvršena",
+        backgroundColor: Colors.green,
+      );
+
+      await Future.delayed(const Duration(seconds: 3));
+
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
@@ -311,18 +318,11 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
         ),
       );
 
-      if (result == true) {
+      if (result == false) {
         showTopFlushBar(
           context: context,
-          message: "Rezervacija je uspješno izvršena!",
-          backgroundColor: Colors.green,
-        );
-
-        fetchUnits(reset: true);
-      } else if (result == false) {
-        showTopFlushBar(
-          context: context,
-          message: "Rezervacija nije bila uspješna.",
+          message:
+              "Plaćanje nije bilo uspješno, nastavite sa plaćanjem kasnije.",
           backgroundColor: Colors.red,
         );
       }

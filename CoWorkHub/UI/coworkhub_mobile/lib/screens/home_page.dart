@@ -1,8 +1,13 @@
 import 'package:coworkhub_mobile/models/city.dart';
+import 'package:coworkhub_mobile/models/space_unit.dart';
 import 'package:coworkhub_mobile/models/workspace_type.dart';
 import 'package:coworkhub_mobile/models/paged_result.dart';
+import 'package:coworkhub_mobile/providers/base_provider.dart';
 import 'package:coworkhub_mobile/providers/city_provider.dart';
+import 'package:coworkhub_mobile/providers/recommender_provider.dart';
+import 'package:coworkhub_mobile/providers/space_unit_provider.dart';
 import 'package:coworkhub_mobile/providers/workspace_type_provider.dart';
+import 'package:coworkhub_mobile/screens/space_unit_details_screen.dart';
 import 'package:coworkhub_mobile/screens/space_unit_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -349,9 +354,225 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+              // Recommender
+              const SizedBox(height: 30),
+              const Text(
+                'Preporučeno za vas',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              RecommendedSpaceUnitsWidget(),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class RecommendedSpaceUnitsWidget extends StatefulWidget {
+  const RecommendedSpaceUnitsWidget({Key? key}) : super(key: key);
+
+  @override
+  State<RecommendedSpaceUnitsWidget> createState() =>
+      _RecommendedSpaceUnitsWidgetState();
+}
+
+class _RecommendedSpaceUnitsWidgetState
+    extends State<RecommendedSpaceUnitsWidget> {
+  List<SpaceUnit> units = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecommendedUnits();
+  }
+
+  Future<void> _loadRecommendedUnits() async {
+    try {
+      final recommender = RecommenderProvider();
+      final spaceUnitProvider = Provider.of<SpaceUnitProvider>(
+        context,
+        listen: false,
+      );
+
+      final recommendations = await recommender.getRecommendations();
+
+      final futures = recommendations.map((r) async {
+        final result = await spaceUnitProvider.get(
+          filter: {
+            "SpaceUnitId": r.spaceUnitId,
+            "IncludeImages": true,
+            "IncludeWorkingSpace": true,
+          },
+        );
+        return result.resultList.isNotEmpty ? result.resultList.first : null;
+      });
+
+      final results = await Future.wait(futures);
+      setState(() {
+        units = results.whereType<SpaceUnit>().toList();
+        loading = false;
+      });
+    } catch (e) {
+      print("Greška pri učitavanju preporuka: $e");
+      setState(() {
+        units = [];
+        loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (units.isEmpty) {
+      return const Center(child: Text("Trenutno nema preporuka za vas."));
+    }
+
+    return SizedBox(
+      height: 270, // horizontalni scroll height
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: units.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final su = units[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SpaceUnitDetailsScreen(
+                    spaceUnitId: su.spaceUnitId,
+                    dateRange: DateTimeRange(
+                      start: DateTime.now(),
+                      end: DateTime.now().add(const Duration(days: 1)),
+                    ),
+                    peopleCount: 1,
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              width: 220,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 5,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // IMAGE
+                  Container(
+                    height: 140,
+                    width: double.infinity,
+                    child: su.spaceUnitImages.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.network(
+                              "${BaseProvider.baseUrl}${su.spaceUnitImages.first.imagePath}",
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, o, s) =>
+                                  const Icon(Icons.broken_image),
+                            ),
+                          )
+                        : const Icon(Icons.image, size: 50),
+                  ),
+                  // INFO
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          su.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          softWrap: true,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: "Lokacija: ",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              TextSpan(
+                                text: su.workingSpace!.city!.cityName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: "Kapacitet: ",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              TextSpan(
+                                text: su.capacity.toString(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+                        Text(
+                          "${su.pricePerDay.toStringAsFixed(2)} KM / dan",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

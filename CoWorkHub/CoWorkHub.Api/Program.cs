@@ -7,6 +7,7 @@ using CoWorkHub.Services.RabbitMqService;
 using CoWorkHub.Services.ReservationStateMachine;
 using CoWorkHub.Services.Seed;
 using CoWorkHub.Services.Services;
+using CoWorkHub.Services.Services.Recommender;
 using CoWorkHub.Services.WorkingSpaceStateMachine;
 using FluentValidation;
 using Mapster;
@@ -58,6 +59,7 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IRabbitMqService, RabbitMqService>();
 builder.Services.AddScoped<IWorkingSpaceImageService, WorkingSpaceImagesService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IRecommenderService, RecommenderService>();
 
 builder.Services.AddControllers(x =>
 {
