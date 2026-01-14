@@ -156,7 +156,6 @@ namespace CoWorkHub.Services.Services
         {
             var today = DateTime.UtcNow.Date;
 
-            // Plaćene i završene rezervacije → Completed
             var confirmedReservations = await Context.Reservations
                 .Where(r => r.StateMachine == "confirmed" && r.EndDate < today)
                 .ToListAsync();
