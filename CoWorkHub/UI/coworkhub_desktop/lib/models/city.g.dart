@@ -12,6 +12,8 @@ City _$CityFromJson(Map<String, dynamic> json) => City(
   postalCode: json['postalCode'] as String,
   latitude: (json['latitude'] as num?)?.toDouble(),
   longitude: (json['longitude'] as num?)?.toDouble(),
+  countryId: (json['countryId'] as num).toInt(),
+  country: Country.fromJson(json['country'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$CityToJson(City instance) => <String, dynamic>{
@@ -20,4 +22,6 @@ Map<String, dynamic> _$CityToJson(City instance) => <String, dynamic>{
   'postalCode': instance.postalCode,
   'latitude': instance.latitude,
   'longitude': instance.longitude,
+  'countryId': instance.countryId,
+  'country': instance.country,
 };

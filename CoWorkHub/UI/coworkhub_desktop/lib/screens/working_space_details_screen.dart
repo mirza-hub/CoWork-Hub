@@ -14,6 +14,7 @@ import 'package:coworkhub_desktop/providers/workspace_type_provider.dart';
 import 'package:coworkhub_desktop/screens/space_unit_form_screen.dart';
 import 'package:coworkhub_desktop/screens/working_space_form_screen.dart';
 import 'package:coworkhub_desktop/screens/working_space_screen.dart';
+import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -73,7 +74,10 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     setState(() => _loadingImages = true);
     try {
       var result = await _imageProvider.get(
-        filter: {'WorkingSpaceId': widget.space.workingSpacesId},
+        filter: {
+          'WorkingSpaceId': widget.space.workingSpacesId,
+          'IsDeleted': false,
+        },
       );
       setState(() => _images = result.resultList);
     } catch (e) {
@@ -169,25 +173,18 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
         workingSpaceId: widget.space.workingSpacesId,
         base64Images: base64Images,
       );
-
-      Flushbar(
-        title: "Uspjeh",
-        message: "Slike uspješno dodane!",
-        duration: const Duration(seconds: 3),
+      showTopFlushBar(
+        context: context,
+        message: "Slike uspješno dodane",
         backgroundColor: Colors.green,
-        margin: const EdgeInsets.all(8),
-        flushbarPosition: FlushbarPosition.TOP,
-        borderRadius: BorderRadius.circular(8),
-      ).show(context);
-
+      );
       await _loadImages();
     } catch (e) {
-      Flushbar(
-        title: "Greška",
+      showTopFlushBar(
+        context: context,
         message: e.toString(),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ).show(context);
+        backgroundColor: Colors.green,
+      );
     }
   }
 
@@ -231,12 +228,9 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
               DropdownButtonFormField<bool?>(
                 value: selectedDeleted,
                 items: const [
-                  DropdownMenuItem(value: null, child: Text("Sve")),
-                  DropdownMenuItem(
-                    value: false,
-                    child: Text("Samo neobrisani"),
-                  ),
-                  DropdownMenuItem(value: true, child: Text("Samo obrisani")),
+                  DropdownMenuItem(value: null, child: Text("Svi")),
+                  DropdownMenuItem(value: true, child: Text("Obrisani")),
+                  DropdownMenuItem(value: false, child: Text("Neobrisani")),
                 ],
                 onChanged: (v) => selectedDeleted = v,
                 decoration: const InputDecoration(labelText: "Obrisani"),
@@ -253,15 +247,47 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                 _loadUnitsWithFilters();
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: const Text(
                 "Primijeni",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(fontSize: 16, color: Colors.white),
               ),
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Otkaži"),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  selectedCity = null;
+                  selectedWorkspaceType = null;
+                  selectedDeleted = false;
+
+                  filterCityId = null;
+                  filterWorkspaceTypeId = null;
+                  filterIsDeleted = false;
+                  page = 1;
+                });
+                _loadUnitsWithFilters();
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[300],
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                "Resetiraj",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ],
         );
@@ -301,7 +327,9 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
         ),
         TabBar(
           controller: _tabController,
-          labelColor: Colors.black,
+          labelColor: Colors.blue,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: Colors.blue,
           tabs: const [
             Tab(text: "Detalji"),
             Tab(text: "Prostorne jedinice"),
@@ -393,7 +421,7 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                 ),
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text(
-                  "Dodaj space unit",
+                  "Dodaj jedinicu",
                   style: TextStyle(color: Colors.white),
                 ),
               ),
@@ -411,7 +439,11 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                   ? const Center(
                       child: Text(
                         "Nema podataka za prikaz",
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -507,7 +539,11 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                 ? const Center(
                     child: Text(
                       "Nema slika za prikaz",
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   )
                 : GridView.builder(
@@ -516,40 +552,113 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                           crossAxisCount: 4,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
+                          childAspectRatio: 1,
                         ),
                     itemCount: _images.length,
                     itemBuilder: (_, index) {
                       final img = _images[index];
                       final imageUrl =
                           "${BaseProvider.baseUrl}${img.imagePath}";
-                      return GestureDetector(
-                        onTap: () => _openImageViewer(index),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.grey.shade300,
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Center(
-                                    child: Icon(
-                                      Icons.broken_image,
-                                      size: 40,
-                                      color: Colors.grey,
+
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            GestureDetector(
+                              onTap: () => _openImageViewer(index),
+                              child: Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Center(
+                                      child: Icon(
+                                        Icons.broken_image,
+                                        size: 40,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                  ),
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              top: 1,
+                              right: 1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  shape: BoxShape.rectangle,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                    size: 30,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () async {
+                                    bool? confirm = await showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text("Potvrda brisanja"),
+                                        content: const Text(
+                                          "Da li ste sigurni da želite obrisati ovu sliku?",
+                                        ),
+                                        actions: [
+                                          ElevatedButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, true),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.blue,
+                                            ),
+                                            child: const Text(
+                                              "Da",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, false),
+                                            child: const Text("Ne"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirm == true) {
+                                      try {
+                                        await _imageProvider.delete(
+                                          img.imageId!,
+                                        );
+                                        showTopFlushBar(
+                                          context: context,
+                                          message: "Slika je obrisana",
+                                          backgroundColor: Colors.green,
+                                        );
+                                        await _loadImages();
+                                      } catch (e) {
+                                        showTopFlushBar(
+                                          context: context,
+                                          message:
+                                              "Greška pri brisanju slike: $e",
+                                          backgroundColor: Colors.red,
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },

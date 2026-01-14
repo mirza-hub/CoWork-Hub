@@ -198,5 +198,53 @@ namespace CoWorkHub.Services.Services
 
             entity.IsActive = false;
         }
+
+        public Model.User UpdateForAdmin(int id, UserAdminUpdateRequest request)
+        {
+            var set = Context.Set<Database.User>();
+
+            var entity = set.Find(id);
+
+            if (entity == null)
+                throw new UserException("Entitet nije pronađen.");
+
+            entity.IsActive = (bool)request.IsActive;
+
+            if (string.IsNullOrEmpty(request.ProfileImageBase64))
+            {
+                entity.ProfileImage = null;
+            }
+            else
+            {
+                entity.ProfileImage = Convert.FromBase64String(request.ProfileImageBase64);
+            }
+
+            if (request.RolesId != null)
+            {
+                var rolesToRemove = Context.UserRoles
+                    .Where(ur => ur.UserId == id)
+                    .ToList();
+
+                Context.UserRoles.RemoveRange(rolesToRemove);
+
+                foreach (var roleId in request.RolesId)
+                {
+                    entity.UserRoles.Add(new Database.UserRole
+                    {
+                        UserId = entity.UsersId,
+                        RoleId = roleId
+                    });
+                }
+
+                Context.SaveChanges();
+            }
+
+            var userWithRoles = Context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefault(u => u.UsersId == entity.UsersId);
+
+            return Mapper.Map<Model.User>(userWithRoles);
+        }
     }
 }

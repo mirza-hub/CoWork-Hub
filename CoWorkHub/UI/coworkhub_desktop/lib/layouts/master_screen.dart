@@ -1,9 +1,9 @@
-import 'dart:convert';
-
 import 'package:coworkhub_desktop/main.dart';
 import 'package:coworkhub_desktop/models/extensions/user_image_extension.dart';
 import 'package:coworkhub_desktop/models/user.dart';
+import 'package:coworkhub_desktop/screens/dashboard_screen.dart';
 import 'package:coworkhub_desktop/screens/reservation_screen.dart';
+import 'package:coworkhub_desktop/screens/settings_screen.dart';
 import 'package:coworkhub_desktop/screens/users_screen.dart';
 import 'package:coworkhub_desktop/screens/working_space_screen.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +27,7 @@ class _MasterScreenState extends State<MasterScreen> {
     super.initState();
 
     _pages = [
-      const Center(child: Text('Dashboard Page')),
+      DashboardScreen(onChangeScreen: (newScreen) => changeScreen(newScreen)),
       UsersScreen(
         onChangeScreen: (newScreen) {
           changeScreen(newScreen);
@@ -39,6 +39,7 @@ class _MasterScreenState extends State<MasterScreen> {
         },
       ),
       ReservationScreen(onChangeScreen: (newScreen) => changeScreen(newScreen)),
+      SettingsScreen(onChangeScreen: (newScreen) => changeScreen(newScreen)),
     ];
 
     _currentChild = _pages[_selectedIndex];
@@ -99,6 +100,11 @@ class _MasterScreenState extends State<MasterScreen> {
                   icon: Icons.calendar_month,
                   label: "Rezervacije",
                 ),
+                _buildMenuItem(
+                  index: 4,
+                  icon: Icons.settings,
+                  label: "Podešavanja",
+                ),
 
                 const Spacer(),
 
@@ -158,13 +164,17 @@ class _MasterScreenState extends State<MasterScreen> {
                           const SizedBox(width: 10),
                           widget.user.getImageBytes() != null
                               ? Container(
-                                  width: 43, // ista dimenzija kao radius*2
+                                  width: 43,
                                   height: 43,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     image: DecorationImage(
-                                      image: MemoryImage(
-                                        widget.user.getImageBytes()!,
+                                      image: ResizeImage(
+                                        MemoryImage(
+                                          widget.user.getImageBytes()!,
+                                        ),
+                                        width: 43,
+                                        height: 43,
                                       ),
                                       fit: BoxFit.cover,
                                     ),
@@ -316,6 +326,8 @@ class _MasterScreenState extends State<MasterScreen> {
         return "Prostori";
       case 3:
         return "Rezervacije";
+      case 4:
+        return "Podešavanja";
       default:
         return "";
     }

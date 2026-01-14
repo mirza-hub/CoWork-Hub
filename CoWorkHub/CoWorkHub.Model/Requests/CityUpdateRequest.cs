@@ -8,5 +8,6 @@ namespace CoWorkHub.Model.Requests
     {
         public string? CityName { get; set; } = null!;
         public int? CountryId { get; set; }
+        public string? PostalCode { get; set; } = null!;
     }
 }

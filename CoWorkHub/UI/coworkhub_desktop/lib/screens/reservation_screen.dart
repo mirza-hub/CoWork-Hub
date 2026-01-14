@@ -178,7 +178,11 @@ class _ReservationScreenState extends State<ReservationScreen> {
                 ? const Center(
                     child: Text(
                       "Nema podataka za prikazivanje",
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   )
                 : SingleChildScrollView(
