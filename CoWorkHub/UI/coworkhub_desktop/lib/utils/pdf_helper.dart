@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../models/dashboard_stats.dart';
 import '../models/revenue_by_month.dart';
@@ -113,7 +112,6 @@ class PdfHelper {
       ),
     );
 
-    // Otvori dijalog za spremanje sa predloženim nazivom
     final typeGroup = XTypeGroup(label: 'pdf', extensions: ['pdf']);
     final filePath = await getSavePath(
       suggestedName: 'dashboard_stats.pdf',

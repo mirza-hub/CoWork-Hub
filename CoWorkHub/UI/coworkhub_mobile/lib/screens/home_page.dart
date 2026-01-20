@@ -74,7 +74,7 @@ class _HomePageState extends State<HomePage> {
 
   void search() {
     setState(() {
-      _submitted = true; // klikom na dugme označimo da se polja validiraju
+      _submitted = true;
     });
 
     if (_formKey.currentState!.validate() && selectedDateRange != null) {
@@ -142,7 +142,7 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // TIP PROSTORA
+                      // Tip prostora
                       FutureBuilder<PagedResult<WorkspaceType>>(
                         future: _futureSpaceTypes,
                         builder: (context, snapshot) {
@@ -183,7 +183,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 16),
 
-                      // LOKACIJA
+                      // Lokacija
                       FutureBuilder<PagedResult<City>>(
                         future: _futureCities,
                         builder: (context, snapshot) {
@@ -224,7 +224,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 16),
 
-                      // DATUM OD-DO
+                      // Datum OD-DO
                       TextFormField(
                         readOnly: true,
                         controller: TextEditingController(
@@ -247,7 +247,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 16),
 
-                      // BROJ LJUDI
+                      // Broj ljudi
                       Row(
                         children: [
                           Expanded(
@@ -332,7 +332,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 20),
 
-                      // DUGME ZA PRETRAGU
+                      // Dugme za pretragu
                       SizedBox(
                         width: double.infinity,
                         height: 48,
@@ -440,7 +440,7 @@ class _RecommendedSpaceUnitsWidgetState
     }
 
     return SizedBox(
-      height: 270, // horizontalni scroll height
+      height: 270,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -480,7 +480,7 @@ class _RecommendedSpaceUnitsWidgetState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // IMAGE
+                  // Image
                   Container(
                     height: 140,
                     width: double.infinity,
@@ -498,7 +498,7 @@ class _RecommendedSpaceUnitsWidgetState
                           )
                         : const Icon(Icons.image, size: 50),
                   ),
-                  // INFO
+                  // Info
                   Padding(
                     padding: const EdgeInsets.all(8),
                     child: Column(

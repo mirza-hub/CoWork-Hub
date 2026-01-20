@@ -40,7 +40,7 @@ namespace CoWorkHub.Services.Services
 
             if (existingRole != null)
             {
-                throw new UserException("A role with this name already exists in the database.");
+                throw new UserException("Uloga sa ovim imenom već postoji u bazi.");
             }
 
             entity.IsDeleted = false;
@@ -55,7 +55,7 @@ namespace CoWorkHub.Services.Services
 
             if (existingRole != null)
             {
-                throw new UserException("Another role with this name already exists in the database.");
+                throw new UserException("Uloga sa ovim imenom već postoji u bazi.");
             }
         }
     }

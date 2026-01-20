@@ -22,15 +22,12 @@ namespace CoWorkHub.Api.Controllers
         {
             try
             {
-                // PRONAĐI USER ID IZ CLAIM-OVA
-                var userIdClaim = User.FindFirst("UserId"); // Ovo je claim koji smo dodali
+                var userIdClaim = User.FindFirst("UserId");
 
                 if (userIdClaim == null)
                 {
-                    // Probaj druge opcije
                     userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
-                    // Ako ništa ne uspije, vrati grešku
                     if (userIdClaim == null)
                     {
                         return Unauthorized(new
@@ -41,11 +38,8 @@ namespace CoWorkHub.Api.Controllers
                     }
                 }
 
-                // Parsiraj UserId
                 if (!int.TryParse(userIdClaim.Value, out int userId))
                 {
-                    // Ako NameIdentifier sadrži username, moramo naći ID iz baze
-                    // Ovo je fallback opcija
                     return BadRequest(new
                     {
                         Message = "Could not parse User ID",
@@ -54,7 +48,6 @@ namespace CoWorkHub.Api.Controllers
                     });
                 }
 
-                // Sada imamo userId - pozovi servis
                 var recommendations = await _recommenderService.GetRecommendedSpaces(userId);
 
                 return Ok(new

@@ -230,8 +230,6 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // SEARCH
-          // Padding(
-          // padding: const EdgeInsets.all(8.0),
           Row(
             children: [
               SizedBox(
@@ -241,9 +239,7 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     labelText: "Naziv",
-                    labelStyle: TextStyle(
-                      color: Colors.grey, // ← izgleda kao placeholder
-                    ),
+                    labelStyle: TextStyle(color: Colors.grey),
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       // borderRadius: BorderRadius.circular(8),
@@ -251,12 +247,6 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                   ),
                 ),
               ),
-              // Expanded(
-              //   child: TextField(
-              //     decoration: const InputDecoration(labelText: "Naziv"),
-              //     onChanged: (v) => searchName = v,
-              //   ),
-              // ),
               const SizedBox(width: 12),
               SizedBox(
                 width: 240,
@@ -321,7 +311,7 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
           ),
           const SizedBox(height: 20),
 
-          // DATA TABLE
+          // Tabela
           Expanded(
             child: _isLoadingSpaces
                 ? const Center(child: CircularProgressIndicator())
@@ -475,12 +465,8 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                     },
                   ),
           ),
-          const Divider(
-            color: Colors.grey, // ista boja kao header, možeš prilagoditi
-            thickness: 1,
-            height: 1,
-          ),
-          // PAGINATION
+          const Divider(color: Colors.grey, thickness: 1, height: 1),
+          // Paginacija
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

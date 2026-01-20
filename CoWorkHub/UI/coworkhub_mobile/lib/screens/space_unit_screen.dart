@@ -134,7 +134,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        // privremena varijabla koja prati odabrani radio
+        // privremena varijabla za praćenje odabranog radia
         String selectedSort = "$orderBy$sortDirection";
 
         return StatefulBuilder(
@@ -202,7 +202,6 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            // primijeni izabrani sort
                             if (selectedSort == "PricePerDayASC") {
                               orderBy = "PricePerDay";
                               sortDirection = "ASC";
@@ -368,13 +367,11 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
   }
 
   void showFilterOptions() {
-    // privremene varijable filtera
     int? tempCapacityFrom = filterCapacityFrom;
     int? tempCapacityTo = filterCapacityTo;
     double? tempPriceFrom = filterPriceFrom;
     double? tempPriceTo = filterPriceTo;
 
-    // Controllers inicijaliziraj samo jednom
     final capacityFromController = TextEditingController(
       text: tempCapacityFrom?.toString() ?? "",
     );
@@ -408,7 +405,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Kapacitet od
+                  // Kapacitet OD
                   TextField(
                     controller: capacityFromController,
                     keyboardType: TextInputType.number,
@@ -427,7 +424,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Kapacitet do
+                  // Kapacitet DO
                   TextField(
                     controller: capacityToController,
                     keyboardType: TextInputType.number,
@@ -446,7 +443,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Cijena od
+                  // Cijena OD
                   TextField(
                     controller: priceFromController,
                     keyboardType: TextInputType.number,
@@ -465,7 +462,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Cijena do
+                  // Cijena DO
                   TextField(
                     controller: priceToController,
                     keyboardType: TextInputType.number,
@@ -524,31 +521,26 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             setState(() {
-                              // resetuj filter varijable
                               filterCapacityFrom = null;
                               filterCapacityTo = null;
                               filterPriceFrom = null;
                               filterPriceTo = null;
 
-                              // reset privremenih varijabli u sheet-u
                               tempCapacityFrom = null;
                               tempCapacityTo = null;
                               tempPriceFrom = null;
                               tempPriceTo = null;
 
-                              // očisti TextField kontrole
                               capacityFromController.text = "";
                               capacityToController.text = "";
                               priceFromController.text = "";
                               priceToController.text = "";
 
-                              // resetuj listu i paginaciju
                               units.clear();
                               page = 1;
                               hasMore = true;
                             });
 
-                            // automatski primijeni i zatvori sheet
                             Navigator.pop(context);
                             fetchUnits();
                           },
@@ -873,7 +865,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
 
                                       const SizedBox(height: 4),
                                       Text(
-                                        su.description ?? " nema opisa.",
+                                        su.description,
                                         style: const TextStyle(fontSize: 13),
                                       ),
 
@@ -892,7 +884,6 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                                         alignment: Alignment.centerRight,
                                         child: Row(
                                           children: [
-                                            // PRVA polovina prazna
                                             const Expanded(child: SizedBox()),
 
                                             const SizedBox(width: 10),
@@ -988,7 +979,7 @@ class _HoverInfoState extends State<HoverInfo> {
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         left: offset.dx,
-        top: offset.dy - 120, // prikazuje iznad dugmeta
+        top: offset.dy - 120,
         child: Material(
           color: Colors.transparent,
           child: Container(

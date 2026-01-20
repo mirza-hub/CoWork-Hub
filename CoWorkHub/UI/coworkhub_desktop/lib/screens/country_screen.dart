@@ -19,6 +19,9 @@ class _CountryScreenState extends State<CountryScreen> {
   final CountryProvider _countryProvider = CountryProvider();
   final TextEditingController _searchController = TextEditingController();
 
+  static const double columnWidth = 150;
+  static const double actionColumnWidth = 120;
+
   List<Country> countries = [];
   bool isLoading = true;
 
@@ -27,8 +30,10 @@ class _CountryScreenState extends State<CountryScreen> {
   int pageSize = 5;
   int totalPages = 1;
 
-  String? sortColumn;
-  String? sortDirection;
+  final Map<int, String> _sortMap = {0: "CountryId", 1: "CountryName"};
+
+  String? sortColumn = "countryId";
+  String? sortDirection = "asc";
 
   @override
   void initState() {
@@ -75,18 +80,9 @@ class _CountryScreenState extends State<CountryScreen> {
     });
   }
 
-  void _onSort(String column) {
-    String backendColumn;
-    switch (column) {
-      case "ID":
-        backendColumn = "countryId";
-        break;
-      case "Naziv":
-        backendColumn = "countryName";
-        break;
-      default:
-        backendColumn = column;
-    }
+  void _onSort(int columnIndex) {
+    final backendColumn = _sortMap[columnIndex];
+    if (backendColumn == null) return;
 
     if (sortColumn == backendColumn) {
       sortDirection = sortDirection == "asc" ? "desc" : "asc";
@@ -94,7 +90,55 @@ class _CountryScreenState extends State<CountryScreen> {
       sortColumn = backendColumn;
       sortDirection = "asc";
     }
+
+    page = 1;
     _fetchCountries();
+  }
+
+  Widget _sortableHeader(String title, String columnKey) {
+    Widget icon;
+
+    if (sortColumn != columnKey) {
+      icon = const Icon(Icons.unfold_more, size: 18, color: Colors.grey);
+    } else {
+      icon = Icon(
+        sortDirection == "asc" ? Icons.arrow_downward : Icons.arrow_upward,
+        size: 16,
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [Text(title), const SizedBox(width: 6), icon],
+    );
+  }
+
+  DataColumn _centeredColumn(
+    Widget label, {
+    double width = columnWidth,
+    bool numeric = false,
+    void Function(int, bool)? onSort,
+  }) {
+    return DataColumn(
+      numeric: numeric,
+      onSort: onSort,
+      label: SizedBox(
+        width: width,
+        child: Center(child: label),
+      ),
+    );
+  }
+
+  DataCell _centeredCell(String text, {double width = columnWidth}) {
+    return DataCell(
+      SizedBox(
+        width: width,
+        child: Center(
+          child: Text(text, textAlign: TextAlign.center, softWrap: true),
+        ),
+      ),
+    );
   }
 
   @override
@@ -104,28 +148,13 @@ class _CountryScreenState extends State<CountryScreen> {
     super.dispose();
   }
 
-  // void _openForm({Country? country}) {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (_) => CountryFormScreen(
-  //         country: country,
-  //         onSave: () {
-  //           _fetchCountries();
-  //         },
-  //       ),
-  //     ),
-  //   );
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// ---------- HEADER ----------
+          // HEADER
           Stack(
             children: [
               Align(
@@ -148,13 +177,14 @@ class _CountryScreenState extends State<CountryScreen> {
               ),
             ],
           ),
+
           const SizedBox(height: 25),
 
-          /// ---------- SEARCH + ADD ----------
+          // SEARCH + ADD
           Row(
             children: [
               SizedBox(
-                width: 300,
+                width: 360,
                 height: 40,
                 child: TextField(
                   controller: _searchController,
@@ -177,7 +207,7 @@ class _CountryScreenState extends State<CountryScreen> {
                   );
                 },
                 icon: const Icon(Icons.add, color: Colors.white),
-                label: Text(
+                label: const Text(
                   "Dodaj državu",
                   style: TextStyle(color: Colors.white),
                 ),
@@ -190,23 +220,13 @@ class _CountryScreenState extends State<CountryScreen> {
               ),
             ],
           ),
+
           const SizedBox(height: 20),
 
-          /// ---------- TABLE ----------
+          // Tabela
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : countries.isEmpty
-                ? const Center(
-                    child: Text(
-                      "Nema podataka za prikazivanje",
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  )
                 : LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
@@ -215,113 +235,131 @@ class _CountryScreenState extends State<CountryScreen> {
                             minWidth: constraints.maxWidth,
                           ),
                           child: DataTable(
+                            headingRowHeight: 50,
+                            dataRowHeight: 48,
+                            columnSpacing: 0,
+                            horizontalMargin: 0,
                             headingRowColor: MaterialStateProperty.all(
                               const Color.fromARGB(255, 243, 242, 242),
                             ),
-                            sortColumnIndex: sortColumn == "countryId" ? 0 : 1,
-                            sortAscending: sortDirection == "asc",
                             columns: [
-                              DataColumn(
-                                label: const Text("ID"),
+                              _centeredColumn(
+                                _sortableHeader("ID", "CountryId"),
                                 numeric: true,
-                                onSort: (_, __) => _onSort("ID"),
+                                onSort: (i, __) => _onSort(i),
                               ),
-                              DataColumn(
-                                label: const Text("Naziv"),
-                                onSort: (_, __) => _onSort("Naziv"),
+                              _centeredColumn(
+                                _sortableHeader("Naziv", "CountryName"),
+                                onSort: (i, __) => _onSort(i),
                               ),
-                              const DataColumn(label: Text("Akcije")),
+                              _centeredColumn(
+                                const Text("Akcije"),
+                                width: actionColumnWidth,
+                              ),
                             ],
                             rows: countries.map((country) {
                               return DataRow(
                                 cells: [
-                                  DataCell(Text(country.countryId.toString())),
-                                  DataCell(Text(country.countryName)),
+                                  _centeredCell(country.countryId.toString()),
+                                  _centeredCell(country.countryName),
                                   DataCell(
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.info_outline),
-                                          onPressed: () {
-                                            widget.onChangeScreen(
-                                              CountryFormScreen(
-                                                country: country,
-                                                onChangeScreen:
-                                                    widget.onChangeScreen,
+                                    SizedBox(
+                                      width: actionColumnWidth,
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.info_outline,
                                               ),
-                                            );
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.red,
-                                          ),
-                                          onPressed: () async {
-                                            final confirmed = await showDialog<bool>(
-                                              context: context,
-                                              builder: (context) => AlertDialog(
-                                                title: const Text(
-                                                  "Potvrda brisanja",
-                                                ),
-                                                content: Text(
-                                                  "Da li ste sigurni da želite obrisati ${country.countryName}?",
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          context,
-                                                          true,
-                                                        ),
-                                                    style:
-                                                        ElevatedButton.styleFrom(
-                                                          backgroundColor:
-                                                              Colors.blue,
-                                                        ),
-                                                    child: const Text(
-                                                      "Da",
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                      ),
+                                              onPressed: () {
+                                                widget.onChangeScreen(
+                                                  CountryFormScreen(
+                                                    country: country,
+                                                    onChangeScreen:
+                                                        widget.onChangeScreen,
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
+                                              ),
+                                              onPressed: () async {
+                                                final confirmed = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text(
+                                                      "Potvrda brisanja",
                                                     ),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          context,
-                                                          false,
+                                                    content: Text(
+                                                      "Da li želite obrisati državu?",
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                              context,
+                                                              true,
+                                                            ),
+                                                        style:
+                                                            ElevatedButton.styleFrom(
+                                                              backgroundColor:
+                                                                  Colors.blue,
+                                                            ),
+                                                        child: const Text(
+                                                          "Da",
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                          ),
                                                         ),
-                                                    child: const Text("Ne"),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                              context,
+                                                              false,
+                                                            ),
+                                                        child: const Text("Ne"),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ],
-                                              ),
-                                            );
+                                                );
 
-                                            if (confirmed == true) {
-                                              try {
-                                                await _countryProvider.delete(
-                                                  country.countryId,
-                                                );
-                                                showTopFlushBar(
-                                                  context: context,
-                                                  message:
-                                                      "Država uspješno obrisana",
-                                                  backgroundColor: Colors.green,
-                                                );
-                                                _fetchCountries();
-                                              } catch (e) {
-                                                showTopFlushBar(
-                                                  context: context,
-                                                  message:
-                                                      "Brisanje nije uspjelo",
-                                                  backgroundColor: Colors.red,
-                                                );
-                                              }
-                                            }
-                                          },
+                                                if (confirmed == true) {
+                                                  try {
+                                                    await _countryProvider
+                                                        .delete(
+                                                          country.countryId,
+                                                        );
+                                                    _fetchCountries();
+                                                    showTopFlushBar(
+                                                      context: context,
+                                                      message:
+                                                          "Država obrisana",
+                                                      backgroundColor:
+                                                          Colors.green,
+                                                    );
+                                                  } catch (e) {
+                                                    showTopFlushBar(
+                                                      context: context,
+                                                      message:
+                                                          "Greška pri brisanju države: $e",
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                    );
+                                                  }
+                                                }
+                                              },
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -334,7 +372,7 @@ class _CountryScreenState extends State<CountryScreen> {
                   ),
           ),
 
-          /// ---------- FOOTER ----------
+          // FOOTER
           const Divider(height: 1),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

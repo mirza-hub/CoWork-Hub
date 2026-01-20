@@ -85,24 +85,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
     } else {
       throw response;
     }
-
-    // Ako je server vratio JSON sa greškama
-    // try {
-    //   var body = jsonDecode(response.body);
-
-    //   if (body is Map && body["errors"] != null) {
-    //     // Uzmi prvu poruku iz "errors"
-    //     var errors = body["errors"] as Map<String, dynamic>;
-    //     var firstKey = errors.keys.first;
-    //     var firstError = errors[firstKey][0];
-
-    //     throw Exception(firstError.toString());
-    //   }
-    // } catch (_) {
-    //   // ako parsing error — ignoriraj
-    // }
-
-    // throw Exception("Greška na serveru (${response.statusCode})");
   }
 
   Future<T> update(int id, dynamic request) async {
@@ -117,22 +99,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
     } else {
       throw response;
     }
-
-    // // Ako backend šalje errors JSON
-    // try {
-    //   var body = jsonDecode(response.body);
-
-    //   if (body is Map && body["errors"] != null) {
-    //     var errors = body["errors"] as Map<String, dynamic>;
-    //     var firstKey = errors.keys.first;
-    //     var firstError = errors[firstKey][0];
-    //     throw Exception(firstError.toString());
-    //   }
-    // } catch (_) {
-    //   // ignoriraj parsing greške
-    // }
-
-    // throw Exception("Greška na serveru (${response.statusCode})");
   }
 
   Future<void> delete(int id) async {

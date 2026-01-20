@@ -96,7 +96,6 @@ namespace CoWorkHub.Services.Services.Recommender
         {
             try
             {
-                // 1. Dohvati sve rezervacije korisnika
                 var userReservationIds = await _context.Reservations
                     .Where(r => r.UsersId == userId && !r.IsDeleted)
                     .Select(r => r.SpaceUnitId)
@@ -105,7 +104,6 @@ namespace CoWorkHub.Services.Services.Recommender
 
                 if (!userReservationIds.Any())
                 {
-                    // Ako korisnik nema istoriju, vrati popularne prostore
                     return await GetPopularSpaces();
                 }
 

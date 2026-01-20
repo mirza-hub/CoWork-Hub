@@ -114,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 20),
 
-                // Password
+                // Šifra
                 TextFormField(
                   controller: _passwordCtrl,
                   obscureText: _obscure,
@@ -134,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 30),
 
-                // Login button
+                // Login dugme
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -157,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 25),
 
-                // Forgot password
+                // Zaboravljena šifra
                 GestureDetector(
                   onTap: () {
                     // TODO: dodaj forgot password ekran
@@ -174,14 +174,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 10),
 
-                // Register
+                // Registracija
                 RichText(
                   text: TextSpan(
-                    text: 'Nemate račun? ', // običan tekst
+                    text: 'Nemate račun? ',
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                     children: [
                       TextSpan(
-                        text: 'Registrirajte se', // samo ovaj dio podvučen
+                        text: 'Registrirajte se',
                         style: const TextStyle(
                           color: Colors.blue,
                           decoration: TextDecoration.underline,
@@ -189,7 +189,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            // navigacija na RegisterScreen
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -206,7 +205,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 GestureDetector(
                   onTap: () {
-                    // Guest mode — user = null
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(

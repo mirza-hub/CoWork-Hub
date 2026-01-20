@@ -1,0 +1,115 @@
+version: '3'
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    labels:
+      NAME: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${_rabbitMqUser}
+      - RABBITMQ_DEFAULT_PASS=${_rabbitMqPassword}
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    expose:
+      - 5672
+      - 15672
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:15672"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    networks:
+      - coworkhubnet
+
+  coworkhub-sql:
+    image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+    restart: unless-stopped
+    user: root
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${_saPassword}
+      - MSSQL_PID=Developer
+    ports:
+      - "1401:1433"
+    networks:
+      - coworkhubnet
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P ${_saPassword} -Q 'SELECT 1'"]
+      interval: 10s
+      retries: 10
+      timeout: 5s
+
+  coworkhub-api:
+    restart: unless-stopped
+    build:
+      context: .
+    environment:
+      - ConnectionStrings:CoWorkHubConnection=Server=coworkhub-coworkhub-sql-1,1433;Database=210095;User Id=sa;Password=CoWorkHub2026!;ConnectRetryCount=10;ConnectRetryInterval=5;TrustServerCertificate=True
+      - ASPNETCORE_ENVIRONMENT=Development
+      - _fromAddress=${_fromAddress}
+      - _password=${_password}
+      - _host=${_host}
+      - _enableSSL=${_enableSSL}
+      - _displayName=${_displayName}
+      - _timeout=${_timeout}
+      - _port=${_port}
+      - _rabbitMqHost=rabbitmq
+      - _rabbitMqUser=${_rabbitMqUser}
+      - _rabbitMqPassword=${_rabbitMqPassword}
+      - _rabbitMqPort=${_rabbitMqPort}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_SECRET=${PAYPAL_SECRET}
+      - PAYPAL_MODE=${PAYPAL_MODE}
+      - PAYPAL_CURRENCY=${PAYPAL_CURRENCY}
+      - PAYPAL_SUCCESS_URL=${PAYPAL_SUCCESS_URL}
+      - PAYPAL_CANCEL_URL=${PAYPAL_CANCEL_URL}
+      - _saPassword=${_saPassword}
+    ports:
+      - "5084:5084"
+    depends_on:
+      - coworkhub-sql
+      - rabbitmq
+    networks:
+      - coworkhubnet
+
+  coworkhub-subscriber:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+    environment:
+      - _fromAddress=${_fromAddress}
+      - _password=${_password}
+      - _host=${_host}
+      - _enableSSL=${_enableSSL}
+      - _displayName=${_displayName}
+      - _timeout=${_timeout}
+      - _port=${_port}
+      - _rabbitMqHost=rabbitmq
+      - _rabbitMqUser=${_rabbitMqUser}
+      - _rabbitMqPassword=${_rabbitMqPassword}
+      - _rabbitMqPort=${_rabbitMqPort}
+    networks:
+      - coworkhubnet
+
+  coworkhub-worker:
+    restart: unless-stopped
+    build:
+      context: .
+    depends_on:
+      - coworkhub-sql
+    environment:
+      - ConnectionStrings:CoWorkHubConnection=Server=coworkhub-coworkhub-sql-1,1433;Database=210095;User Id=sa;Password=CoWorkHub2026!;ConnectRetryCount=10;ConnectRetryInterval=5;TrustServerCertificate=True
+    networks:
+      - coworkhubnet
+
+networks:
+  coworkhubnet:
+    driver: bridge

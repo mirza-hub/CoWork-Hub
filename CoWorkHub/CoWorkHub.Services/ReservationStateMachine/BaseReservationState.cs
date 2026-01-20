@@ -26,32 +26,32 @@ namespace CoWorkHub.Services.ReservationStateMachine
 
         public virtual Model.Reservation Insert(ReservationInsertRequest request)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Model.Reservation Update(int id, ReservationUpdateRequest request)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Model.Reservation Confirm(int id)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Model.Reservation Cancel(int id)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Model.Reservation Complete(int id)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual List<string> AllowedActions(Database.Reservation entity)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public BaseReservationState CreateState(string stateName)
@@ -68,7 +68,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
                     return ServiceProvider.GetService<CanceledReservationiState>();
                 case "completed":
                     return ServiceProvider.GetService<CompletedReservationiState>();
-                default: throw new Exception("State not recognized");
+                default: throw new UserException("State nije prepoznat");
             }
         }
     }

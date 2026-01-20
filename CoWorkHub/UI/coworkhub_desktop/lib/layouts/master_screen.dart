@@ -4,6 +4,7 @@ import 'package:coworkhub_desktop/models/user.dart';
 import 'package:coworkhub_desktop/screens/dashboard_screen.dart';
 import 'package:coworkhub_desktop/screens/reservation_screen.dart';
 import 'package:coworkhub_desktop/screens/settings_screen.dart';
+import 'package:coworkhub_desktop/screens/user_details_screen.dart';
 import 'package:coworkhub_desktop/screens/users_screen.dart';
 import 'package:coworkhub_desktop/screens/working_space_screen.dart';
 import 'package:flutter/material.dart';
@@ -45,12 +46,6 @@ class _MasterScreenState extends State<MasterScreen> {
     _currentChild = _pages[_selectedIndex];
   }
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _currentChild = _pages[_selectedIndex];
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,7 +74,7 @@ class _MasterScreenState extends State<MasterScreen> {
 
                 const Divider(color: Colors.white24, height: 1),
 
-                // Menu list
+                // Menu lista
                 _buildMenuItem(
                   index: 0,
                   icon: Icons.dashboard,
@@ -108,7 +103,7 @@ class _MasterScreenState extends State<MasterScreen> {
 
                 const Spacer(),
 
-                // Logout button
+                // Logout dugme
                 _buildMenuItem(
                   index: 99,
                   icon: Icons.logout,
@@ -142,7 +137,7 @@ class _MasterScreenState extends State<MasterScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Left title
+                      // Lijeva strana
                       Text(
                         getPageTitle(_selectedIndex),
                         style: const TextStyle(
@@ -151,7 +146,7 @@ class _MasterScreenState extends State<MasterScreen> {
                         ),
                       ),
 
-                      // Right side: user name + avatar
+                      // Desna strana: username + slika(avatar)
                       Row(
                         children: [
                           Text(
@@ -162,39 +157,53 @@ class _MasterScreenState extends State<MasterScreen> {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          widget.user.getImageBytes() != null
-                              ? Container(
-                                  width: 43,
-                                  height: 43,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    image: DecorationImage(
-                                      image: ResizeImage(
-                                        MemoryImage(
-                                          widget.user.getImageBytes()!,
+
+                          MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: GestureDetector(
+                              onTap: () {
+                                changeScreen(
+                                  UserDetailsScreen(
+                                    user: widget.user,
+                                    onChangeScreen: changeScreen,
+                                  ),
+                                );
+                              },
+                              child: widget.user.getImageBytes() != null
+                                  ? Container(
+                                      width: 43,
+                                      height: 43,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        image: DecorationImage(
+                                          image: ResizeImage(
+                                            MemoryImage(
+                                              widget.user.getImageBytes()!,
+                                            ),
+                                            width: 43,
+                                            height: 43,
+                                          ),
+                                          fit: BoxFit.cover,
                                         ),
-                                        width: 43,
-                                        height: 43,
                                       ),
-                                      fit: BoxFit.cover,
+                                    )
+                                  : CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: Colors.grey.shade300,
+                                      child: const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                  ),
-                                )
-                              : CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: Colors.grey.shade300,
-                                  child: const Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
 
-                // PAGE CONTENT
+                // Kontent
                 Expanded(
                   child: Container(color: Colors.white, child: _currentChild),
                 ),
@@ -285,7 +294,7 @@ class _MasterScreenState extends State<MasterScreen> {
     });
   }
 
-  // Logout dialog
+  // Logout dijalog
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -315,7 +324,7 @@ class _MasterScreenState extends State<MasterScreen> {
     );
   }
 
-  // Page title resolver
+  // Naslov stranica resolver
   String getPageTitle(int index) {
     switch (index) {
       case 0:

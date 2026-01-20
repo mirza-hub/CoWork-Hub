@@ -21,47 +21,47 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
 
         public virtual Task<Model.SpaceUnit> Insert(SpaceUnitInsertRequest request, CancellationToken cancellationToken)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Task<Model.SpaceUnit> Update(int id, SpaceUnitUpdateRequest request, CancellationToken cancellationToken)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Task<Model.SpaceUnit> Activate(int id, CancellationToken cancellationToken)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Task<Model.SpaceUnit> Hide(int id, CancellationToken cancellationToken)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Task<Model.SpaceUnit> Edit(int id, CancellationToken cancellationToken)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Task<Model.SpaceUnit> SetMaintenance(int id, CancellationToken cancellationToken)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual async Task Delete(int id, CancellationToken cancellationToken)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Task<Model.SpaceUnit> Restore(int id, CancellationToken cancellationToken)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public virtual Task<List<string>> AllowedActions(Database.SpaceUnit entity, CancellationToken cancellationToken)
         {
-            throw new UserException("Method not allowed.");
+            throw new UserException("Metoda nije dozvoljena.");
         }
 
         public BaseSpaceUnitState CreateState(string stateName)
@@ -80,7 +80,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
                     return ServiceProvider.GetService<MaintenanceSpaceUnitState>();
                 case "deleted":
                     return ServiceProvider.GetService<DeletedSpaceUnitState>();
-                default: throw new UserException("State not recognized");
+                default: throw new UserException("State nije prepoznat");
             }
         }
     }

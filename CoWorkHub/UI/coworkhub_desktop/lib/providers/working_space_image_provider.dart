@@ -36,7 +36,6 @@ class WorkingSpaceImageProvider extends BaseProvider<WorkingSpaceImage> {
       var data = jsonDecode(response.body) as List;
       return data.map((e) => WorkingSpaceImage.fromJson(e)).toList();
     } else {
-      // Pokušaj da parsiraš eventualne greške iz servera
       try {
         var errorData = jsonDecode(response.body);
         if (errorData is Map && errorData["message"] != null) {

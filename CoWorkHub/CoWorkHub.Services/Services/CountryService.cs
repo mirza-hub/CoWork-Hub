@@ -44,7 +44,7 @@ namespace CoWorkHub.Services.Services
             base.BeforeUpdate(request, entity);
 
             var existingCountry = Context.Countries
-                .FirstOrDefault(x => x.CountryName.ToLower() == request.CountryName.ToLower());
+                .FirstOrDefault(x => (x.CountryName.ToLower() == request.CountryName.ToLower()) && x.CountryId!=entity.CountryId);
 
             if (existingCountry != null)
             {

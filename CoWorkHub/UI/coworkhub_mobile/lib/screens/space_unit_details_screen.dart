@@ -66,13 +66,10 @@ class _SpaceUnitDetailsScreenState extends State<SpaceUnitDetailsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white, // bijela pozadina AppBar-a
-        elevation: 0, // po želji, uklanja shadow
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.black,
-          ), // crna strelica
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -80,7 +77,7 @@ class _SpaceUnitDetailsScreenState extends State<SpaceUnitDetailsScreen>
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.black, // crni tekst
+            color: Colors.black,
           ),
         ),
         centerTitle: true,
@@ -106,10 +103,7 @@ class _SpaceUnitDetailsScreenState extends State<SpaceUnitDetailsScreen>
             peopleCount: widget.peopleCount,
             canReserve: widget.canReserve,
           ),
-          // if (widget.spaceUnit != null)
           SpaceUnitImagesTab(spaceUnitId: widget.spaceUnitId),
-          // else
-          // const Center(child: Text("Slike – učitavanje...")),
           ReviewsTab(
             spaceUnitId: widget.spaceUnitId,
             showLeaveReviewButton: widget.showLeaveReviewButton,
@@ -164,8 +158,7 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
     return result.resultList.first;
   }
 
-  // ================= REZERVACIJA =================
-
+  // REZERVACIJA
   void _handleReserve(BuildContext context, SpaceUnit su) {
     if (AuthProvider.isSignedIn != true || AuthProvider.userId == null) {
       _showLoginRequiredDialog(context);
@@ -263,8 +256,7 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
     );
   }
 
-  // ================= UI =================
-
+  // UI
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<SpaceUnit?>(
@@ -325,7 +317,7 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
                         horizontal: 16,
                         vertical: 11,
                       ),
-                      minimumSize: Size(0, 40), // visina dugmeta
+                      minimumSize: Size(0, 40),
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -454,7 +446,7 @@ class _SpaceUnitImagesTabState extends State<SpaceUnitImagesTab> {
 
       spaceUnitImagePaths = suImages.resultList
           .where((e) => e.imagePath != null)
-          .map((e) => e.imagePath!)
+          .map((e) => e.imagePath)
           .toList();
     } catch (e) {
       debugPrint("GREŠKA SPACE UNIT SLIKE: $e");
@@ -744,9 +736,7 @@ class _ReviewsTabState extends State<ReviewsTab> {
                       ),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isHighlighted
-                            ? Colors.blue[50]
-                            : Colors.white, // <-- istakni
+                        color: isHighlighted ? Colors.blue[50] : Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: isHighlighted
                             ? Border.all(color: Colors.blue, width: 1.5)
@@ -850,7 +840,7 @@ class _ReviewsTabState extends State<ReviewsTab> {
                   },
                 ),
         ),
-        // Ostavi recenziju dugme
+        // OSTAVI RECENZIJU dugme
         if (widget.showLeaveReviewButton &&
             !reviews.any(
               (r) =>
@@ -861,9 +851,7 @@ class _ReviewsTabState extends State<ReviewsTab> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Otvori formu za ostavljanje recenzije
-                },
+                onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   backgroundColor: Colors.blue,

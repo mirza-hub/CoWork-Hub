@@ -10,6 +10,8 @@ class WorkingSpace {
   int cityId;
   String description;
   String address;
+  double latitude;
+  double longitude;
   bool? isDeleted;
   City? city;
 
@@ -19,6 +21,8 @@ class WorkingSpace {
     required this.cityId,
     required this.description,
     required this.address,
+    required this.latitude,
+    required this.longitude,
     this.isDeleted,
     this.city,
   });

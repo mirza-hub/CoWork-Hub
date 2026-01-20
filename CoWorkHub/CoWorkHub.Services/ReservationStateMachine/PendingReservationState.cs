@@ -23,16 +23,16 @@ namespace CoWorkHub.Services.ReservationStateMachine
             var entity = set.Find(id);
 
             if (entity == null)
-                throw new UserException("Reservation not found.");
+                throw new UserException("Rezervacija nije pronađena.");
 
             if (entity.IsDeleted)
-                throw new UserException("Cannot update a deleted reservation.");
+                throw new UserException("Nije moguće ažurirati obrisanu rezervaciju.");
 
             if (request.StartDate.HasValue && request.StartDate.Value < DateTime.UtcNow)
-                throw new UserException("Start date cannot be in the past.");
+                throw new UserException("Početni datum ne može biti u prošlosti.");
 
             if (request.EndDate.HasValue && request.EndDate.Value < DateTime.UtcNow)
-                throw new Exception("End date cannot be in the past.");
+                throw new Exception("Krajnji datum ne može biti u prošlosti.");
 
             var startDate = request.StartDate ?? entity.StartDate;
             var endDate = request.EndDate ?? entity.EndDate;
@@ -49,7 +49,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
             );
 
             if (conflictExists)
-                throw new UserException("The reservation conflicts with an existing reservation for this space.");
+                throw new UserException("Rezervacijski konflikt sa postojećom rezervacijom za ovaj prostor.");
 
             Mapper.Map(request, entity);
             entity.TotalPrice = (decimal)request.PeopleCount * entity.SpaceUnit.PricePerDay;
@@ -80,7 +80,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
             var reservation = reservationSet.Find(id);
 
             if (reservation == null)
-                throw new UserException("Reservation not found.");
+                throw new UserException("Rezervacija nije pronađeno.");
 
             var today = DateTime.UtcNow.Date;
             var startDate = reservation.StartDate.Date;
@@ -88,7 +88,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
             var daysUntilStart = (startDate - today).TotalDays;
 
             if (daysUntilStart < 3)
-                throw new UserException("Reservation cannot be canceled less than 3 days before start.");
+                throw new UserException("Rezervacija se ne može otkazati manje od 3 dana prije početka.");
 
             reservation.StateMachine = "canceled";
             reservation.CanceledAt = DateTime.UtcNow;

@@ -36,7 +36,7 @@ namespace CoWorkHub.Services.Services
 
             if (existingResource != null)
             {
-                throw new UserException("A resource with this name already exists in the database.");
+                throw new UserException("Resurs sa ovim imenom već postoji u bazi.");
             }
 
             entity.IsDeleted = false;
@@ -52,7 +52,7 @@ namespace CoWorkHub.Services.Services
 
             if (existingResource != null)
             {
-                throw new UserException("Another resource with this name already exists in the database.");
+                throw new UserException("Resurs sa ovim imenom već postoji u bazi.");
             }
 
             entity.ModifiedAt = DateTime.UtcNow;

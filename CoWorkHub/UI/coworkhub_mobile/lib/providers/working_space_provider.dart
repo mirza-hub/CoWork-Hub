@@ -5,7 +5,6 @@ import 'package:coworkhub_mobile/providers/base_provider.dart';
 class WorkingSpaceProvider extends BaseProvider<WorkingSpace> {
   WorkingSpaceProvider() : super("WorkingSpace");
 
-  // Filter metoda
   Future<PagedResult<WorkingSpace>> getFiltered({
     String? nameFts,
     String? addressFts,

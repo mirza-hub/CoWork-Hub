@@ -37,23 +37,19 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Providers
   final SpaceUnitProvider _spaceUnitProvider = SpaceUnitProvider();
   final WorkingSpaceImageProvider _imageProvider = WorkingSpaceImageProvider();
   final WorkspaceTypeProvider _workspaceTypeProvider = WorkspaceTypeProvider();
 
-  // Data
   List<SpaceUnit> _units = [];
   List<SpaceUnit> _filteredUnits = [];
   List<WorkingSpaceImage> _images = [];
   List<WorkspaceType> _workspaceTypes = [];
 
-  // Filters
   int? filterCityId;
   int? filterWorkspaceTypeId;
   bool? filterIsDeleted;
 
-  // State
   String _searchQuery = "";
   bool _loadingUnits = true;
   bool _loadingImages = true;
@@ -67,9 +63,6 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     _loadImages();
   }
 
-  // -------------------------------
-  // LOAD IMAGES
-  // -------------------------------
   Future<void> _loadImages() async {
     setState(() => _loadingImages = true);
     try {
@@ -87,14 +80,10 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     }
   }
 
-  // -------------------------------
-  // LOAD UNITS WITH FILTERS
-  // -------------------------------
   Future<void> _loadUnitsWithFilters() async {
     setState(() => _loadingUnits = true);
 
     try {
-      // Dohvati tipove prostora za dropdown
       var workspaceTypeResult = await _workspaceTypeProvider.get(
         filter: {'RetrieveAll': true},
       );
@@ -126,9 +115,6 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     }
   }
 
-  // -------------------------------
-  // IMAGE VIEWER
-  // -------------------------------
   void _openImageViewer(int initialIndex) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -188,9 +174,6 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     }
   }
 
-  // -------------------------------
-  // FILTER DIALOG
-  // -------------------------------
   void _openFilterDialog() {
     showDialog(
       context: context,
@@ -224,7 +207,7 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                 decoration: const InputDecoration(labelText: "Tip prostora"),
               ),
               const SizedBox(height: 10),
-              // Obrišani
+              // Obrisani
               DropdownButtonFormField<bool?>(
                 value: selectedDeleted,
                 items: const [
@@ -295,9 +278,6 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     );
   }
 
-  // -------------------------------
-  // BUILD
-  // -------------------------------
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -353,9 +333,6 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     );
   }
 
-  // -------------------------------
-  // SPACE UNITS TAB
-  // -------------------------------
   Widget _buildSpaceUnitsTab() {
     if (_loadingUnits) return const Center(child: CircularProgressIndicator());
 
@@ -459,15 +436,13 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                               vertical: 6,
                             ),
                             title: Text(
-                              unit.name ?? "N/A",
+                              unit.name,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            subtitle: Text(
-                              "Kapacitet: ${unit.capacity ?? 'N/A'}",
-                            ),
+                            subtitle: Text("Kapacitet: ${unit.capacity}"),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -506,9 +481,6 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     );
   }
 
-  // -------------------------------
-  // IMAGES TAB
-  // -------------------------------
   Widget _buildImagesTab() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -670,9 +642,6 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
   }
 }
 
-// -------------------------------
-// IMAGE VIEWER
-// -------------------------------
 class ImageViewer extends StatefulWidget {
   final List<WorkingSpaceImage> images;
   final int initialIndex;
