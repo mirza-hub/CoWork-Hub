@@ -14,7 +14,6 @@ class DashboardProvider with ChangeNotifier {
   List<RevenueByMonth>? get revenueByMonth => _revenueByMonth;
   bool get loading => _loading;
 
-  /// Fetch main dashboard stats
   Future<void> fetchStats() async {
     _loading = true;
     notifyListeners();
@@ -54,7 +53,6 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
-  /// New method: fetch revenue by month for line chart
   Future<void> fetchRevenueByMonth() async {
     _loading = true;
     notifyListeners();

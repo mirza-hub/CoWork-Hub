@@ -108,16 +108,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         } catch (_) {}
       }
-
-      // Flushbar(
-      //   message: message,
-      //   backgroundColor: Colors.red,
-      //   duration: const Duration(seconds: 3),
-      //   margin: const EdgeInsets.all(10),
-      //   borderRadius: BorderRadius.circular(8),
-      //   flushbarPosition: FlushbarPosition.TOP,
-      // ).show(context);
-
       showTopFlushBar(
         context: context,
         message: message,
@@ -127,71 +117,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   final ImagePicker _picker = ImagePicker();
-
-  // Future<void> _pickImage(ImageSource source) async {
-  //   try {
-  //     final XFile? pickedFile = await _picker.pickImage(
-  //       source: source,
-  //       maxWidth: 800,
-  //       maxHeight: 800,
-  //       imageQuality: 80,
-  //     );
-
-  //     if (pickedFile != null) {
-  //       File imageFile = File(pickedFile.path);
-  //       final bytes = await imageFile.readAsBytes();
-  //       setState(() {
-  //         _selectedImage = imageFile;
-  //         _imageBase64 = base64Encode(bytes);
-  //       });
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Greška pri odabiru slike: $e');
-  //   }
-  // }
-
-  // void _showImagePickerDialog() {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     shape: const RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-  //     ),
-  //     builder: (_) => SafeArea(
-  //       child: Column(
-  //         mainAxisSize: MainAxisSize.min,
-  //         children: [
-  //           ListTile(
-  //             leading: const Icon(Icons.photo_camera),
-  //             title: const Text('Kamera'),
-  //             onTap: () {
-  //               Navigator.pop(context);
-  //               _pickImage(ImageSource.camera);
-  //             },
-  //           ),
-  //           ListTile(
-  //             leading: const Icon(Icons.photo_library),
-  //             title: const Text('Galerija'),
-  //             onTap: () {
-  //               Navigator.pop(context);
-  //               _pickImage(ImageSource.gallery);
-  //             },
-  //           ),
-  //           ListTile(
-  //             leading: const Icon(Icons.delete),
-  //             title: const Text('Obriši sliku'),
-  //             onTap: () {
-  //               Navigator.pop(context);
-  //               setState(() {
-  //                 _selectedImage = null;
-  //                 _imageBase64 = null; // ili "" ako želiš
-  //               });
-  //             },
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 
   void _showImagePickerDialog() {
     showModalBottomSheet(
@@ -299,7 +224,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
 
           final user = snapshot.data!;
-          // inicijaliziraj kontrolere
           _controllers['firstName'] ??= TextEditingController(
             text: user.firstName,
           );
@@ -379,7 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         controller: _controllers['username']!,
                       ),
 
-                      // Polje za lozinku
+                      // Lozinka
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
@@ -409,7 +333,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Polje za potvrdu lozinke
+                      // Potvrda lozinke
                       TextFormField(
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,

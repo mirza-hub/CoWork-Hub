@@ -74,18 +74,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       String message = "Greška prilikom registracije.";
 
-      // provjeri je li e http.Response
       if (e is http.Response) {
         try {
           final errorJson = jsonDecode(e.body);
           if (errorJson["errors"] != null &&
               errorJson["errors"]["userError"] != null) {
-            message =
-                errorJson["errors"]["userError"][0]; // ovdje je tvoja poruka
+            message = errorJson["errors"]["userError"][0];
           }
-        } catch (_) {
-          // ako JSON ne radi, ostavi default poruku
-        }
+        } catch (_) {}
       }
 
       Flushbar(
@@ -112,14 +108,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       flushbarPosition: FlushbarPosition.TOP,
       mainButton: TextButton(
         onPressed: () {
-          Navigator.pop(context); // zatvori Flushbar
+          Navigator.pop(context);
         },
         child: const Text("OK", style: TextStyle(color: Colors.white)),
       ),
-      // Dodaj ovo
       onStatusChanged: (status) {
         if (status == FlushbarStatus.DISMISSED) {
-          // očisti formu kada Flushbar nestane
           _formKey.currentState?.reset();
           setState(() {
             _selectedCity = null;
@@ -210,7 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // First Name
+                // Ime
                 TextFormField(
                   controller: _firstNameCtrl,
                   decoration: const InputDecoration(
@@ -221,7 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Last Name
+                // Prezime
                 TextFormField(
                   controller: _lastNameCtrl,
                   decoration: const InputDecoration(
@@ -255,7 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Phone
+                // Mobitel
                 TextFormField(
                   controller: _phoneCtrl,
                   decoration: const InputDecoration(
@@ -267,7 +261,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // City dropdown
+                // Grad dropdown
                 DropdownButtonFormField<City>(
                   initialValue: _selectedCity,
                   items: _cities
@@ -289,7 +283,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password
+                // Šifra
                 TextFormField(
                   controller: _passwordCtrl,
                   obscureText: _obscurePassword,
@@ -310,7 +304,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password confirm
+                // Šifra potvrda
                 TextFormField(
                   controller: _passwordConfirmCtrl,
                   obscureText: _obscureConfirm,
@@ -331,7 +325,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Register button
+                // Dugme za registraciju
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -368,7 +362,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            // navigacija na RegisterScreen
                             Navigator.push(
                               context,
                               MaterialPageRoute(

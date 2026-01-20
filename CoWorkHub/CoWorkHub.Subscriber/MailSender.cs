@@ -20,10 +20,10 @@ namespace CoWorkHub.Subscriber
             bool enableSSL = bool.Parse(Environment.GetEnvironmentVariable("_enableSSL") ?? "true");
             string displayName = Environment.GetEnvironmentVariable("_displayName") ?? "no-reply";
             int timeout = int.Parse(Environment.GetEnvironmentVariable("_timeout") ?? "255");
-            Console.WriteLine($"Usli smo u metodu prije password: {password}");
+            Console.WriteLine($"Ušli smo u metodu prije password: {password}");
             if (password == string.Empty)
             {
-                Console.WriteLine("Sifra je prazna");
+                Console.WriteLine("Šifra je prazna");
                 return;
             }
 
@@ -41,7 +41,7 @@ namespace CoWorkHub.Subscriber
 
             try
             {
-                Console.WriteLine($"Sending email from {fromAddress} to {mailObj.EmailTo}, via port: {port}, at {DateTime.Now}");
+                Console.WriteLine($"Slanje emaila od {fromAddress} prema {mailObj.EmailTo}, preko porta: {port}, at {DateTime.Now}");
                 using (var smtp = new SmtpClient())
                 {
                     await smtp.ConnectAsync(host, port, enableSSL);

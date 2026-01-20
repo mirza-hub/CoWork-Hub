@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:coworkhub_desktop/models/resource.dart';
 import 'package:coworkhub_desktop/models/review.dart';
 import 'package:coworkhub_desktop/models/space_unit.dart';
@@ -129,8 +128,7 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
   }
 
   Future<void> _loadSelectedResources() async {
-    if (!isEdit) return; // samo za edit
-
+    if (!isEdit) return;
     try {
       final result = await _spaceUnitResourcesProvider.get(
         filter: {
@@ -282,7 +280,9 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
 
   Future<void> _loadResources() async {
     try {
-      var result = await _resourceProvider.get(filter: {"RetrieveAll": true});
+      var result = await _resourceProvider.get(
+        filter: {"RetrieveAll": true, "IsDeleted": false},
+      );
       setState(() {
         _resources = result.resultList;
         _loadingResources = false;
@@ -512,18 +512,6 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
     }
   }
 
-  Future<void> _showErrorFlushbar(String message) async {
-    await Flushbar(
-      message: message,
-      duration: const Duration(seconds: 4),
-      backgroundColor: Colors.red,
-      flushbarPosition: FlushbarPosition.TOP,
-      margin: const EdgeInsets.all(8),
-      borderRadius: BorderRadius.circular(8),
-      icon: const Icon(Icons.error, color: Colors.white),
-    ).show(context);
-  }
-
   String parseServerError(dynamic error) {
     try {
       if (error is http.Response) {
@@ -546,9 +534,7 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
           return errorJson["message"].toString();
         }
       }
-    } catch (_) {
-      // ignore
-    }
+    } catch (_) {}
 
     return "Došlo je do greške. Pokušajte ponovo.";
   }
@@ -577,7 +563,6 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                     borderRadius: BorderRadius.circular(8),
                   ).show(context);
 
-                  // vrati korisnika na WorkingSpaceDetailsScreen
                   widget.onChangeScreen(
                     WorkingSpaceDetailsScreen(
                       space: widget.space,
@@ -671,6 +656,7 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
         key: _formKey,
         child: ListView(
           children: [
+            const SizedBox(height: 3),
             _buildInput(
               _nameController,
               "Naziv",
@@ -735,7 +721,6 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                 ? const Center(child: CircularProgressIndicator())
                 : _buildResourceMultiSelect(),
             const SizedBox(height: 16),
-            // ---- STATE MACHINE PRIKAZ ----
             if (isEdit)
               Row(
                 children: [
@@ -771,7 +756,6 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                 spacing: 10,
                 children: _allowedActions.map((action) {
                   Color buttonColor;
-
                   switch (action.toLowerCase()) {
                     case "activate":
                       buttonColor = Colors.green;
@@ -1083,16 +1067,6 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
     );
   }
 
-  Widget _buildImageTile({required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.grey.shade300,
-      ),
-      child: ClipRRect(borderRadius: BorderRadius.circular(8), child: child),
-    );
-  }
-
   Widget _buildInput(
     TextEditingController c,
     String label, {
@@ -1165,7 +1139,9 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Wrap(
+                alignment: WrapAlignment.start,
                 spacing: 10,
+                runSpacing: 8,
                 children: _resources.map((r) {
                   bool selected = _selectedResourceIds.contains(r.resourcesId);
                   return FilterChip(
@@ -1208,8 +1184,8 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
 }
 
 class _LocalImageViewer extends StatefulWidget {
-  final List<SpaceUnitImage> networkImages; // slike sa servera
-  final List<Uint8List> localImages; // slike iz memorije
+  final List<SpaceUnitImage> networkImages;
+  final List<Uint8List> localImages;
   final int initialIndex;
 
   const _LocalImageViewer({

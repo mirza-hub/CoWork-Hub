@@ -27,7 +27,7 @@ namespace CoWorkHub.Services.Services
                 TotalReservations = await _context.Reservations.CountAsync(r => !r.IsDeleted),
                 ActiveReservations = await _context.Reservations.CountAsync(r => !r.IsDeleted && r.CanceledAt == null),
                 CancelledReservations = await _context.Reservations.CountAsync(r => !r.IsDeleted && r.CanceledAt != null),
-                TotalUsers = await _context.Users.CountAsync(u => !u.IsDeleted),
+                TotalUsers = await _context.Users.CountAsync(u => !u.IsDeleted && u.IsActive),
                 TotalWorkingSpaces = await _context.WorkingSpaces.CountAsync(w => !w.IsDeleted),
                 TotalRevenue = await _context.Payments
                                              .Where(p => !p.IsDeleted && p.StateMachine == "Paid")

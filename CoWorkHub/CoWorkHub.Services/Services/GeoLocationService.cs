@@ -23,7 +23,7 @@ namespace CoWorkHub.Services.Services
         public async Task<(double lat, double lon)> GetCoordinatesAsync(string cityName)
         {
             if (string.IsNullOrWhiteSpace(cityName))
-                throw new ArgumentException("City name cannot be empty");
+                throw new UserException("Ime grada ne može biti prazno");
 
             // Encode za URL (razmaci, dijakritika)
             var url = $"https://nominatim.openstreetmap.org/search?format=json&q={Uri.EscapeDataString(cityName)}";
@@ -41,13 +41,13 @@ namespace CoWorkHub.Services.Services
             var result = JsonSerializer.Deserialize<List<NominatimResult>>(json);
 
             if (result == null || result.Count == 0)
-                throw new UserException($"Coordinates not found for city: {cityName}");
+                throw new UserException($"Koordinate nisu pronađene za grad: {cityName}");
 
             // Parsiranje lat/lon
             if (!double.TryParse(result[0].Lat, out double lat))
-                throw new UserException($"Invalid latitude returned for city: {cityName}");
+                throw new UserException($"Pogrešan latitude vraćen za grad: {cityName}");
             if (!double.TryParse(result[0].Lon, out double lon))
-                throw new UserException($"Invalid longitude returned for city: {cityName}");
+                throw new UserException($"Pogrešan longitude vraćen za grad: {cityName}");
 
             return (lat, lon);
         }

@@ -7,6 +7,7 @@ import 'package:coworkhub_desktop/providers/role_provider.dart';
 import 'package:coworkhub_desktop/providers/user_provider.dart';
 import 'package:coworkhub_desktop/screens/users_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
+import 'package:coworkhub_desktop/utils/format_date.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -39,49 +40,30 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
   List<Role> roles = [];
 
-  // ACTIVE DROPDOWN VALUE
-
   @override
   void initState() {
     super.initState();
     _loadCity();
-    activeValue = widget.user.isActive; // default active state
-    _loadRoles(); // selectedRoles će se postaviti nakon učitavanja
+    activeValue = widget.user.isActive;
+    _loadRoles();
     profileImageBase64 = widget.user.profileImageBase64;
-
-    // OVO IZBACI/UKLONI
-    // if (widget.user.userRoles != null) {
-    //   selectedRoles = widget.user.userRoles!
-    //       .map((ur) => roles.firstWhere((r) => r.rolesId == ur.roleId))
-    //       .toList();
-    // }
   }
 
-  // ---------------------------------------------
-  // LOAD CITY
-  // ---------------------------------------------
   Future<void> _loadCity() async {
     if (widget.user.cityId != null) {
       try {
         final result = await cityProvider.getById(widget.user.cityId);
         setState(() {
           city = result;
-          isLoadingCity = false; // Grad je učitan
+          isLoadingCity = false;
         });
       } catch (e) {
         print("Greška pri dohvaćanju grada: $e");
-        setState(
-          () => isLoadingCity = false,
-        ); // čak i ako je greška, prestani loader
+        setState(() => isLoadingCity = false);
       }
-    } else {
-      setState(() => isLoadingCity = false); // nema grada
     }
   }
 
-  // ---------------------------------------------
-  // LOAD ROLES
-  // ---------------------------------------------
   Future<void> _loadRoles() async {
     try {
       final response = await roleProvider.get();
@@ -94,7 +76,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
         if (widget.user.userRoles != null) {
           for (var ur in widget.user.userRoles!) {
-            // pokušaj pronaći među dostupnim rolama
             final match = fetchedRoles
                 .where((r) => r.rolesId == ur.roleId)
                 .toList();
@@ -102,7 +83,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             if (match.isNotEmpty) {
               selectedRoles.add(match.first);
             } else if (ur.role != null) {
-              // fallback: koristi rolu iz userRole
               selectedRoles.add(
                 Role(
                   rolesId: ur.roleId,
@@ -146,9 +126,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---------------------------------------------
-            // BACK BUTTON
-            // ---------------------------------------------
+            // Strelica nazad + ime korisnika
             Row(
               children: [
                 IconButton(
@@ -172,13 +150,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
             const SizedBox(height: 20),
 
-            // ---------------------------------------------
-            // MAIN LAYOUT (2 COLUMNS)
-            // ---------------------------------------------
+            // Glavni izgled (2 kolone)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // LEFT SIDE
+                // Lijeva strana
                 Expanded(
                   flex: 1,
                   child: Column(
@@ -194,14 +170,12 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   ),
                 ),
 
-                // RIGHT SIDE
+                // Desna strana
                 Expanded(
                   flex: 1,
                   child: Column(
                     children: [
-                      // -----------------------------------------
-                      // PROFILE IMAGE
-                      // -----------------------------------------
+                      // Slika profila + dugme za promjenu
                       Column(
                         children: [
                           GestureDetector(
@@ -251,25 +225,21 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       ),
 
                       const SizedBox(height: 20),
-
-                      // -------------------------------------------------
-                      // ACTIVE DROPDOWN
-                      // -------------------------------------------------
+                      // Dropdown za aktivan/neaktivan
                       _buildActiveDropdown(),
-
+                      // Dropdown za obrisan/neobrisan
                       _buildField(
-                        "Deleted",
+                        "Obrisan/Neobrisan",
                         user.isDeleted == true ? "Obrisan" : "Neobrisan",
                       ),
-                      _buildField("Kreiran profil", user.createdAt.toString()),
-
+                      // Datum kreiranja profila
+                      _buildField("Kreiran profil", formatDate(user.createdAt)),
+                      // Role toggles
                       _buildRoleToggles(),
 
                       const SizedBox(height: 25),
 
-                      // -------------------------------------------------
-                      // SAVE BUTTON (CENTERED)
-                      // -------------------------------------------------
+                      // Dugme sačuvaj
                       Center(
                         child: SizedBox(
                           width: 150,
@@ -277,19 +247,16 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           child: ElevatedButton(
                             onPressed: () async {
                               try {
-                                // 1️⃣ Pripremi listu RolesId
                                 List<int> rolesId = selectedRoles
                                     .map((r) => r.rolesId)
                                     .toList();
 
-                                // 2️⃣ Kreiraj request
                                 final request = {
                                   "ProfileImageBase64": profileImageBase64,
                                   "IsActive": activeValue,
                                   "RolesId": rolesId,
                                 };
 
-                                // 3️⃣ Pozovi provider
                                 final updatedUser = await _userProvider
                                     .updateForAdmin(
                                       widget.user.usersId,
@@ -300,15 +267,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                   message: "Korisnik je uspješno ažuriran",
                                   backgroundColor: Colors.green,
                                 );
-
-                                // setState(() {
-                                //   widget.user.isActive =
-                                //       activeValue ?? widget.user.isActive;
-                                //   widget.user.profileImageBase64 =
-                                //       profileImageBase64;
-                                // });
-
-                                // 5️⃣ Obavijesti korisnika
                               } catch (e, stack) {
                                 debugPrint("UPDATE ERROR: $e");
                                 debugPrint(stack.toString());
@@ -348,9 +306,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     );
   }
 
-  // --------------------------------------------------------
-  // Reusable text field
-  // --------------------------------------------------------
+  // Text polje za prikaz podataka
   Widget _buildField(String label, String value, {bool enabled = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -392,9 +348,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     );
   }
 
-  // --------------------------------------------------------
-  // ROLE TOGGLES (Admin/User) - barem jedna mora biti izabrana
-  // --------------------------------------------------------
+  // Role toggles (barem jedna rola mora biti izabrana)
   Widget _buildRoleToggles() {
     bool isAdminSelected = selectedRoles.any(
       (role) => role.roleName.toLowerCase() == "admin",
@@ -405,7 +359,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
     void toggleRole(String roleName) {
       setState(() {
-        // Ako pokušavaš isključiti posljednju izabranu rolu, ignoriraj
         if (roleName.toLowerCase() == "admin") {
           if (isAdminSelected) {
             if (selectedRoles.length > 1) {
@@ -413,7 +366,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 (role) => role.roleName.toLowerCase() == "admin",
               );
             }
-            // inače ne radimo ništa
           } else {
             selectedRoles.add(
               roles.firstWhere(
@@ -434,7 +386,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 (role) => role.roleName.toLowerCase() == "user",
               );
             }
-            // inače ne radimo ništa
           } else {
             selectedRoles.add(
               roles.firstWhere(
@@ -531,9 +482,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     );
   }
 
-  // --------------------------------------------------------
-  // ACTIVE DROPDOWN
-  // --------------------------------------------------------
+  // Dropdown za aktivan/neaktivan
   Widget _buildActiveDropdown() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),

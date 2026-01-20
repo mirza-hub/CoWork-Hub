@@ -41,7 +41,7 @@ namespace CoWorkHub.Services.Services
             if (existingPaymentMethod != null)
             {
                 if (existingPaymentMethod.PaymentMethodName.Equals(request.PaymentMethodName, StringComparison.OrdinalIgnoreCase))
-                    throw new UserException("A payment method with this name already exists in the database.");
+                    throw new UserException("Način plaćanja sa ovim imenom već postoji u bazi.");
             }
         }
 
@@ -54,7 +54,7 @@ namespace CoWorkHub.Services.Services
 
             if (existingPaymentMethod != null)
             {
-                throw new UserException("Another payment method with this name already exists in the database.");
+                throw new UserException("Način plaćanja sa ovim imenom već postoji u bazi.");
             }
         }
     }

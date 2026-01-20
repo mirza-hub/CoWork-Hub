@@ -61,7 +61,16 @@ namespace CoWorkHub.Services.Services
             if (existingWorkingSpace != null)
             {
                 if (existingWorkingSpace.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
-                    throw new UserException("A working space with this name already exists in the database.");
+                    throw new UserException("Prostor sa ovim imenom već postoji u bazi.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Address))
+                throw new UserException("Adresa je obavezna.");
+
+            if (request.Latitude < -90 || request.Latitude > 90 ||
+                request.Longitude < -180 || request.Longitude > 180)
+            {
+                throw new UserException("Koordinate nisu validne");
             }
 
             entity.CreatedAt = DateTime.UtcNow;
@@ -79,7 +88,13 @@ namespace CoWorkHub.Services.Services
 
             if (existingWorkingSpace != null)
             {
-                throw new UserException("Another working space with this name already exists in the database.");
+                throw new UserException("Prostor sa ovim imenom već postoji u bazi.");
+            }
+
+            if (request.Latitude < -90 || request.Latitude > 90 ||
+                request.Longitude < -180 || request.Longitude > 180)
+            {
+                throw new UserException("Koordinate nisu validne");
             }
 
             entity.ModifiedAt = DateTime.UtcNow;

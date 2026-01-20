@@ -1,94 +1,65 @@
 import 'dart:convert';
 
-import 'package:coworkhub_desktop/models/city.dart';
-import 'package:coworkhub_desktop/models/country.dart';
-import 'package:coworkhub_desktop/providers/city_provider.dart';
-import 'package:coworkhub_desktop/providers/country_provider.dart';
-import 'package:coworkhub_desktop/screens/city_screen.dart';
+import 'package:coworkhub_desktop/models/resource.dart';
+import 'package:coworkhub_desktop/providers/resource_provider.dart';
+import 'package:coworkhub_desktop/screens/resource_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-class CityFormScreen extends StatefulWidget {
-  final City? city;
+class ResourceFormScreen extends StatefulWidget {
+  final Resource? resource;
   final void Function(Widget) onChangeScreen;
 
-  const CityFormScreen({
+  const ResourceFormScreen({
     super.key,
-    required this.city,
+    this.resource,
     required this.onChangeScreen,
   });
 
   @override
-  State<CityFormScreen> createState() => _CityFormScreenState();
+  State<ResourceFormScreen> createState() => _ResourceFormScreenState();
 }
 
-class _CityFormScreenState extends State<CityFormScreen> {
+class _ResourceFormScreenState extends State<ResourceFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final CityProvider _cityProvider = CityProvider();
-  final CountryProvider _countryProvider = CountryProvider();
+  final ResourceProvider _resourceProvider = ResourceProvider();
 
   late TextEditingController _nameController;
-  late TextEditingController _postalController;
 
-  List<Country> countries = [];
-  int? selectedCountryId;
-  bool loadingCountries = true;
-
-  bool get isEdit => widget.city != null;
+  bool get isEdit => widget.resource != null;
 
   @override
   void initState() {
     super.initState();
-
-    _nameController = TextEditingController(text: widget.city?.cityName ?? "");
-    _postalController = TextEditingController(
-      text: widget.city?.postalCode ?? "",
+    _nameController = TextEditingController(
+      text: widget.resource?.resourceName ?? "",
     );
-    selectedCountryId = widget.city?.countryId;
-
-    _loadCountries();
-  }
-
-  Future<void> _loadCountries() async {
-    final result = await _countryProvider.get(
-      filter: {"RetrieveAll": true, "IsDeleted": false},
-    );
-    setState(() {
-      countries = result.resultList;
-      loadingCountries = false;
-    });
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final request = {
-      "cityName": _nameController.text,
-      "countryId": selectedCountryId,
-      "postalCode": _postalController.text,
-    };
+    final request = {"resourceName": _nameController.text};
+
     try {
       if (isEdit) {
-        await _cityProvider.update(widget.city!.cityId, request);
+        await _resourceProvider.update(widget.resource!.resourcesId, request);
         showTopFlushBar(
           context: context,
-          message: "Grad je uspješno ažuriran",
+          message: "Resurs uspješno ažuriran",
           backgroundColor: Colors.green,
         );
       } else {
-        await _cityProvider.insert(request);
+        await _resourceProvider.insert(request);
         showTopFlushBar(
           context: context,
-          message: "Grad je uspješno dodan",
+          message: "Resurs uspješno dodan",
           backgroundColor: Colors.green,
         );
-
         setState(() {
           _nameController.clear();
-          _postalController.clear();
-          selectedCountryId = null;
         });
       }
     } catch (e) {
@@ -97,7 +68,9 @@ class _CityFormScreenState extends State<CityFormScreen> {
           final errorData = jsonDecode(e.body);
           if (errorData['errors'] != null &&
               errorData['errors']['userError'] != null) {
-            String message = errorData['errors']['userError'].join("\n");
+            String message = (errorData['errors']['userError'] as List).join(
+              "\n",
+            );
             showTopFlushBar(
               context: context,
               message: message,
@@ -140,7 +113,7 @@ class _CityFormScreenState extends State<CityFormScreen> {
             iconSize: 28,
             onPressed: () {
               widget.onChangeScreen(
-                CityScreen(onChangeScreen: widget.onChangeScreen),
+                ResourceScreen(onChangeScreen: widget.onChangeScreen),
               );
             },
           ),
@@ -160,83 +133,35 @@ class _CityFormScreenState extends State<CityFormScreen> {
                     children: [
                       Center(
                         child: Text(
-                          isEdit ? "Uredi grad" : "Dodaj novi grad",
+                          isEdit ? "Uredi resurs" : "Dodaj novi resurs",
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 25),
 
+                      // Ime resursa
                       TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(
-                          labelText: "Naziv grada",
+                          labelText: "Naziv resursa",
                           border: OutlineInputBorder(),
                         ),
                         inputFormatters: [
-                          LengthLimitingTextInputFormatter(30),
+                          LengthLimitingTextInputFormatter(20),
                           FilteringTextInputFormatter.allow(
-                            RegExp(r'[a-zA-Z0-9\s\-]'),
+                            RegExp(r'[a-zA-Z0-9_-\s]'),
                           ),
                         ],
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return "Naziv je obavezan";
-                          }
-                          return null;
-                        },
+                        validator: (v) =>
+                            v == null || v.isEmpty ? "Naziv je obavezan" : null,
                       ),
-
-                      const SizedBox(height: 16),
-
-                      TextFormField(
-                        controller: _postalController,
-                        decoration: const InputDecoration(
-                          labelText: "Poštanski broj",
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(10),
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return "Poštanski broj je obavezan";
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      loadingCountries
-                          ? const Center(child: CircularProgressIndicator())
-                          : DropdownButtonFormField<int>(
-                              initialValue: selectedCountryId,
-                              decoration: const InputDecoration(
-                                labelText: "Država",
-                                border: OutlineInputBorder(),
-                              ),
-                              items: countries
-                                  .map(
-                                    (c) => DropdownMenuItem(
-                                      value: c.countryId,
-                                      child: Text(c.countryName),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedCountryId = v),
-                              validator: (v) =>
-                                  v == null ? "Izaberite državu" : null,
-                            ),
 
                       const SizedBox(height: 30),
 
+                      // Dugme sačuvaj/spasi
                       Center(
                         child: SizedBox(
                           width: 150,

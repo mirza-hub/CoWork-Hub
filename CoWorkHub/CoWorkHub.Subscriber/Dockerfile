@@ -10,7 +10,7 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["CoWorkHub.Subscriber/CoWorkHub.Subscriber.csproj", "CoWorkHub.Subscriber/"]
+COPY ["CoWorkHub.Subscriber.csproj", "./"]
 RUN dotnet restore "./CoWorkHub.Subscriber/CoWorkHub.Subscriber.csproj"
 COPY . .
 WORKDIR "/src/CoWorkHub.Subscriber"

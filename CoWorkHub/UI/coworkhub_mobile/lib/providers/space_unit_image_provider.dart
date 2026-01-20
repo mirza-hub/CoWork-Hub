@@ -38,7 +38,6 @@ class SpaceUnitImageProvider extends BaseProvider<SpaceUnitImage> {
       var data = jsonDecode(response.body) as List;
       return data.map((e) => SpaceUnitImage.fromJson(e)).toList();
     } else {
-      // Pokušaj da parsiraš eventualne greške iz servera
       try {
         var errorData = jsonDecode(response.body);
         if (errorData is Map && errorData["message"] != null) {

@@ -5,7 +5,6 @@ import 'package:coworkhub_desktop/providers/base_provider.dart';
 class WorkingSpaceProvider extends BaseProvider<WorkingSpace> {
   WorkingSpaceProvider() : super("WorkingSpace");
 
-  // Filter metoda
   Future<PagedResult<WorkingSpace>> getFiltered({
     String? nameFts,
     String? addressFts,
@@ -27,12 +26,7 @@ class WorkingSpaceProvider extends BaseProvider<WorkingSpace> {
       if (sortDirection != null) 'sortDirection': sortDirection,
     };
 
-    final result = await get(
-      filter: filter,
-      // fromJsonT: (Object? json) {
-      //   return WorkingSpace.fromJson(json as Map<String, dynamic>);
-      // },
-    );
+    final result = await get(filter: filter);
     return result;
   }
 

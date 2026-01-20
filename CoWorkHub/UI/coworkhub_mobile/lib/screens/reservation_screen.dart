@@ -142,7 +142,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                 bottom: MediaQuery.of(context).viewInsets.bottom + 20,
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min, // ovo je ključno
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
@@ -247,8 +247,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                         ),
                       ),
 
-                      const SizedBox(width: 10), // mali razmak
-                      // Prazna polovina
+                      const SizedBox(width: 10),
                       const Expanded(child: SizedBox.shrink()),
                     ],
                   ),
@@ -262,7 +261,6 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
   }
 
   void showFilterOptions() {
-    // privremene varijable za sheet
     DateTime? tempDateFrom = filterDateFrom;
     DateTime? tempDateTo = filterDateTo;
     double? tempPriceFrom = filterPriceFrom;
@@ -271,7 +269,6 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     int? tempPeopleTo = filterPeopleTo;
     String? tempStateFilter = stateFilter;
 
-    // kontroleri za inpute
     final dateFromController = TextEditingController(
       text: tempDateFrom != null ? formatDate(tempDateFrom) : '',
     );
@@ -317,7 +314,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // DATUM OD
+                  // Datum OD
                   TextFormField(
                     readOnly: true,
                     controller: dateFromController,
@@ -343,7 +340,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // DATUM DO
+                  // Datum DO
                   TextFormField(
                     readOnly: true,
                     controller: dateToController,
@@ -399,7 +396,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  // CIJENA OD
+                  // Cijena OD
                   TextField(
                     controller: priceFromController,
                     keyboardType: TextInputType.number,
@@ -416,7 +413,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // CIJENA DO
+                  // Cijena DO
                   TextField(
                     controller: priceToController,
                     keyboardType: TextInputType.number,
@@ -433,7 +430,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // BROJ OSOBA OD
+                  // Broj osoba OD
                   TextField(
                     controller: peopleFromController,
                     keyboardType: TextInputType.number,
@@ -450,7 +447,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // BROJ OSOBA DO
+                  // Broj osoba DO
                   TextField(
                     controller: peopleToController,
                     keyboardType: TextInputType.number,
@@ -469,7 +466,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      // PRIMIJENI
+                      // Primijeni dugme
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
@@ -498,7 +495,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // RESETIRAJ
+                      // Resetiraj
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
@@ -511,7 +508,6 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                               tempPeopleTo = null;
                               tempStateFilter = "all";
 
-                              // očisti inpute odmah
                               dateFromController.text = '';
                               dateToController.text = '';
                               priceFromController.text = '';
@@ -738,7 +734,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
               ),
             ),
 
-          /// LISTA
+          // LISTA
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
@@ -865,7 +861,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                                         alignment: Alignment.centerRight,
                                         child: Row(
                                           children: [
-                                            // PLATI - samo ako je pending, inače nevidljivo ali zauzima prostor
+                                            // PLATI samo ako je pending, inače je nevidljivo ali zauzima prostor radi konzistentnosti
                                             Expanded(
                                               child: Visibility(
                                                 visible:

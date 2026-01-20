@@ -39,8 +39,8 @@ namespace CoWorkHub.Services.Services
             base.BeforeInsert(request, entity);
 
             var existingCity = Context.Cities
-                .FirstOrDefault(x => x.CityName.ToLower() == request.CityName.ToLower()
-                       || x.PostalCode.ToLower() == request.PostalCode.ToLower());
+                .FirstOrDefault(x => (x.CityName.ToLower() == request.CityName.ToLower()
+                       || x.PostalCode.ToLower() == request.PostalCode.ToLower()) && x.CityId != entity.CityId);
 
             if (existingCity != null)
             {

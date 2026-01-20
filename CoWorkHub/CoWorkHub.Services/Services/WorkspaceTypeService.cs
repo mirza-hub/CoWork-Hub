@@ -38,7 +38,7 @@ namespace CoWorkHub.Services.Services
             if (existingWorkspaceType != null)
             {
                 if (existingWorkspaceType.TypeName.Equals(request.TypeName, StringComparison.OrdinalIgnoreCase))
-                    throw new UserException("A workspace type with this name already exists in the database.");
+                    throw new UserException("Tip prostora sa ovim imenom već postoji u bazi.");
             }
 
             entity.CreatedAt = DateTime.UtcNow;
@@ -53,7 +53,7 @@ namespace CoWorkHub.Services.Services
 
             if (existingWorkspaceType != null)
             {
-                throw new UserException("Another workspace type with this name already exists in the database.");
+                throw new UserException("Tip prostora sa ovim imenom već postoji u bazi.");
             }
 
             entity.ModifiedAt = DateTime.UtcNow;

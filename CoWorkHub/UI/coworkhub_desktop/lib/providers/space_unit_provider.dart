@@ -73,10 +73,6 @@ class SpaceUnitProvider extends BaseProvider<SpaceUnit> {
     throw Exception("Restoring failed");
   }
 
-  // Future<void> delete(int id) async {
-  //   await delete(id);
-  // }
-
   Future<List<String>> allowedActions(int id) async {
     final response = await http.get(
       Uri.parse("${BaseProvider.baseUrl!}SpaceUnit/$id/allowedActions"),

@@ -64,7 +64,7 @@ class DashboardScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    // CARDOVI
+                    // Cardovi
                     Wrap(
                       spacing: 15,
                       runSpacing: 15,
@@ -186,7 +186,7 @@ class DashboardScreen extends StatelessWidget {
 
                     const SizedBox(height: 30),
 
-                    // LINE/ BAR CHART: Prihod po mesecima
+                    // LINE/ BAR CHART: Prihod po mjesecima
                     if (provider.revenueByMonth != null &&
                         provider.revenueByMonth!.isNotEmpty) ...[
                       Text(
@@ -244,8 +244,8 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildStatCard(String title, String value) {
     return Container(
-      width: 150, // fiksna širina
-      height: 140, // fiksna visina za sve kartice
+      width: 150,
+      height: 140,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF4F5F7),
@@ -255,7 +255,7 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center, // centriranje vertikalno
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             title,

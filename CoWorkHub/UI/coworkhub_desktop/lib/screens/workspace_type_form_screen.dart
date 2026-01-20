@@ -1,61 +1,62 @@
 import 'dart:convert';
 
-import 'package:coworkhub_desktop/models/country.dart';
-import 'package:coworkhub_desktop/providers/country_provider.dart';
-import 'package:coworkhub_desktop/screens/country_screen.dart';
+import 'package:coworkhub_desktop/models/workspace_type.dart';
+import 'package:coworkhub_desktop/providers/workspace_type_provider.dart';
+import 'package:coworkhub_desktop/screens/workspace_type_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-class CountryFormScreen extends StatefulWidget {
-  final Country? country;
+class WorkspaceTypeFormScreen extends StatefulWidget {
+  final WorkspaceType? workspaceType;
   final void Function(Widget) onChangeScreen;
 
-  const CountryFormScreen({
+  const WorkspaceTypeFormScreen({
     super.key,
-    this.country,
+    this.workspaceType,
     required this.onChangeScreen,
   });
 
   @override
-  State<CountryFormScreen> createState() => _CountryFormScreenState();
+  State<WorkspaceTypeFormScreen> createState() =>
+      _WorkspaceTypeFormScreenState();
 }
 
-class _CountryFormScreenState extends State<CountryFormScreen> {
+class _WorkspaceTypeFormScreenState extends State<WorkspaceTypeFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final CountryProvider _countryProvider = CountryProvider();
+  final WorkspaceTypeProvider _provider = WorkspaceTypeProvider();
 
   late TextEditingController _nameController;
 
-  bool get isEdit => widget.country != null;
+  bool get isEdit => widget.workspaceType != null;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(
-      text: widget.country?.countryName ?? "",
+      text: widget.workspaceType?.typeName ?? "",
     );
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final request = {"countryName": _nameController.text};
+    final request = {"typeName": _nameController.text};
 
     try {
       if (isEdit) {
-        await _countryProvider.update(widget.country!.countryId, request);
+        await _provider.update(widget.workspaceType!.workspaceTypeId, request);
         showTopFlushBar(
           context: context,
-          message: "Država uspješno ažurirana",
+          message: "Tip prostora uspješno ažuriran",
           backgroundColor: Colors.green,
         );
       } else {
-        await _countryProvider.insert(request);
+        await _provider.insert(request);
         showTopFlushBar(
           context: context,
-          message: "Država uspješno dodana",
+          message: "Tip prostora uspješno dodat",
           backgroundColor: Colors.green,
         );
         setState(() {
@@ -68,7 +69,9 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
           final errorData = jsonDecode(e.body);
           if (errorData['errors'] != null &&
               errorData['errors']['userError'] != null) {
-            String message = errorData['errors']['userError'].join("\n");
+            String message = (errorData['errors']['userError'] as List).join(
+              "\n",
+            );
             showTopFlushBar(
               context: context,
               message: message,
@@ -111,7 +114,7 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
             iconSize: 28,
             onPressed: () {
               widget.onChangeScreen(
-                CountryScreen(onChangeScreen: widget.onChangeScreen),
+                WorkspaceTypeScreen(onChangeScreen: widget.onChangeScreen),
               );
             },
           ),
@@ -131,7 +134,9 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                     children: [
                       Center(
                         child: Text(
-                          isEdit ? "Uredi državu" : "Dodaj novu državu",
+                          isEdit
+                              ? "Uredi tip prostora"
+                              : "Dodaj novi tip prostora",
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -139,22 +144,22 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                         ),
                       ),
                       const SizedBox(height: 25),
+
+                      // Naziv tipa prostora
                       TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(
-                          labelText: "Naziv države",
+                          labelText: "Naziv tipa prostora",
                           border: OutlineInputBorder(),
                         ),
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(30),
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'[a-zA-Z0-9\s\-]'),
-                          ),
-                        ],
+                        inputFormatters: [LengthLimitingTextInputFormatter(20)],
                         validator: (v) =>
                             v == null || v.isEmpty ? "Naziv je obavezan" : null,
                       ),
+
                       const SizedBox(height: 30),
+
+                      // Dugme sačuvaj/spasi
                       Center(
                         child: SizedBox(
                           width: 150,

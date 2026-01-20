@@ -34,7 +34,6 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
   void initState() {
     super.initState();
 
-    // Ako editujemo postojeću recenziju, popuni polja
     if (widget.existingReview != null) {
       _rating = widget.existingReview!.rating;
       _commentController.text = widget.existingReview!.comment;
@@ -97,53 +96,6 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
     }
   }
 
-  Future<void> _delete() async {
-    if (widget.existingReview == null) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Potvrda brisanja"),
-        content: const Text("Da li ste sigurni da želite obrisati recenziju?"),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            child: const Text("Da", style: TextStyle(color: Colors.white)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Ne"),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _loading = true);
-
-    final provider = context.read<ReviewProvider>();
-
-    try {
-      await provider.delete(widget.existingReview!.reviewsId);
-      showTopFlushBar(
-        context: context,
-        message: "Recenzija je obrisana",
-        backgroundColor: Colors.green,
-      );
-      Navigator.pop(context, true);
-    } catch (e) {
-      showTopFlushBar(
-        context: context,
-        message: "Greška: $e",
-        backgroundColor: Colors.red,
-      );
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
   @override
   void dispose() {
     _commentController.dispose();
@@ -176,7 +128,7 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // IME SPACE UNITA
+                      // Ime space unita
                       if (_loadingSpaceUnit)
                         const Center(child: CircularProgressIndicator())
                       else if (_spaceUnit != null)
@@ -191,7 +143,7 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
 
                       const SizedBox(height: 12),
 
-                      // COMMENT
+                      // Komentar
                       TextFormField(
                         controller: _commentController,
                         maxLines: 5,
@@ -206,7 +158,7 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
 
                       const SizedBox(height: 16),
 
-                      // TEKST IZNAD RATINGA
+                      // Tekst iznad ratinga
                       const Text(
                         "Ocijenite prostor",
                         style: TextStyle(
@@ -217,7 +169,7 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
 
                       const SizedBox(height: 8),
 
-                      // RATING
+                      // Rating
                       Row(
                         children: List.generate(
                           5,
@@ -240,7 +192,7 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
 
                       const SizedBox(height: 24),
 
-                      // DUGMAD
+                      // Dugmad
                       Row(
                         children: [
                           // if (isEdit)

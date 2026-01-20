@@ -76,7 +76,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // SPACE INFO
+            // Info
             Text(
               widget.spaceUnit.name,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -106,7 +106,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
             const SizedBox(height: 16),
 
-            // PAYMENT METHODS
+            // Način plaćanja
             Expanded(
               child: loading
                   ? const Center(child: CircularProgressIndicator())
@@ -153,7 +153,6 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       return;
     }
 
-    // Pokreće PayPal checkout i čeka rezultat
     final bool? isSuccess = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (context) => PaypalCheckoutView(

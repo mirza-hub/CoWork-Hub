@@ -48,10 +48,10 @@ namespace CoWorkHub.Services.Services
             base.BeforeInsert(request, entity);
 
             if (!Context.SpaceUnits.Any(x => x.SpaceUnitId == request.SpaceUnitId && !x.IsDeleted))
-                throw new UserException("SpaceUnit does not exist.");
+                throw new UserException("Prostorna jedinica ne postoji.");
 
             if (!Context.Resources.Any(x => x.ResourcesId == request.ResourcesId && !x.IsDeleted))
-                throw new UserException("Resource does not exist.");
+                throw new UserException("Resurs ne postoji.");
 
             bool exists = Context.SpaceUnitResources.Any(x =>
                 x.SpaceUnitId == request.SpaceUnitId &&
@@ -59,7 +59,7 @@ namespace CoWorkHub.Services.Services
                 !x.IsDeleted);
 
             if (exists)
-                throw new UserException("This resource is already assigned to this SpaceUnit.");
+                throw new UserException("Ovaj resurs je već dodjeljen ovoj prostornoj jedinici.");
 
             entity.CreatedAt = DateTime.UtcNow;
             entity.CreatedBy = (int)_currentUserService.GetUserId();
@@ -72,7 +72,7 @@ namespace CoWorkHub.Services.Services
             if (request.ResourcesId.HasValue)
             {
                 if (!Context.Resources.Any(x => x.ResourcesId == request.ResourcesId && !x.IsDeleted))
-                    throw new UserException("Resource does not exist.");
+                    throw new UserException("Resurs ne postoji.");
 
                 bool duplicate = Context.SpaceUnitResources.Any(x =>
                     x.SpaceUnitId == entity.SpaceUnitId &&
@@ -81,7 +81,7 @@ namespace CoWorkHub.Services.Services
                     !x.IsDeleted);
 
                 if (duplicate)
-                    throw new UserException("This resource is already assigned to this SpaceUnit.");
+                    throw new UserException("Ovaj resurs je već dodjeljen ovoj prostornoj jedinici.");
             }
 
             entity.ModifiedAt = DateTime.UtcNow;

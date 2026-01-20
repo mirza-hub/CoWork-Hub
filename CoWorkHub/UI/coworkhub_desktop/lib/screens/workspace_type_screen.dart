@@ -1,35 +1,31 @@
 import 'dart:async';
 
-import 'package:coworkhub_desktop/models/city.dart';
-import 'package:coworkhub_desktop/providers/city_provider.dart';
-import 'package:coworkhub_desktop/screens/city_form_screen.dart';
+import 'package:coworkhub_desktop/models/workspace_type.dart';
+import 'package:coworkhub_desktop/providers/workspace_type_provider.dart';
 import 'package:coworkhub_desktop/screens/settings_screen.dart';
+import 'package:coworkhub_desktop/screens/workspace_type_form_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 
-class CityScreen extends StatefulWidget {
+class WorkspaceTypeScreen extends StatefulWidget {
   final void Function(Widget) onChangeScreen;
 
-  const CityScreen({super.key, required this.onChangeScreen});
+  const WorkspaceTypeScreen({super.key, required this.onChangeScreen});
 
   @override
-  State<CityScreen> createState() => _CityScreenState();
+  State<WorkspaceTypeScreen> createState() => _WorkspaceTypeScreenState();
 }
 
-class _CityScreenState extends State<CityScreen> {
-  final CityProvider _cityProvider = CityProvider();
+class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
+  final WorkspaceTypeProvider _provider = WorkspaceTypeProvider();
   final TextEditingController _searchController = TextEditingController();
 
   static const double actionColumnWidth = 120;
 
-  List<City> cities = [];
+  List<WorkspaceType> types = [];
   bool isLoading = true;
 
-  final Map<int, String> _sortMap = {
-    0: "CityId",
-    1: "CityName",
-    2: "PostalCode",
-  };
+  final Map<int, String> _sortMap = {0: "WorkspaceTypeId", 1: "TypeName"};
 
   Timer? _debounce;
 
@@ -37,35 +33,28 @@ class _CityScreenState extends State<CityScreen> {
   int pageSize = 5;
   int totalPages = 1;
 
-  String? sortColumn;
-  String? sortDirection;
+  String? sortColumn = "WorkspaceTypeId";
+  String? sortDirection = "asc";
 
   @override
   void initState() {
     super.initState();
-
-    sortColumn = "CityId";
-    sortDirection = "asc";
-
     _searchController.addListener(() {
       _onSearchChanged(_searchController.text);
     });
-    _fetchCities();
+    _fetchTypes();
   }
 
-  Future<void> _fetchCities() async {
+  Future<void> _fetchTypes() async {
     setState(() => isLoading = true);
 
-    final Map<String, dynamic> filter = {
-      "IsCountryIncluded": true,
-      "IsDeleted": false,
-    };
+    final Map<String, dynamic> filter = {"IsDeleted": false};
     if (_searchController.text.isNotEmpty) {
-      filter["CityNameGTE"] = _searchController.text;
+      filter["TypeNameGTE"] = _searchController.text;
     }
 
     try {
-      final result = await _cityProvider.get(
+      final result = await _provider.get(
         filter: filter,
         page: page,
         pageSize: pageSize,
@@ -74,11 +63,11 @@ class _CityScreenState extends State<CityScreen> {
       );
 
       setState(() {
-        cities = result.resultList;
+        types = result.resultList;
         totalPages = result.totalPages ?? 1;
       });
     } catch (e) {
-      debugPrint("Greška pri učitavanju gradova: $e");
+      debugPrint("Greška pri učitavanju tipova prostora: $e");
     } finally {
       setState(() => isLoading = false);
     }
@@ -88,7 +77,7 @@ class _CityScreenState extends State<CityScreen> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       page = 1;
-      _fetchCities();
+      _fetchTypes();
     });
   }
 
@@ -104,19 +93,17 @@ class _CityScreenState extends State<CityScreen> {
     }
 
     page = 1;
-    _fetchCities();
+    _fetchTypes();
   }
 
   Widget _sortableHeader(String title, String columnKey) {
     Widget icon;
-
     if (sortColumn != columnKey) {
       icon = const Icon(Icons.unfold_more, size: 18, color: Colors.grey);
     } else {
       icon = Icon(
-        sortDirection == "asc" ? Icons.arrow_downward : Icons.arrow_upward,
+        sortDirection == "asc" ? Icons.arrow_upward : Icons.arrow_downward,
         size: 16,
-        color: Colors.black,
       );
     }
 
@@ -127,26 +114,21 @@ class _CityScreenState extends State<CityScreen> {
     );
   }
 
-  DataCell _centeredCell(String text, double width) {
+  DataColumn _centeredColumn(Widget label, {void Function(int, bool)? onSort}) {
+    return DataColumn(
+      label: SizedBox(width: 160, child: Center(child: label)),
+      onSort: onSort,
+    );
+  }
+
+  DataCell _centeredCell(String text) {
     return DataCell(
       SizedBox(
-        width: width,
+        width: 160,
         child: Center(
           child: Text(text, textAlign: TextAlign.center, softWrap: true),
         ),
       ),
-    );
-  }
-
-  DataColumn _centeredColumn(
-    Widget label, {
-    bool numeric = false,
-    void Function(int, bool)? onSort,
-  }) {
-    return DataColumn(
-      label: SizedBox(width: 120, child: Center(child: label)),
-      numeric: numeric,
-      onSort: onSort,
     );
   }
 
@@ -162,7 +144,6 @@ class _CityScreenState extends State<CityScreen> {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // HEADER
           Stack(
@@ -181,7 +162,7 @@ class _CityScreenState extends State<CityScreen> {
               ),
               const Center(
                 child: Text(
-                  "Gradovi",
+                  "Tipovi prostora",
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -199,7 +180,7 @@ class _CityScreenState extends State<CityScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: const InputDecoration(
-                    labelText: "Pretraži gradove...",
+                    labelText: "Pretraži tipove prostora...",
                     prefixIcon: Icon(Icons.search),
                     labelStyle: TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(),
@@ -210,15 +191,15 @@ class _CityScreenState extends State<CityScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   widget.onChangeScreen(
-                    CityFormScreen(
-                      city: null,
+                    WorkspaceTypeFormScreen(
+                      workspaceType: null,
                       onChangeScreen: widget.onChangeScreen,
                     ),
                   );
                 },
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text(
-                  "Dodaj grad",
+                  "Dodaj tip prostora",
                   style: TextStyle(color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -233,11 +214,11 @@ class _CityScreenState extends State<CityScreen> {
 
           const SizedBox(height: 20),
 
-          // TABELA
+          // Tabela
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : cities.isEmpty
+                : types.isEmpty
                 ? const Center(
                     child: Text(
                       "Nema podataka za prikazivanje",
@@ -251,10 +232,9 @@ class _CityScreenState extends State<CityScreen> {
                 : LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minWidth: constraints.maxWidth,
-                          ),
+                        scrollDirection: Axis.horizontal,
+                        child: SizedBox(
+                          width: constraints.maxWidth,
                           child: DataTable(
                             headingRowHeight: 50,
                             dataRowHeight: 48,
@@ -265,16 +245,13 @@ class _CityScreenState extends State<CityScreen> {
                             ),
                             columns: [
                               _centeredColumn(
-                                _sortableHeader("ID", "CityId"),
-                                numeric: true,
+                                _sortableHeader("ID", "WorkspaceTypeId"),
                                 onSort: (i, _) => _onSort(i),
                               ),
                               _centeredColumn(
-                                _sortableHeader("Naziv", "CityName"),
+                                _sortableHeader("Naziv", "TypeName"),
                                 onSort: (i, _) => _onSort(i),
                               ),
-                              _centeredColumn(const Text("Poštanski broj")),
-                              _centeredColumn(const Text("Država")),
                               DataColumn(
                                 label: SizedBox(
                                   width: actionColumnWidth,
@@ -282,13 +259,11 @@ class _CityScreenState extends State<CityScreen> {
                                 ),
                               ),
                             ],
-                            rows: cities.map((city) {
+                            rows: types.map((t) {
                               return DataRow(
                                 cells: [
-                                  _centeredCell(city.cityId.toString(), 120),
-                                  _centeredCell(city.cityName, 120),
-                                  _centeredCell(city.postalCode, 120),
-                                  _centeredCell(city.country.countryName, 120),
+                                  _centeredCell(t.workspaceTypeId.toString()),
+                                  _centeredCell(t.typeName),
                                   DataCell(
                                     SizedBox(
                                       width: actionColumnWidth,
@@ -304,8 +279,8 @@ class _CityScreenState extends State<CityScreen> {
                                               ),
                                               onPressed: () {
                                                 widget.onChangeScreen(
-                                                  CityFormScreen(
-                                                    city: city,
+                                                  WorkspaceTypeFormScreen(
+                                                    workspaceType: t,
                                                     onChangeScreen:
                                                         widget.onChangeScreen,
                                                   ),
@@ -324,15 +299,16 @@ class _CityScreenState extends State<CityScreen> {
                                                     title: const Text(
                                                       "Potvrda brisanja",
                                                     ),
-                                                    content: const Text(
-                                                      "Da li želite obrisati ovaj grad?",
+                                                    content: Text(
+                                                      "Da li želite obrisati tip prostora?",
                                                     ),
                                                     actions: [
                                                       TextButton(
                                                         onPressed: () =>
-                                                            Navigator.of(
+                                                            Navigator.pop(
                                                               context,
-                                                            ).pop(true),
+                                                              true,
+                                                            ),
                                                         style:
                                                             ElevatedButton.styleFrom(
                                                               backgroundColor:
@@ -347,9 +323,10 @@ class _CityScreenState extends State<CityScreen> {
                                                       ),
                                                       TextButton(
                                                         onPressed: () =>
-                                                            Navigator.of(
+                                                            Navigator.pop(
                                                               context,
-                                                            ).pop(false),
+                                                              false,
+                                                            ),
                                                         child: const Text("Ne"),
                                                       ),
                                                     ],
@@ -358,14 +335,14 @@ class _CityScreenState extends State<CityScreen> {
 
                                                 if (confirmed == true) {
                                                   try {
-                                                    await _cityProvider.delete(
-                                                      city.cityId,
+                                                    await _provider.delete(
+                                                      t.workspaceTypeId,
                                                     );
-                                                    _fetchCities();
+                                                    _fetchTypes();
                                                     showTopFlushBar(
                                                       context: context,
                                                       message:
-                                                          "Grad uspješno obrisan",
+                                                          "Tip prostora je obrisan",
                                                       backgroundColor:
                                                           Colors.green,
                                                     );
@@ -373,7 +350,7 @@ class _CityScreenState extends State<CityScreen> {
                                                     showTopFlushBar(
                                                       context: context,
                                                       message:
-                                                          "Brisanje nije uspjelo",
+                                                          "Greška pri brisanju: $e",
                                                       backgroundColor:
                                                           Colors.red,
                                                     );
@@ -396,7 +373,7 @@ class _CityScreenState extends State<CityScreen> {
                   ),
           ),
 
-          // FOOTER
+          // Footer
           const Divider(height: 1),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -416,7 +393,7 @@ class _CityScreenState extends State<CityScreen> {
                     onChanged: (v) {
                       pageSize = v!;
                       page = 1;
-                      _fetchCities();
+                      _fetchTypes();
                     },
                   ),
                 ],
@@ -428,7 +405,7 @@ class _CityScreenState extends State<CityScreen> {
                     onPressed: page > 1
                         ? () {
                             setState(() => page--);
-                            _fetchCities();
+                            _fetchTypes();
                           }
                         : null,
                   ),
@@ -438,7 +415,7 @@ class _CityScreenState extends State<CityScreen> {
                     onPressed: page < totalPages
                         ? () {
                             setState(() => page++);
-                            _fetchCities();
+                            _fetchTypes();
                           }
                         : null,
                   ),

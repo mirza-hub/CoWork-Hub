@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:coworkhub_mobile/layout/layout_screen.dart';
-import 'package:coworkhub_mobile/models/working_space.dart';
-import 'package:coworkhub_mobile/models/working_space_image.dart';
 import 'package:coworkhub_mobile/providers/city_provider.dart';
 import 'package:coworkhub_mobile/providers/payment_method_provider.dart';
 import 'package:coworkhub_mobile/providers/payment_provider.dart';

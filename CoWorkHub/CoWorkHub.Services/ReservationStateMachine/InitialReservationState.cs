@@ -30,14 +30,14 @@ namespace CoWorkHub.Services.ReservationStateMachine
             var set = Context.Set<Reservation>();
 
             if (request.StartDate >= request.EndDate)
-                throw new UserException("StartDate must be earlier than EndDate.");
+                throw new UserException("Početni datum mora biti raniji od kranjeg datuma.");
 
             if (request.PeopleCount <= 0)
-                throw new UserException("PeopleCount must be greater than zero.");
+                throw new UserException("Broj ljudi mora biti veći od nule.");
 
             var spaceUnit = Context.SpaceUnits.FirstOrDefault(s => s.SpaceUnitId == request.SpaceUnitId && !s.IsDeleted);
             if (spaceUnit == null)
-                throw new UserException("Space unit does not exist or is deleted.");
+                throw new UserException("Prostorna jedinica ne postoji ili je obrisana.");
 
             if (spaceUnit.WorkspaceTypeId == 1) // Shared/Open Space
             {
@@ -48,7 +48,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
                     .Sum(r => r.PeopleCount);
 
                 if (totalPeople + request.PeopleCount > spaceUnit.Capacity)
-                    throw new UserException($"Cannot reserve: capacity exceeded. Max capacity is {spaceUnit.Capacity}.");
+                    throw new UserException($"Ne može se rezervirati: kapacitet je prekoračen. Max kapacitet je {spaceUnit.Capacity}.");
             }
             else
             {
@@ -56,18 +56,18 @@ namespace CoWorkHub.Services.ReservationStateMachine
                 bool overlaps = set.Any(r => r.SpaceUnitId == request.SpaceUnitId && !r.IsDeleted &&
                                              r.StartDate < request.EndDate && r.EndDate > request.StartDate);
                 if (overlaps)
-                    throw new UserException("This space unit is already reserved for the selected dates.");
+                    throw new UserException("Ova prostorna jedinica je već zauzeta za odabrane datume.");
 
                 // provjeri da PeopleCount nije veći od kapaciteta
                 if (request.PeopleCount > spaceUnit.Capacity)
-                    throw new UserException($"PeopleCount exceeds the capacity of the space unit ({spaceUnit.Capacity}).");
+                    throw new UserException($"Broj ljudi prekoračuje kapacitet prostorne jedinice ({spaceUnit.Capacity}).");
             }
 
             var entity = Mapper.Map<Reservation>(request);
             var numberOfDays = (request.EndDate - request.StartDate).Days;
 
             if (numberOfDays <= 0)
-                throw new UserException("Reservation must be at least 1 day.");
+                throw new UserException("Rezervacija mora biti najmanje 1 dan.");
 
             entity.UsersId = (int)_currentUserService.GetUserId();
             entity.StateMachine = "pending";

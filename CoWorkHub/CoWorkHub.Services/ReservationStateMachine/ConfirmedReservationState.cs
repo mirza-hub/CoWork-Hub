@@ -24,7 +24,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
             var reservation = reservationSet.Find(id);
 
             if (reservation == null)
-                throw new UserException("Reservation not found.");
+                throw new UserException("Rezervacija nije pronađena.");
 
             var today = DateTime.UtcNow.Date;
             var startDate = reservation.StartDate.Date;
@@ -32,7 +32,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
             var daysUntilStart = (startDate - today).TotalDays;
 
             if (daysUntilStart < 3)
-                throw new UserException("Reservation cannot be canceled less than 3 days before start.");
+                throw new UserException("Rezervacija se ne može otkazati manje od 3 dana prije početka.");
 
             reservation.StateMachine = "canceled";
             reservation.CanceledAt = DateTime.UtcNow;
@@ -57,7 +57,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
 
             if (entity == null)
             {
-                throw new UserException("Reservation not found.");
+                throw new UserException("Rezervacija nije pronađena.");
             }
 
             entity.StateMachine = "completed";

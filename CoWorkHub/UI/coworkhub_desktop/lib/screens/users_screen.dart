@@ -33,6 +33,8 @@ class _UsersScreenState extends State<UsersScreen> {
   String? sortColumn;
   bool sortAscending = true;
   String? sortDirection;
+  static const double columnWidth = 160;
+  static const double actionColumnWidth = 120;
   int page = 1;
   int pageSize = 10;
   int totalPages = 1;
@@ -55,6 +57,14 @@ class _UsersScreenState extends State<UsersScreen> {
     DropdownMenuItem(value: "2", child: Text("Mostar")),
     DropdownMenuItem(value: "3", child: Text("Tuzla")),
   ];
+
+  final Map<int, String> _sortMap = {
+    0: "UsersId",
+    1: "FirstName",
+    2: "LastName",
+    3: "Email",
+    4: "Username",
+  };
 
   @override
   void initState() {
@@ -102,7 +112,6 @@ class _UsersScreenState extends State<UsersScreen> {
         pageSize: pageSize,
         orderBy: sortColumn,
         sortDirection: sortDirection,
-        // fromJsonT: (json) => User.fromJson(json as Map<String, dynamic>),
       );
       setState(() {
         users = result.resultList;
@@ -117,10 +126,7 @@ class _UsersScreenState extends State<UsersScreen> {
 
   Future<void> loadCities() async {
     try {
-      final result = await cityProvider.get(
-        filter: {'RetrieveAll': true},
-        // fromJsonT: (json) => City.fromJson(json as Map<String, dynamic>),
-      );
+      final result = await cityProvider.get(filter: {'RetrieveAll': true});
 
       cityOptions = [
         const DropdownMenuItem(value: null, child: Text("Svi")),
@@ -234,15 +240,14 @@ class _UsersScreenState extends State<UsersScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          // kada potvrdiš, prenesi vrijednosti u glavni state
                           setState(() {
                             selectedCityId = tempCity;
                             selectedActive = tempActive;
                             selectedDeleted = tempDeleted;
-                            page = 1; // resetuj na prvu stranicu
+                            page = 1;
                           });
                           Navigator.pop(context);
-                          _fetchUsers(); // refresh liste
+                          _fetchUsers();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
@@ -288,6 +293,27 @@ class _UsersScreenState extends State<UsersScreen> {
           },
         );
       },
+    );
+  }
+
+  DataColumn _centeredColumn(Widget label, {void Function(int, bool)? onSort}) {
+    return DataColumn(
+      onSort: onSort,
+      label: SizedBox(
+        width: columnWidth,
+        child: Center(child: label),
+      ),
+    );
+  }
+
+  DataCell _centeredCell(String text) {
+    return DataCell(
+      SizedBox(
+        width: columnWidth,
+        child: Center(
+          child: Text(text, textAlign: TextAlign.center, softWrap: true),
+        ),
+      ),
     );
   }
 
@@ -346,7 +372,7 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
           const SizedBox(height: 20),
 
-          // ------------------- TABELA -------------------
+          // Tabela
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -544,11 +570,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   ),
           ),
 
-          const Divider(
-            color: Colors.grey, // ista boja kao header, možeš prilagoditi
-            thickness: 1,
-            height: 1,
-          ),
+          const Divider(color: Colors.grey, thickness: 1, height: 1),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -605,7 +627,7 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 }
 
-/// HEADER CELL
+// HEADER ćelija
 class _HeaderCell extends StatelessWidget {
   final String text;
   final int flex;
@@ -624,7 +646,7 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-/// BODY CELL
+// BODY ćelija
 class _TableCell extends StatelessWidget {
   final String text;
   final int flex;

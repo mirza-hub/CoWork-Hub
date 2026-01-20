@@ -1,6 +1,6 @@
 import 'package:coworkhub_desktop/screens/country_screen.dart';
 import 'package:coworkhub_desktop/screens/resource_screen.dart';
-import 'package:coworkhub_desktop/screens/space_type_screen.dart';
+import 'package:coworkhub_desktop/screens/workspace_type_screen.dart';
 import 'package:flutter/material.dart';
 import 'city_screen.dart';
 
@@ -17,7 +17,7 @@ class SettingsScreen extends StatelessWidget {
     } else if (name == "Resursi") {
       onChangeScreen(ResourceScreen(onChangeScreen: onChangeScreen));
     } else if (name == "Tipovi prostora") {
-      onChangeScreen(SpaceTypeScreen(onChangeScreen: onChangeScreen));
+      onChangeScreen(WorkspaceTypeScreen(onChangeScreen: onChangeScreen));
     }
   }
 
@@ -44,7 +44,6 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-// Hover kontenjer kao pre
 class _HoverContainer extends StatefulWidget {
   final String label;
   final VoidCallback onTap;

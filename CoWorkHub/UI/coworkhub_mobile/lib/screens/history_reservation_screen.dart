@@ -142,7 +142,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 bottom: MediaQuery.of(context).viewInsets.bottom + 20,
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min, // ovo je ključno
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
@@ -261,7 +261,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void showFilterOptions() {
-    // privremene varijable za sheet
     DateTime? tempDateFrom = filterDateFrom;
     DateTime? tempDateTo = filterDateTo;
     double? tempPriceFrom = filterPriceFrom;
@@ -270,7 +269,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     int? tempPeopleTo = filterPeopleTo;
     String? tempStateFilter = stateFilter;
 
-    // kontroleri za inpute
     final dateFromController = TextEditingController(
       text: tempDateFrom != null ? formatDate(tempDateFrom) : '',
     );
@@ -316,7 +314,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // DATUM OD
+                  // Datum OD
                   TextFormField(
                     readOnly: true,
                     controller: dateFromController,
@@ -342,7 +340,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // DATUM DO
+                  // Datum DO
                   TextFormField(
                     readOnly: true,
                     controller: dateToController,
@@ -398,7 +396,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  // CIJENA OD
+                  // Cijena OD
                   TextField(
                     controller: priceFromController,
                     keyboardType: TextInputType.number,
@@ -415,7 +413,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // CIJENA DO
+                  // Cijena DO
                   TextField(
                     controller: priceToController,
                     keyboardType: TextInputType.number,
@@ -432,7 +430,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // BROJ OSOBA OD
+                  // Broj osoba OD
                   TextField(
                     controller: peopleFromController,
                     keyboardType: TextInputType.number,
@@ -449,7 +447,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // BROJ OSOBA DO
+                  // Broj osoba DO
                   TextField(
                     controller: peopleToController,
                     keyboardType: TextInputType.number,
@@ -468,7 +466,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      // PRIMIJENI
+                      // Primijeni
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
@@ -497,7 +495,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // RESETIRAJ
+                      // Resetiraj
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
@@ -510,7 +508,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               tempPeopleTo = null;
                               tempStateFilter = "completed";
 
-                              // očisti inpute odmah
                               dateFromController.text = '';
                               dateToController.text = '';
                               priceFromController.text = '';
@@ -737,7 +734,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
             ),
 
-          /// LISTA
+          // LISTA
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
@@ -880,18 +877,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
                                             final hasReviewed = snapshot.data!;
 
-                                            // Ako rezervacija nije završena, ne prikazuj dugme
                                             if (reservation.stateMachine !=
                                                 "completed") {
                                               return const SizedBox.shrink();
                                             }
 
-                                            // Ako je već recenzirano, prikaži poruku
                                             if (hasReviewed) {
                                               return Padding(
                                                 padding: const EdgeInsets.only(
                                                   top: 10,
-                                                ), // spusti poruku malo
+                                                ),
                                                 child: const Text(
                                                   "Već ste ostavili recenziju",
                                                   style: TextStyle(
@@ -907,18 +902,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                               children: [
                                                 // Dummy dugme (nevidljivo, samo da popuni prostor)
                                                 Expanded(
-                                                  child: SizedBox(
-                                                    height:
-                                                        44, // ista visina kao pravo dugme
-                                                  ),
+                                                  child: SizedBox(height: 44),
                                                 ),
                                                 const SizedBox(width: 10),
 
-                                                // Pravo dugme "Ocijeni"
+                                                // Pravo dugme Ocijeni
                                                 Expanded(
                                                   child: ElevatedButton(
                                                     onPressed: () async {
-                                                      // Otvori ReviewFormScreen
                                                       final result = await Navigator.push(
                                                         context,
                                                         MaterialPageRoute(
@@ -950,7 +941,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                                       minimumSize: const Size(
                                                         0,
                                                         44,
-                                                      ), // širina se prilagođava
+                                                      ),
                                                       backgroundColor:
                                                           Colors.blue,
                                                       shape: RoundedRectangleBorder(

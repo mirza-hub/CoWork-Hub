@@ -19,7 +19,6 @@ class UserProvider extends BaseProvider<User> {
     var url =
         "${BaseProvider.baseUrl}User/login?username=$username&password=$password";
     var uri = Uri.parse(url);
-    // var headers = createHeaders();
 
     var response = await http.post(
       uri,

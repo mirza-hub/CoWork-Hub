@@ -59,7 +59,7 @@ namespace CoWorkHub.Services.Services
 
             var reservation = Context.Reservations.Find(request.ReservationId);
             if (reservation == null)
-                throw new UserException("Reservation does not exist.");
+                throw new UserException("Rezervacija ne postoji.");
 
             entity.PaymentDate = DateTime.UtcNow;
             entity.CreatedAt = DateTime.UtcNow;
@@ -72,7 +72,7 @@ namespace CoWorkHub.Services.Services
 
             var reservation = Context.Reservations.Find(request.ReservationId);
             if (reservation == null)
-                throw new UserException("Reservation does not exist.");
+                throw new UserException("Rezervacija ne postoji.");
 
             _reservationService.Confirm(reservation.ReservationId);
         }
