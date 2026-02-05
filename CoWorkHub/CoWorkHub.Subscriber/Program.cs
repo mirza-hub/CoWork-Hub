@@ -5,7 +5,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 
-Env.Load();
+//Env.Load();
 Console.WriteLine("Sleeping to wait for Rabbit");
 Task.Delay(10000).Wait();
 
@@ -13,10 +13,15 @@ Task.Delay(1000).Wait();
 Console.WriteLine("Consuming Queue Now");
 
 
-var hostname = Environment.GetEnvironmentVariable("_rabbitMqHost") ?? "localhost";
+var hostname = Environment.GetEnvironmentVariable("_rabbitMqHost") ?? "rabbitmq";
 var username = Environment.GetEnvironmentVariable("_rabbitMqUser") ?? "guest";
 var password = Environment.GetEnvironmentVariable("_rabbitMqPassword") ?? "guest";
 var port = int.Parse(Environment.GetEnvironmentVariable("_rabbitMqPort") ?? "5672");
+
+Console.WriteLine($"Hostname: {hostname}");
+Console.WriteLine($"Username: {username}");
+Console.WriteLine($"Password: {password}");
+Console.WriteLine($"Port: {port}");
 
 ConnectionFactory factory = new ConnectionFactory() { HostName = hostname, Port = port };
 factory.UserName = username;

@@ -86,7 +86,7 @@ namespace CoWorkHub.Services.Services
                 query = query.Include(r => r.Users);
 
             if (search.IncludeSpaceUnit)
-                query = query.Include(r => r.SpaceUnit);
+                query = query.Include(r => r.SpaceUnit).ThenInclude(r => r.SpaceUnitImages);
 
             return query;
         }

@@ -87,6 +87,14 @@ namespace CoWorkHub.Api.Controllers
             return await (_service as ISpaceUnitService).AllowedActions(id, cancellationToken);
         }
 
+        [AllowAnonymous]
+        [HttpPost("{id}/availability")]
+        public async Task<List<DayAvailability>> GetAvailability(int id, [FromBody] SpaceUnitAvailabilityRequest request, CancellationToken cancellationToken)
+        {
+            return await (_service as ISpaceUnitService).GetAvailability(id, request.From, request.To, request.PeopleCount);
+        }
+
+
         //[AllowAnonymous]
         //[HttpGet("availability")]
         //public List<DayAvailability> GetAvailabilityForMonth([FromQuery] SpaceUnitSearchObject search)

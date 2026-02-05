@@ -305,9 +305,7 @@ namespace CoWorkHub.Services.Seed
             if (!context.PaymentMethods.Any())
             {
                 context.PaymentMethods.AddRange(
-                    new PaymentMethod { PaymentMethodName = "Credit Card" },
-                    new PaymentMethod { PaymentMethodName = "PayPal" },
-                    new PaymentMethod { PaymentMethodName = "Cash" }
+                    new PaymentMethod { PaymentMethodName = "PayPal" }
                 );
                 context.SaveChanges();
             }

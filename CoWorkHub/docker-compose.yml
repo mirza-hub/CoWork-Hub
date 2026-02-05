@@ -1,9 +1,8 @@
 version: '3'
 
 services:
-
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4.0-management
     container_name: rabbitmq
     hostname: rabbitmq
     restart: unless-stopped
@@ -13,8 +12,8 @@ services:
       - RABBITMQ_DEFAULT_USER=${_rabbitMqUser}
       - RABBITMQ_DEFAULT_PASS=${_rabbitMqPassword}
     ports:
-      - "15672:15672"
-      - "5672:5672"
+      - "15801:15672"
+      - "5674:5672"
     expose:
       - 5672
       - 15672
@@ -27,7 +26,7 @@ services:
       - coworkhubnet
 
   coworkhub-sql:
-    image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+    image: mcr.microsoft.com/mssql/server:2019-latest
     restart: unless-stopped
     user: root
     environment:
@@ -35,21 +34,23 @@ services:
       - SA_PASSWORD=${_saPassword}
       - MSSQL_PID=Developer
     ports:
-      - "1401:1433"
+      - "1433:1433"
+    expose:
+      - 1433
     networks:
       - coworkhubnet
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P ${_saPassword} -Q 'SELECT 1'"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P CoWorkHub2026! -Q 'SELECT 1'"]
       interval: 10s
       retries: 10
-      timeout: 5s
+      timeout: 5s   
 
   coworkhub-api:
     restart: unless-stopped
     build:
       context: .
     environment:
-      - ConnectionStrings:CoWorkHubConnection=Server=coworkhub-coworkhub-sql-1,1433;Database=210095;User Id=sa;Password=CoWorkHub2026!;ConnectRetryCount=10;ConnectRetryInterval=5;TrustServerCertificate=True
+      - ConnectionStrings__CoWorkHubConnection=Server=coworkhub-sql,1433;Database=210095;User=sa;Password=${_saPassword};TrustServerCertificate=True;
       - ASPNETCORE_ENVIRONMENT=Development
       - _fromAddress=${_fromAddress}
       - _password=${_password}
@@ -71,17 +72,21 @@ services:
       - _saPassword=${_saPassword}
     ports:
       - "5084:5084"
+    networks:
+      - coworkhubnet
+    links:
+      - coworkhub-sql
     depends_on:
       - coworkhub-sql
       - rabbitmq
-    networks:
-      - coworkhubnet
 
-  coworkhub-subscriber:
+  coworkhub-console:
     restart: on-failure
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: CoWorkHub.Subscriber/Dockerfile
+    env_file:
+      - .env
     depends_on:
       - rabbitmq
     environment:
@@ -92,7 +97,7 @@ services:
       - _displayName=${_displayName}
       - _timeout=${_timeout}
       - _port=${_port}
-      - _rabbitMqHost=rabbitmq
+      - _rabbitMqHost=${_rabbitMqHost}
       - _rabbitMqUser=${_rabbitMqUser}
       - _rabbitMqPassword=${_rabbitMqPassword}
       - _rabbitMqPort=${_rabbitMqPort}
@@ -100,13 +105,20 @@ services:
       - coworkhubnet
 
   coworkhub-worker:
-    restart: unless-stopped
+    image: coworkhub-coworkhub-worker
+    container_name: worker
+    restart: no
     build:
       context: .
+      dockerfile: CoWorkHub.Worker/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - ConnectionStrings__CoWorkHubConnection=Server=coworkhub-sql,1433;Database=210095;User=sa;Password=${_saPassword};Trusted_Connection=False;TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - coworkhub-sql
-    environment:
-      - ConnectionStrings:CoWorkHubConnection=Server=coworkhub-coworkhub-sql-1,1433;Database=210095;User Id=sa;Password=CoWorkHub2026!;ConnectRetryCount=10;ConnectRetryInterval=5;TrustServerCertificate=True
+      - coworkhub-api
     networks:
       - coworkhubnet
 

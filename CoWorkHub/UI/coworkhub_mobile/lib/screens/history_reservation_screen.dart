@@ -1,3 +1,4 @@
+import 'package:coworkhub_mobile/providers/base_provider.dart';
 import 'package:coworkhub_mobile/screens/review_form_screen.dart';
 import 'package:coworkhub_mobile/screens/space_unit_details_screen.dart';
 import 'package:coworkhub_mobile/utils/flushbar_helper.dart';
@@ -618,7 +619,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(top: 6),
+      margin: EdgeInsets.zero,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
@@ -729,7 +730,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text(
                 "Prikazano ${reservations.length} od $totalCount rezervacija",
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 15, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -742,7 +743,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ? const Center(
                     child: Text(
                       "Nema rezervacija",
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -800,175 +805,226 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               ),
                             ],
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // IMAGE
-                              SizedBox(
-                                width: 110,
-                                height: 240,
-                                child: su.spaceUnitImages.isNotEmpty
-                                    ? ClipRRect(
-                                        borderRadius:
-                                            const BorderRadius.horizontal(
-                                              left: Radius.circular(12),
-                                            ),
-                                        child: Image.network(
-                                          su.spaceUnitImages.first.imagePath,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                    : const Icon(Icons.image, size: 30),
-                              ),
+                              // IMAGE full width
+                              su.spaceUnitImages.isNotEmpty
+                                  ? ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(12),
+                                      ),
+                                      child: Image.network(
+                                        "${BaseProvider.baseUrl}${su.spaceUnitImages.first.imagePath}",
+                                        width: double.infinity,
+                                        height: 180,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (c, o, s) =>
+                                            const Icon(Icons.broken_image),
+                                      ),
+                                    )
+                                  : Container(
+                                      height: 180,
+                                      alignment: Alignment.center,
+                                      child: const Icon(Icons.image, size: 40),
+                                    ),
 
                               // INFO
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        su.name,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                              Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      su.name,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        "Od ${formatDate(reservation.startDate.toLocal())} "
-                                        "- ${formatDate(reservation.endDate.toLocal())}",
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                      buildReservationStatus(
-                                        reservation.stateMachine,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        "Osoba: ${reservation.peopleCount}",
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        "${reservation.totalPrice.toStringAsFixed(2)} KM",
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blueAccent,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      "Od ${formatDate(reservation.startDate.toLocal())} "
+                                      "- ${formatDate(reservation.endDate.toLocal())}",
+                                      style: const TextStyle(fontSize: 15),
+                                    ),
 
-                                      // DUGMAD
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: FutureBuilder<bool>(
-                                          future: context
-                                              .read<ReservationProvider>()
-                                              .hasReviewed(
-                                                reservation.reservationId,
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        buildReservationStatus(
+                                          reservation.stateMachine,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        const Text(
+                                          "•",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          "Osoba: ${reservation.peopleCount}",
+                                          style: const TextStyle(fontSize: 15),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        const Text(
+                                          "•",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          "${reservation.totalPrice.toStringAsFixed(2)} KM",
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blueAccent,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 15),
+
+                                    // DUGMAD
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: FutureBuilder<bool>(
+                                        future: context
+                                            .read<ReservationProvider>()
+                                            .hasReviewed(
+                                              reservation.reservationId,
+                                            ),
+                                        builder: (context, snapshot) {
+                                          if (!snapshot.hasData) {
+                                            return const SizedBox.shrink();
+                                          }
+
+                                          final hasReviewed = snapshot.data!;
+
+                                          if (reservation.stateMachine !=
+                                              "completed") {
+                                            return const SizedBox.shrink();
+                                          }
+
+                                          if (hasReviewed) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 10,
                                               ),
-                                          builder: (context, snapshot) {
-                                            if (!snapshot.hasData) {
-                                              return const SizedBox.shrink();
-                                            }
-
-                                            final hasReviewed = snapshot.data!;
-
-                                            if (reservation.stateMachine !=
-                                                "completed") {
-                                              return const SizedBox.shrink();
-                                            }
-
-                                            if (hasReviewed) {
-                                              return Padding(
-                                                padding: const EdgeInsets.only(
-                                                  top: 10,
+                                              child: Container(
+                                                width: double.infinity,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 10,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blueGrey
+                                                      .withOpacity(0.08),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
                                                 ),
-                                                child: const Text(
-                                                  "Već ste ostavili recenziju",
-                                                  style: TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                              );
-                                            }
-
-                                            // Ako nije recenzirano, prikaži dugme "Ocijeni"
-                                            return Row(
-                                              children: [
-                                                // Dummy dugme (nevidljivo, samo da popuni prostor)
-                                                Expanded(
-                                                  child: SizedBox(height: 44),
-                                                ),
-                                                const SizedBox(width: 10),
-
-                                                // Pravo dugme Ocijeni
-                                                Expanded(
-                                                  child: ElevatedButton(
-                                                    onPressed: () async {
-                                                      final result = await Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (_) => ReviewFormScreen(
-                                                            spaceUnitId:
-                                                                reservation
-                                                                    .spaceUnit!
-                                                                    .spaceUnitId,
-                                                            reservationId:
-                                                                reservation
-                                                                    .reservationId,
-                                                          ),
+                                                child: Row(
+                                                  children: const [
+                                                    Icon(
+                                                      Icons.info_outline,
+                                                      size: 20,
+                                                      color: Colors.blueGrey,
+                                                    ),
+                                                    SizedBox(width: 6),
+                                                    Expanded(
+                                                      child: Text(
+                                                        "Već ste ostavili recenziju",
+                                                        style: TextStyle(
+                                                          fontSize: 13,
+                                                          color: Colors.black87,
+                                                          height: 1.35,
                                                         ),
-                                                      );
-
-                                                      if (result == true) {
-                                                        showTopFlushBar(
-                                                          context: context,
-                                                          message:
-                                                              "Recenzija je uspješno spremljena",
-                                                          backgroundColor:
-                                                              Colors.green,
-                                                        );
-
-                                                        setState(() {});
-                                                      }
-                                                    },
-                                                    style: ElevatedButton.styleFrom(
-                                                      minimumSize: const Size(
-                                                        0,
-                                                        44,
                                                       ),
-                                                      backgroundColor:
-                                                          Colors.blue,
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              8,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          }
+
+                                          // Ako nije recenzirano, prikaži dugme "Ocijeni"
+                                          return Row(
+                                            children: [
+                                              // Dummy dugme (nevidljivo, samo da popuni prostor)
+                                              Expanded(
+                                                child: SizedBox(height: 44),
+                                              ),
+                                              const SizedBox(width: 10),
+
+                                              // Pravo dugme Ocijeni
+                                              Expanded(
+                                                child: ElevatedButton(
+                                                  onPressed: () async {
+                                                    final result = await Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            ReviewFormScreen(
+                                                              spaceUnitId:
+                                                                  reservation
+                                                                      .spaceUnit!
+                                                                      .spaceUnitId,
+                                                              reservationId:
+                                                                  reservation
+                                                                      .reservationId,
                                                             ),
                                                       ),
+                                                    );
+
+                                                    if (result == true) {
+                                                      showTopFlushBar(
+                                                        context: context,
+                                                        message:
+                                                            "Recenzija je uspješno spremljena",
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                      );
+
+                                                      setState(() {});
+                                                    }
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    minimumSize: const Size(
+                                                      0,
+                                                      44,
                                                     ),
-                                                    child: const Text(
-                                                      "Ocijeni",
-                                                      style: TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: Colors.white,
-                                                      ),
+                                                    backgroundColor:
+                                                        Colors.blue,
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  child: const Text(
+                                                    "Ocijeni",
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.white,
                                                     ),
                                                   ),
                                                 ),
-                                              ],
-                                            );
-                                          },
-                                        ),
+                                              ),
+                                            ],
+                                          );
+                                        },
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],

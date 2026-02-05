@@ -8,6 +8,8 @@ namespace CoWorkHub.Model
     {
         public DateTime Date { get; set; }
         public bool IsAvailable { get; set; }
-        public int TotalAvailable { get; set; }
+        public int Capacity { get; set; }
+        public int Reserved { get; set; }
+        public int Free { get; set; }
     }
 }

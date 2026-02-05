@@ -9,6 +9,7 @@ import 'package:coworkhub_mobile/providers/space_unit_provider.dart';
 import 'package:coworkhub_mobile/providers/workspace_type_provider.dart';
 import 'package:coworkhub_mobile/screens/space_unit_details_screen.dart';
 import 'package:coworkhub_mobile/screens/space_unit_screen.dart';
+import 'package:coworkhub_mobile/layout/layout_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -61,7 +62,7 @@ class _HomePageState extends State<HomePage> {
     DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime(2100, 12, 31),
       initialDateRange: selectedDateRange,
     );
 
@@ -118,253 +119,291 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 20),
-              const Center(
+      body: Column(
+        children: [
+          PreferredSize(
+            preferredSize: const Size.fromHeight(80),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 43, 16, 16),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 5,
+                    offset: Offset(0, 1.5),
+                  ),
+                ],
+              ),
+              child: const Center(
                 child: Text(
                   'Početna',
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
               ),
-              const SizedBox(height: 50),
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // Tip prostora
-                      FutureBuilder<PagedResult<WorkspaceType>>(
-                        future: _futureSpaceTypes,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const LinearProgressIndicator();
-                          }
-
-                          final data = snapshot.data?.resultList ?? [];
-
-                          return DropdownButtonFormField<int>(
-                            initialValue: selectedWorkspaceTypeId,
-                            decoration: getDefaultInputDecoration(
-                              label: 'Tip prostora',
-                              icon: Icons.business_outlined,
-                            ),
-                            items: data
-                                .map(
-                                  (e) => DropdownMenuItem<int>(
-                                    value: e.workspaceTypeId,
-                                    child: Text(e.typeName),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (val) {
-                              final selected = data.firstWhere(
-                                (e) => e.workspaceTypeId == val,
-                              );
-                              setState(() {
-                                selectedWorkspaceTypeId = val;
-                                selectedWorkspaceTypeName = selected.typeName;
-                              });
-                            },
-                            validator: (value) =>
-                                value == null ? 'Odaberite tip prostora' : null,
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Lokacija
-                      FutureBuilder<PagedResult<City>>(
-                        future: _futureCities,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const LinearProgressIndicator();
-                          }
-
-                          final data = snapshot.data?.resultList ?? [];
-
-                          return DropdownButtonFormField<int>(
-                            initialValue: selectedCityId,
-                            decoration: getDefaultInputDecoration(
-                              label: 'Lokacija',
-                              icon: Icons.location_on_outlined,
-                            ),
-                            items: data
-                                .map(
-                                  (e) => DropdownMenuItem<int>(
-                                    value: e.cityId,
-                                    child: Text(e.cityName),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (val) {
-                              final selected = data.firstWhere(
-                                (e) => e.cityId == val,
-                              );
-                              setState(() {
-                                selectedCityId = val;
-                                selectedCityName = selected.cityName;
-                              });
-                            },
-                            validator: (value) =>
-                                value == null ? 'Odaberite lokaciju' : null,
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Datum OD-DO
-                      TextFormField(
-                        readOnly: true,
-                        controller: TextEditingController(
-                          text: selectedDateRange == null
-                              ? ''
-                              : '${dateFormat.format(selectedDateRange!.start)} - ${dateFormat.format(selectedDateRange!.end)}',
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Odaberite datum', // placeholder
-                          labelText: selectedDateRange != null
-                              ? 'Datum'
-                              : null, // label samo kad je datum izabran
-                          prefixIcon: const Icon(Icons.date_range_outlined),
-                          border: const OutlineInputBorder(),
-                          errorText: _submitted && selectedDateRange == null
-                              ? 'Odaberite datum'
-                              : null,
-                        ),
-                        onTap: pickDateRange,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Broj ljudi
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _peopleController,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              keyboardType: TextInputType.number,
-                              decoration: getDefaultInputDecoration(
-                                label: 'Broj ljudi',
-                                icon: Icons.people_outlined,
-                              ),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
-                              validator: (val) {
-                                final parsed = int.tryParse(val ?? '');
-                                if (parsed == null ||
-                                    parsed < 1 ||
-                                    parsed > 10) {
-                                  return 'Unesite broj između 1 i 10';
-                                }
-                                return null;
-                              },
-                              onChanged: (val) {
-                                final parsed = int.tryParse(val);
-                                if (parsed != null &&
-                                    parsed >= 1 &&
-                                    parsed <= 10) {
-                                  setState(() => peopleCount = parsed);
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Column(
-                            children: [
-                              SizedBox(
-                                width: 36,
-                                height: 28,
-                                child: ElevatedButton(
-                                  onPressed: peopleCount < 10
-                                      ? () {
-                                          setState(() {
-                                            peopleCount++;
-                                            _peopleController.text = peopleCount
-                                                .toString();
-                                          });
-                                        }
-                                      : null,
-                                  style: ElevatedButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                  child: const Icon(Icons.add, size: 16),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              SizedBox(
-                                width: 36,
-                                height: 28,
-                                child: ElevatedButton(
-                                  onPressed: peopleCount > 1
-                                      ? () {
-                                          setState(() {
-                                            peopleCount--;
-                                            _peopleController.text = peopleCount
-                                                .toString();
-                                          });
-                                        }
-                                      : null,
-                                  style: ElevatedButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                  child: const Icon(Icons.remove, size: 16),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Dugme za pretragu
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: search,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            'Pretraži',
-                            style: TextStyle(fontSize: 20, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Recommender
-              const SizedBox(height: 30),
-              const Text(
-                'Preporučeno za vas',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              RecommendedSpaceUnitsWidget(),
-            ],
+            ),
           ),
-        ),
+          // Scrollable sadržaj
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 10),
+                    Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            // Tip prostora
+                            FutureBuilder<PagedResult<WorkspaceType>>(
+                              future: _futureSpaceTypes,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const LinearProgressIndicator();
+                                }
+
+                                final data = snapshot.data?.resultList ?? [];
+
+                                return DropdownButtonFormField<int>(
+                                  initialValue: selectedWorkspaceTypeId,
+                                  decoration: getDefaultInputDecoration(
+                                    label: 'Tip prostora',
+                                    icon: Icons.business_outlined,
+                                  ),
+                                  items: data
+                                      .map(
+                                        (e) => DropdownMenuItem<int>(
+                                          value: e.workspaceTypeId,
+                                          child: Text(e.typeName),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) {
+                                    final selected = data.firstWhere(
+                                      (e) => e.workspaceTypeId == val,
+                                    );
+                                    setState(() {
+                                      selectedWorkspaceTypeId = val;
+                                      selectedWorkspaceTypeName =
+                                          selected.typeName;
+                                    });
+                                  },
+                                  validator: (value) => value == null
+                                      ? 'Odaberite tip prostora'
+                                      : null,
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Lokacija
+                            FutureBuilder<PagedResult<City>>(
+                              future: _futureCities,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const LinearProgressIndicator();
+                                }
+
+                                final data = snapshot.data?.resultList ?? [];
+
+                                return DropdownButtonFormField<int>(
+                                  initialValue: selectedCityId,
+                                  decoration: getDefaultInputDecoration(
+                                    label: 'Lokacija',
+                                    icon: Icons.location_on_outlined,
+                                  ),
+                                  items: data
+                                      .map(
+                                        (e) => DropdownMenuItem<int>(
+                                          value: e.cityId,
+                                          child: Text(e.cityName),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) {
+                                    final selected = data.firstWhere(
+                                      (e) => e.cityId == val,
+                                    );
+                                    setState(() {
+                                      selectedCityId = val;
+                                      selectedCityName = selected.cityName;
+                                    });
+                                  },
+                                  validator: (value) => value == null
+                                      ? 'Odaberite lokaciju'
+                                      : null,
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Datum OD-DO
+                            TextFormField(
+                              readOnly: true,
+                              controller: TextEditingController(
+                                text: selectedDateRange == null
+                                    ? ''
+                                    : '${dateFormat.format(selectedDateRange!.start)} - ${dateFormat.format(selectedDateRange!.end)}',
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Odaberite datum',
+                                labelText: selectedDateRange != null
+                                    ? 'Datum'
+                                    : null, // label samo kad je datum izabran
+                                prefixIcon: const Icon(
+                                  Icons.date_range_outlined,
+                                ),
+                                border: const OutlineInputBorder(),
+                                errorText:
+                                    _submitted && selectedDateRange == null
+                                    ? 'Odaberite datum'
+                                    : null,
+                              ),
+                              onTap: pickDateRange,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Broj ljudi
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _peopleController,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    keyboardType: TextInputType.number,
+                                    decoration: getDefaultInputDecoration(
+                                      label: 'Broj ljudi',
+                                      icon: Icons.people_outlined,
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black87,
+                                    ),
+                                    validator: (val) {
+                                      final parsed = int.tryParse(val ?? '');
+                                      if (parsed == null ||
+                                          parsed < 1 ||
+                                          parsed > 10) {
+                                        return 'Unesite broj između 1 i 10';
+                                      }
+                                      return null;
+                                    },
+                                    onChanged: (val) {
+                                      final parsed = int.tryParse(val);
+                                      if (parsed != null &&
+                                          parsed >= 1 &&
+                                          parsed <= 10) {
+                                        setState(() => peopleCount = parsed);
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Column(
+                                  children: [
+                                    SizedBox(
+                                      width: 36,
+                                      height: 28,
+                                      child: ElevatedButton(
+                                        onPressed: peopleCount < 10
+                                            ? () {
+                                                setState(() {
+                                                  peopleCount++;
+                                                  _peopleController.text =
+                                                      peopleCount.toString();
+                                                });
+                                              }
+                                            : null,
+                                        style: ElevatedButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                        child: const Icon(Icons.add, size: 16),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    SizedBox(
+                                      width: 36,
+                                      height: 28,
+                                      child: ElevatedButton(
+                                        onPressed: peopleCount > 1
+                                            ? () {
+                                                setState(() {
+                                                  peopleCount--;
+                                                  _peopleController.text =
+                                                      peopleCount.toString();
+                                                });
+                                              }
+                                            : null,
+                                        style: ElevatedButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                        child: const Icon(
+                                          Icons.remove,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Dugme za pretragu
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: search,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Pretraži',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Recommender
+                    const SizedBox(height: 30),
+                    const Text(
+                      'Preporučeno za vas',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    RecommendedSpaceUnitsWidget(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -449,8 +488,8 @@ class _RecommendedSpaceUnitsWidgetState
         itemBuilder: (context, index) {
           final su = units[index];
           return GestureDetector(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => SpaceUnitDetailsScreen(
@@ -463,6 +502,13 @@ class _RecommendedSpaceUnitsWidgetState
                   ),
                 ),
               );
+              // if (mounted) {
+              //   try {
+              //     _layoutScreenState?.refreshLayout();
+              //   } catch (e) {
+              //     debugPrint("Greška pri osvježavanju layouta: $e");
+              //   }
+              // }
             },
             child: Container(
               width: 220,

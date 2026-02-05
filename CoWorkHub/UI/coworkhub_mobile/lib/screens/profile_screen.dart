@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:coworkhub_mobile/models/extensions/user_image_extension.dart';
 import 'package:coworkhub_mobile/providers/auth_provider.dart';
 import 'package:coworkhub_mobile/utils/flushbar_helper.dart';
@@ -11,9 +10,12 @@ import 'package:provider/provider.dart';
 import '../models/user.dart';
 import '../providers/user_provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final Function(User)? onUserUpdated;
+
+  const ProfileScreen({super.key, this.onUserUpdated});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -30,6 +32,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   File? _selectedImage;
   String? _imageBase64;
+  bool _imageDeleted = false;
+  String? _originalFirstName;
+  String? _originalLastName;
+  String? _originalPhoneNumber;
+  String? _originalUsername;
+  String? _originalImageBase64;
+  bool _isUpdating = false;
 
   @override
   void initState() {
@@ -52,7 +61,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final bytes = user.getImageBytes();
       if (bytes != null && bytes.isNotEmpty) {
         _imageBase64 = base64Encode(bytes);
+        _originalImageBase64 = _imageBase64;
       }
+
+      _originalFirstName = user.firstName;
+      _originalLastName = user.lastName;
+      _originalPhoneNumber = user.phoneNumber;
+      _originalUsername = user.username;
 
       return user;
     }
@@ -60,28 +75,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return null;
   }
 
+  bool _hasChanges() {
+    if (_controllers['firstName']?.text != _originalFirstName) return true;
+    if (_controllers['lastName']?.text != _originalLastName) return true;
+    if (_controllers['phoneNumber']?.text != _originalPhoneNumber) return true;
+    if (_controllers['username']?.text != _originalUsername) return true;
+
+    if (_passwordController.text.isNotEmpty) return true;
+
+    if (_imageDeleted) return true;
+    if (_selectedImage != null) return true;
+    if (_imageBase64 != _originalImageBase64) return true;
+
+    return false;
+  }
+
   Future<void> _updateUser(User user) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
+    if (!_hasChanges()) {
+      showTopFlushBar(
+        context: context,
+        message: 'Nema promjena za čuvanje',
+        backgroundColor: Colors.orange,
+      );
+      return;
+    }
+
+    setState(() => _isUpdating = true);
+
     final provider = context.read<UserProvider>();
     try {
-      final updatedUser = await provider.update(user.usersId, {
+      final Map<String, dynamic> updateData = {
         "firstName": _controllers['firstName']!.text,
         "lastName": _controllers['lastName']!.text,
         "phoneNumber": _controllers['phoneNumber']!.text,
         "username": _controllers['username']!.text,
-        "profileImageBase64": _imageBase64,
-        // if (_imageBase64 != null) "profileImageBase64": _imageBase64,
-        if (_passwordController.text.isNotEmpty)
-          "password": _passwordController.text,
-        if (_confirmPasswordController.text.isNotEmpty)
-          "passwordConfirm": _confirmPasswordController.text,
-      });
+      };
+
+      if (_imageDeleted) {
+        updateData["profileImageBase64"] = null;
+      } else if (_imageBase64 != null) {
+        updateData["profileImageBase64"] = _imageBase64;
+      }
+
+      if (_passwordController.text.isNotEmpty) {
+        updateData["password"] = _passwordController.text;
+      }
+      if (_confirmPasswordController.text.isNotEmpty) {
+        updateData["passwordConfirm"] = _confirmPasswordController.text;
+      }
+
+      final updatedUser = await provider.update(user.usersId, updateData);
+
+      final passwordChanged = _passwordController.text.isNotEmpty;
 
       setState(() {
-        _futureUser = Future.value(updatedUser);
+        setState(() {
+          _selectedImage = null;
+          _imageDeleted = false;
+          _imageBase64 = null;
+          _futureUser = _fetchUser();
+        });
 
         _controllers['firstName']!.text = updatedUser.firstName;
         _controllers['lastName']!.text = updatedUser.lastName;
@@ -89,6 +146,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _controllers['username']!.text = updatedUser.username;
         _passwordController.clear();
         _confirmPasswordController.clear();
+
+        _selectedImage = null;
+        _imageDeleted = false;
+        final bytes = updatedUser.getImageBytes();
+        if (bytes != null && bytes.isNotEmpty) {
+          _imageBase64 = base64Encode(bytes);
+        } else {
+          _imageBase64 = null;
+        }
       });
 
       showTopFlushBar(
@@ -96,6 +162,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         message: 'Uspešno ste ažurirali profil',
         backgroundColor: Colors.green,
       );
+
+      if (passwordChanged && mounted) {
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) {
+          AuthProvider.isSignedIn = false;
+          AuthProvider.userId = null;
+          AuthProvider.userRoles = [];
+          AuthProvider.username = null;
+          AuthProvider.password = null;
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        }
+      } else {
+        if (mounted) {
+          setState(() => _isUpdating = false);
+          if (widget.onUserUpdated != null) {
+            widget.onUserUpdated!(updatedUser);
+          }
+        }
+      }
     } catch (e) {
       String message = "Greška prilikom registracije.";
 
@@ -113,10 +202,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         message: message,
         backgroundColor: Colors.red,
       );
+      if (mounted) {
+        setState(() => _isUpdating = false);
+      }
     }
   }
-
-  final ImagePicker _picker = ImagePicker();
 
   void _showImagePickerDialog() {
     showModalBottomSheet(
@@ -144,10 +234,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _pickImage(ImageSource.gallery);
               },
             ),
-            if (_selectedImage != null ||
-                (_imageBase64 != null && _imageBase64!.isNotEmpty))
+            if (!_imageDeleted &&
+                (_selectedImage != null ||
+                    (_imageBase64 != null && _imageBase64!.isNotEmpty)))
               ListTile(
-                leading: const Icon(Icons.delete),
+                leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('Obriši sliku'),
                 onTap: () {
                   Navigator.pop(context);
@@ -171,15 +262,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _selectedImage = file;
         _imageBase64 = base64Encode(bytes);
+        _imageDeleted = false;
       });
     }
+  }
+
+  String? passwordValidator(String? value) {
+    if (value == null || value.isEmpty) return null;
+    if (value.length < 8) return 'Lozinka mora imati najmanje 8 karaktera';
+    if (value.length > 64) return 'Lozinka je preduga';
+    return null;
   }
 
   void _removeImage() {
     setState(() {
       _selectedImage = null;
       _imageBase64 = null;
+      _imageDeleted = true;
     });
+  }
+
+  ImageProvider? _getImageProvider(User user) {
+    if (_imageDeleted) {
+      return null;
+    }
+
+    if (_selectedImage != null) {
+      return FileImage(_selectedImage!);
+    }
+
+    if (_imageBase64 != null && _imageBase64!.isNotEmpty) {
+      return MemoryImage(base64Decode(_imageBase64!));
+    }
+
+    if (!_imageDeleted) {
+      final bytes = user.getImageBytes();
+      if (bytes != null && bytes.isNotEmpty) {
+        return MemoryImage(bytes);
+      }
+    }
+
+    return null;
+  }
+
+  bool _shouldShowInitials(User user) {
+    return _imageDeleted ||
+        (_selectedImage == null &&
+            (_imageBase64 == null || _imageBase64!.isEmpty) &&
+            (user.getImageBytes() == null || user.getImageBytes()!.isEmpty));
   }
 
   @override
@@ -245,19 +375,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: Colors.blue.shade200,
-                  backgroundImage: _selectedImage != null
-                      ? FileImage(_selectedImage!)
-                      : (_imageBase64 != null && _imageBase64!.isNotEmpty)
-                      ? MemoryImage(base64Decode(_imageBase64!))
-                      : (user.getImageBytes() != null &&
-                            user.getImageBytes()!.isNotEmpty)
-                      ? MemoryImage(user.getImageBytes()!)
-                      : null,
-                  child:
-                      (_selectedImage == null &&
-                          (_imageBase64 == null || _imageBase64!.isEmpty) &&
-                          (user.getImageBytes() == null ||
-                              user.getImageBytes()!.isEmpty))
+                  backgroundImage: _getImageProvider(user),
+                  child: _shouldShowInitials(user)
                       ? Text(
                           user.firstName[0] + user.lastName[0],
                           style: const TextStyle(
@@ -271,10 +390,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: _showImagePickerDialog,
-                  child: const Text(
-                    'Odaberite drugu sliku',
+                  child: Text(
+                    _imageDeleted
+                        ? 'Slika će biti obrisana pri spremanju'
+                        : 'Odaberite drugu sliku',
                     style: TextStyle(
-                      color: Colors.blue,
+                      color: _imageDeleted ? Colors.red : Colors.blue,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -307,14 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
-                        validator: (value) {
-                          if (value != null &&
-                              value.isNotEmpty &&
-                              value.length < 6) {
-                            return "Lozinka mora imati najmanje 6 karaktera";
-                          }
-                          return null;
-                        },
+                        validator: passwordValidator,
                         decoration: InputDecoration(
                           labelText: 'Lozinka',
                           border: const OutlineInputBorder(),
@@ -338,8 +452,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
                         validator: (value) {
-                          if (_passwordController.text.isNotEmpty &&
-                              value != _passwordController.text) {
+                          if (_passwordController.text.isEmpty) {
+                            return null;
+                          }
+                          if (value != _passwordController.text) {
                             return "Lozinke se ne podudaraju";
                           }
                           return null;
@@ -370,11 +486,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'Uloga',
                   user.userRoles.map((role) => role.role.roleName).join(', '),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 15),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => _updateUser(user),
+                    onPressed: _isUpdating ? null : () => _updateUser(user),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       backgroundColor: Colors.blue,
@@ -382,12 +498,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      'Sačuvaj',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                    child: _isUpdating
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            'Sačuvaj',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
+                const SizedBox(height: 20),
               ],
             ),
           );

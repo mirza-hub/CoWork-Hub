@@ -74,7 +74,7 @@ namespace CoWorkHub.Services.Services
                                     r.EndDate > from
                                 )
                                 .Sum(r => (int?)r.PeopleCount) ?? 0
-                            ) + requestedPeopleCount > su.Capacity
+                            ) + requestedPeopleCount <= su.Capacity
                         )
                         : !Context.Reservations.Any(r =>
                             r.SpaceUnitId == su.SpaceUnitId &&
@@ -82,10 +82,10 @@ namespace CoWorkHub.Services.Services
                             (r.StateMachine == "pending" || r.StateMachine == "confirmed") &&
                             r.StartDate < to &&
                             r.EndDate > from
-                        )
+                        ) &&
+                        su.Capacity >= requestedPeopleCount
                 );
             }
-
 
             if (search.IncludeWorkingSpace)
                 query = query.Include(x => x.WorkingSpace)
@@ -172,53 +172,65 @@ namespace CoWorkHub.Services.Services
             }
         }
 
-        //public List<Model.DayAvailability> GetAvailabilityForMonth(SpaceUnitSearchObject search)
-        //{
-        //    if (!search.ByMonth || !search.From.HasValue || !search.To.HasValue)
-        //        throw new UserException("Search must have ByMonth = true and From/To dates set.");
+        public async Task<List<DayAvailability>> GetAvailability(int spaceUnitId, DateTime from, DateTime to, int peopleCount)
+        {
+            var spaceUnit = await Context.SpaceUnits.AsNoTracking().FirstOrDefaultAsync(x => 
+            x.SpaceUnitId == spaceUnitId &&
+            !x.IsDeleted &&
+            x.StateMachine == "active");
 
-        //    var query = AddFilter(search, Context.SpaceUnits.AsQueryable());
+            if (from > to)
+                throw new UserException("Neispravan raspon datuma.");
 
-        //    var days = new List<DayAvailability>();
-        //    for (var day = search.From.Value.Date; day <= search.To.Value.Date; day = day.AddDays(1))
-        //    {
-        //        int availableCount = 0;
+            if (peopleCount <= 0)
+                throw new UserException("PeopleCount mora biti veći od 0.");
 
-        //        foreach (var su in query)
-        //        {
-        //            var reservedCount = Context.Reservations
-        //                .Where(r => r.SpaceUnitId == su.SpaceUnitId
-        //                            && !r.IsDeleted
-        //                            && r.StartDate <= day
-        //                            && r.EndDate > day)
-        //                .Sum(r => r.PeopleCount);
+            if (spaceUnit == null)
+                throw new UserException("Space unit ne postoji.");
 
-        //            int capacity = su.Capacity;
+            var reservations = await Context.Reservations
+                .Where(r =>
+                r.SpaceUnitId == spaceUnitId &&
+                !r.IsDeleted &&
+                (r.StateMachine == "pending" || r.StateMachine == "confirmed" || r.StateMachine == "completed") &&
+                r.EndDate > from).ToListAsync();
 
-        //            if (su.WorkspaceTypeId == 1)
-        //            {
-        //                reservedCount = Context.Reservations
-        //                    .Where(r => r.SpaceUnitId == su.SpaceUnitId
-        //                                && !r.IsDeleted
-        //                                && r.StartDate <= day
-        //                                && r.EndDate > day)
-        //                    .Sum(r => (int?)r.PeopleCount) ?? 0;
-        //                reservedCount += search.PeopleCount ?? 1;
-        //            }
 
-        //            if (capacity - reservedCount > 0)
-        //                availableCount++;
-        //        }
+            var result = new List<DayAvailability>();
 
-        //        days.Add(new DayAvailability
-        //        {
-        //            Date = day,
-        //            IsAvailable = availableCount > 0,
-        //            TotalAvailable = availableCount
-        //        });
-        //    }
+            for (var day = from.Date; day <= to.Date; day = day.AddDays(1))
+            {
+                var dayReservations = reservations
+                    .Where(r => r.StartDate.Date <= day && r.EndDate.Date > day)
+                    .ToList();
 
-        //    return days;
-        //}
+                bool isAvailable;
+
+                if (spaceUnit.WorkspaceTypeId == 1) // open space
+                {
+                    var reserved = dayReservations.Sum(r => r.PeopleCount);
+                    isAvailable = reserved + peopleCount <= spaceUnit.Capacity;
+                }
+                else // private office / event hall
+                {
+                    isAvailable = !dayReservations.Any() && peopleCount <= spaceUnit.Capacity;
+                }
+
+                result.Add(new DayAvailability
+                {
+                    Date = day,
+                    IsAvailable = isAvailable,
+                    Capacity = spaceUnit.Capacity,
+                    Reserved = spaceUnit.WorkspaceTypeId == 1
+                                ? dayReservations.Sum(r => r.PeopleCount)
+                                : dayReservations.Any() ? spaceUnit.Capacity : 0,
+                    Free = spaceUnit.Capacity - (spaceUnit.WorkspaceTypeId == 1
+                                ? dayReservations.Sum(r => r.PeopleCount)
+                                : dayReservations.Any() ? spaceUnit.Capacity : 0)
+                });
+            }
+
+            return result;
+        }
     }
 }
