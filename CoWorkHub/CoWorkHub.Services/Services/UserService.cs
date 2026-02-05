@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model;
+﻿using Azure.Core;
+using CoWorkHub.Model;
 using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.Messages;
 using CoWorkHub.Model.Requests;
@@ -248,6 +249,76 @@ namespace CoWorkHub.Services.Services
                 .FirstOrDefault(u => u.UsersId == entity.UsersId);
 
             return Mapper.Map<Model.User>(userWithRoles);
+        }
+
+        public Model.PasswordResetRequest SendPasswordResetCode(PasswordResetRequestRequest request)
+        {
+            var user = Context.Users.FirstOrDefault(u => u.Email.ToLower() == request.Email.ToLower());
+
+            if (user == null)
+                throw new UserException("Korisnik sa ovim emailom ne postoji");
+
+            var code = new Random().Next(100000, 999999).ToString();
+
+            var resetRequest = new Database.PasswordResetRequest
+            {
+                UserId = user.UsersId,
+                Code = code,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            Context.PasswordResetRequests.Add(resetRequest);
+            Context.SaveChanges();
+
+            _rabbitMqService.SendAnEmail(new EmailDTO
+            {
+                EmailTo = user.Email,
+                Message = $"Vaš kod za reset lozinke: <b>{code}</b>",
+                ReceiverName = $"{user.FirstName} {user.LastName}",
+                Subject = "Reset lozinke"
+            });
+
+            return Mapper.Map<Model.PasswordResetRequest>(resetRequest);
+        }
+
+        public bool VerifyResetCode(string email, string code)
+        {
+            var user = Context.Users.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
+            if (user == null) return false;
+
+            var request = Context.PasswordResetRequests
+                .Where(r => r.UserId == user.UsersId && !r.IsUsed)
+                .OrderByDescending(r => r.CreatedAt)
+                .FirstOrDefault();
+
+            if (request == null) return false;
+            if ((DateTime.UtcNow - request.CreatedAt).TotalMinutes > 10) return false;
+            if (request.Code != code) return false;
+
+            request.IsUsed = true;
+            Context.SaveChanges();
+
+            return true;
+        }
+
+        public void ResetPassword(string email, string newPassword, string newPasswordConfirm)
+        {
+            if (string.IsNullOrWhiteSpace(newPassword))
+                throw new UserException("Lozinka je obavezna");
+
+            if (newPassword.Length < 8 || newPassword.Length > 64)
+                throw new UserException("Lozinka mora imati 8–64 karaktera");
+
+            if (newPassword != newPasswordConfirm)
+                throw new UserException("Lozinka i potvrda se ne poklapaju");
+
+            var user = Context.Users.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
+            if (user == null) throw new UserException("Korisnik ne postoji");
+
+            user.PasswordSalt = _passwordService.GenerateSalt();
+            user.PasswordHash = _passwordService.GenerateHash(user.PasswordSalt, newPassword);
+
+            Context.SaveChanges();
         }
 
         private void ValidateUserInsert(UserInsertRequest request)

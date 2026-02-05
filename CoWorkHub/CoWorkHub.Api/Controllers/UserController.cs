@@ -4,6 +4,7 @@ using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
+using CoWorkHub.Services.Services;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -60,6 +61,27 @@ namespace CoWorkHub.Api.Controllers
         public override User GetById(int id)
         {
             return base.GetById(id);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("password-reset/send-code")]
+        public Model.PasswordResetRequest SendPasswordResetCode([FromBody] PasswordResetRequestRequest request)
+        {
+            return (_service as IUserService).SendPasswordResetCode(request);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("password-reset/verify-code")]
+        public bool VerifyResetCode([FromBody] VerifyResetCode request)
+        {
+            return (_service as IUserService).VerifyResetCode(request.Email, request.Code);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("password-reset/new-password")]
+        public void ResetPassword([FromBody] ResetPassword request)
+        {
+            (_service as IUserService).ResetPassword(request.Email, request.NewPassword, request.NewPasswordConfirm);
         }
     }
 }

@@ -227,6 +227,29 @@ namespace CoWorkHub.Services.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PasswordResetRequests",
+                columns: table => new
+                {
+                    PasswordResetRequestId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    CodeHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsUsed = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PasswordResetRequests", x => x.PasswordResetRequestId);
+                    table.ForeignKey(
+                        name: "FK_PasswordResetRequests_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UsersId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserRoles",
                 columns: table => new
                 {
@@ -555,6 +578,11 @@ namespace CoWorkHub.Services.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PasswordResetRequests_UserId",
+                table: "PasswordResetRequests",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Payment_PaymentMethodId",
                 table: "Payment",
                 column: "PaymentMethodId");
@@ -696,6 +724,9 @@ namespace CoWorkHub.Services.Migrations
 
             migrationBuilder.DropTable(
                 name: "Notifications");
+
+            migrationBuilder.DropTable(
+                name: "PasswordResetRequests");
 
             migrationBuilder.DropTable(
                 name: "Payment");

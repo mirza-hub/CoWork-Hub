@@ -3,6 +3,7 @@ import 'package:coworkhub_mobile/layout/layout_screen.dart';
 import 'package:coworkhub_mobile/models/user.dart';
 import 'package:coworkhub_mobile/providers/auth_provider.dart';
 import 'package:coworkhub_mobile/providers/user_provider.dart';
+import 'package:coworkhub_mobile/screens/forgot_password_screen.dart';
 import 'package:coworkhub_mobile/screens/register_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -184,7 +185,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Zaboravljena šifra
                 GestureDetector(
                   onTap: () {
-                    // TODO: dodaj forgot password ekran
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordScreen(),
+                      ),
+                    );
                   },
                   child: const Text(
                     "Zaboravili ste šifru?",
@@ -209,7 +215,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: const TextStyle(
                           color: Colors.blue,
                           decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.bold,
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
