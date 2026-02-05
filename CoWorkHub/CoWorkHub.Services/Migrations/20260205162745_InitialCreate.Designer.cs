@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CoWorkHub.Services.Migrations
 {
     [DbContext(typeof(_210095Context))]
-    [Migration("20260131222641_InitialCreate")]
+    [Migration("20260205162745_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -160,6 +160,37 @@ namespace CoWorkHub.Services.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("CoWorkHub.Services.Database.PasswordResetRequest", b =>
+                {
+                    b.Property<int>("PasswordResetRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PasswordResetRequestId"));
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PasswordResetRequestId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetRequests");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.Payment", b =>
@@ -923,6 +954,17 @@ namespace CoWorkHub.Services.Migrations
                         .HasForeignKey("UserId")
                         .IsRequired()
                         .HasConstraintName("FK_Notifications_Users");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CoWorkHub.Services.Database.PasswordResetRequest", b =>
+                {
+                    b.HasOne("CoWorkHub.Services.Database.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
