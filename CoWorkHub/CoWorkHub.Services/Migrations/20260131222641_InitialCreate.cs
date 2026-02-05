@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CoWorkHub.Services.Migrations
 {
     /// <inheritdoc />
-    public partial class newDatabase : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -136,6 +136,8 @@ namespace CoWorkHub.Services.Migrations
                     CityName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CountryId = table.Column<int>(type: "int", nullable: false),
                     PostalCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    Latitude = table.Column<double>(type: "float", nullable: true),
+                    Longitude = table.Column<double>(type: "float", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -160,7 +162,7 @@ namespace CoWorkHub.Services.Migrations
                     Email = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     PhoneNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    ProfileImageUrl = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    ProfileImage = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
                     PasswordSalt = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PasswordHash = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     CityId = table.Column<int>(type: "int", nullable: false),
@@ -264,6 +266,8 @@ namespace CoWorkHub.Services.Migrations
                     CityId = table.Column<int>(type: "int", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Latitude = table.Column<double>(type: "float", nullable: false),
+                    Longitude = table.Column<double>(type: "float", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "(getdate())"),
                     CreatedBy = table.Column<int>(type: "int", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -371,7 +375,7 @@ namespace CoWorkHub.Services.Migrations
                     EndDate = table.Column<DateTime>(type: "datetime", nullable: false),
                     PeopleCount = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
                     TotalPrice = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    StateMachine = table.Column<int>(type: "int", nullable: false),
+                    StateMachine = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CanceledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -387,49 +391,6 @@ namespace CoWorkHub.Services.Migrations
                         principalColumn: "UsersId");
                     table.ForeignKey(
                         name: "FK_SpaceUnit_Reservations",
-                        column: x => x.SpaceUnitId,
-                        principalTable: "SpaceUnits",
-                        principalColumn: "SpaceUnitId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Reviews",
-                columns: table => new
-                {
-                    ReviewsId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UsersId = table.Column<int>(type: "int", nullable: false),
-                    SpaceUnitId = table.Column<int>(type: "int", nullable: false),
-                    Rating = table.Column<byte>(type: "tinyint", nullable: false),
-                    Comment = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedBy = table.Column<int>(type: "int", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    WorkingSpacesId = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Reviews", x => x.ReviewsId);
-                    table.ForeignKey(
-                        name: "FK_Review_DeletedBy",
-                        column: x => x.DeletedBy,
-                        principalTable: "Users",
-                        principalColumn: "UsersId");
-                    table.ForeignKey(
-                        name: "FK_Review_User",
-                        column: x => x.UsersId,
-                        principalTable: "Users",
-                        principalColumn: "UsersId");
-                    table.ForeignKey(
-                        name: "FK_Reviews_WorkingSpaces_WorkingSpacesId",
-                        column: x => x.WorkingSpacesId,
-                        principalTable: "WorkingSpaces",
-                        principalColumn: "WorkingSpacesId");
-                    table.ForeignKey(
-                        name: "FK_SpaceUnit_Reviews",
                         column: x => x.SpaceUnitId,
                         principalTable: "SpaceUnits",
                         principalColumn: "SpaceUnitId",
@@ -541,6 +502,43 @@ namespace CoWorkHub.Services.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Reviews",
+                columns: table => new
+                {
+                    ReviewsId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ReservationId = table.Column<int>(type: "int", nullable: false),
+                    Rating = table.Column<byte>(type: "tinyint", nullable: false),
+                    Comment = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedBy = table.Column<int>(type: "int", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    WorkingSpacesId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Reviews", x => x.ReviewsId);
+                    table.ForeignKey(
+                        name: "FK_Review_DeletedBy",
+                        column: x => x.DeletedBy,
+                        principalTable: "Users",
+                        principalColumn: "UsersId");
+                    table.ForeignKey(
+                        name: "FK_Reviews_Reservations_ReservationId",
+                        column: x => x.ReservationId,
+                        principalTable: "Reservations",
+                        principalColumn: "ReservationId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Reviews_WorkingSpaces_WorkingSpacesId",
+                        column: x => x.WorkingSpacesId,
+                        principalTable: "WorkingSpaces",
+                        principalColumn: "WorkingSpacesId");
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityLog_UserId",
                 table: "ActivityLog",
@@ -582,14 +580,10 @@ namespace CoWorkHub.Services.Migrations
                 column: "DeletedBy");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Reviews_SpaceUnitId",
+                name: "IX_Reviews_ReservationId",
                 table: "Reviews",
-                column: "SpaceUnitId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Reviews_UsersId",
-                table: "Reviews",
-                column: "UsersId");
+                column: "ReservationId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reviews_WorkingSpacesId",

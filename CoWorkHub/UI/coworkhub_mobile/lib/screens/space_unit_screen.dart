@@ -317,7 +317,15 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
         ),
       );
 
-      if (result == false) {
+      if (result == true) {
+        showTopFlushBar(
+          context: context,
+          message: "Rezervacija je uspješno plaćena",
+          backgroundColor: Colors.green,
+        );
+
+        await fetchUnits(reset: true);
+      } else if (result == false) {
         showTopFlushBar(
           context: context,
           message:
@@ -720,7 +728,7 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text(
                 "Prikazano ${units.length} od $totalCount rezultata",
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 15, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -788,161 +796,133 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                               ),
                             ],
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // IMAGE
-                              Container(
-                                width: 110,
-                                height: 240,
-                                child: su.spaceUnitImages.isNotEmpty
-                                    ? ClipRRect(
-                                        borderRadius:
-                                            const BorderRadius.horizontal(
-                                              left: Radius.circular(12),
-                                            ),
-                                        child: Image.network(
-                                          "${BaseProvider.baseUrl}${su.spaceUnitImages.first.imagePath}",
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (c, o, s) =>
-                                              const Icon(Icons.broken_image),
-                                        ),
-                                      )
-                                    : const Icon(Icons.image, size: 30),
-                              ),
+                              // IMAGE full width
+                              su.spaceUnitImages.isNotEmpty
+                                  ? ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(12),
+                                      ),
+                                      child: Image.network(
+                                        "${BaseProvider.baseUrl}${su.spaceUnitImages.first.imagePath}",
+                                        width: double.infinity,
+                                        height: 180,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (c, o, s) =>
+                                            const Icon(Icons.broken_image),
+                                      ),
+                                    )
+                                  : Container(
+                                      height: 180,
+                                      alignment: Alignment.center,
+                                      child: const Icon(Icons.image, size: 40),
+                                    ),
 
                               // INFO
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        su.name,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                              Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      su.name,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.location_on,
+                                          size: 16,
+                                          color: Colors.grey,
                                         ),
-                                      ),
-
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.location_on,
-                                            size: 16,
-                                            color: Colors.grey,
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          "${widget.cityName} • ${widget.workspaceTypeName}",
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color: Colors.grey[700],
                                           ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            "${widget.cityName} • ${widget.workspaceTypeName}",
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.grey[700],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.people,
-                                            size: 16,
-                                            color: Colors.grey,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            "Kapacitet: ${su.capacity}",
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        su.description,
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        "${su.pricePerDay.toStringAsFixed(2)} KM / dan",
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blueAccent,
                                         ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.people,
+                                          size: 16,
+                                          color: Colors.grey,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "Kapacitet: ${su.capacity}",
+                                          style: const TextStyle(fontSize: 15),
+                                        ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      su.description,
+                                      style: const TextStyle(fontSize: 15),
+                                    ),
+
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "${su.pricePerDay.toStringAsFixed(2)} KM / dan",
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blueAccent,
                                       ),
+                                    ),
 
-                                      const SizedBox(height: 10),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Row(
-                                          children: [
-                                            const Expanded(child: SizedBox()),
-
-                                            const SizedBox(width: 10),
-                                            //                                             Row(
-                                            //                                               children: [
-                                            //                                                 HoverInfo(
-                                            //                                                   info: """
-                                            // Pravila rezervacija:
-                                            // Ako rezervišete i ne platite, dan prije starta vaša rezervacija se otkazuje.
-                                            // Ako rezervišete i platite, možete otkazati do 2 dana prije starta.
-                                            // """,
-                                            //                                                   child: const Icon(
-                                            //                                                     Icons.info_outline,
-                                            //                                                     color: Colors.blueAccent,
-                                            //                                                     size: 20,
-                                            //                                                   ),
-                                            //                                                 ),
-                                            //                                               ],
-                                            //                                             ),
-
-                                            // const SizedBox(width: 10),
-                                            // DRUGA polovina dugme "Rezerviši"
-                                            Expanded(
-                                              child: ElevatedButton(
-                                                onPressed: () {
-                                                  _handleReserve(context, su);
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 16,
-                                                        vertical: 11,
-                                                      ),
-                                                  minimumSize: const Size(
-                                                    0,
-                                                    40,
-                                                  ),
-                                                  backgroundColor: Colors.blue,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                  ),
+                                    const SizedBox(height: 10),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Row(
+                                        children: [
+                                          const Expanded(child: SizedBox()),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                _handleReserve(context, su);
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 11,
+                                                    ),
+                                                minimumSize: const Size(0, 40),
+                                                backgroundColor: Colors.blue,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
                                                 ),
-                                                child: const Text(
-                                                  "Rezerviši",
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    color: Colors.white,
-                                                  ),
+                                              ),
+                                              child: const Text(
+                                                "Rezerviši",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.white,
                                                 ),
                                               ),
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -954,62 +934,6 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class HoverInfo extends StatefulWidget {
-  final Widget child;
-  final String info;
-
-  const HoverInfo({required this.child, required this.info, Key? key})
-    : super(key: key);
-
-  @override
-  State<HoverInfo> createState() => _HoverInfoState();
-}
-
-class _HoverInfoState extends State<HoverInfo> {
-  OverlayEntry? _overlayEntry;
-
-  void _showOverlay(BuildContext context) {
-    final renderBox = context.findRenderObject() as RenderBox;
-    final offset = renderBox.localToGlobal(Offset.zero);
-
-    _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        left: offset.dx,
-        top: offset.dy - 120,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: 250,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
-            ),
-            child: Text(widget.info, style: const TextStyle(fontSize: 13)),
-          ),
-        ),
-      ),
-    );
-
-    Overlay.of(context).insert(_overlayEntry!);
-  }
-
-  void _hideOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => _showOverlay(context),
-      onExit: (_) => _hideOverlay(),
-      child: widget.child,
     );
   }
 }

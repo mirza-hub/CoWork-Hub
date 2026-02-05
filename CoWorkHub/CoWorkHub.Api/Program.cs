@@ -112,15 +112,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Starting the seeding process on application startup
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<_210095Context>();
-    var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
-
-    DataSeeder.Seed(context, passwordService);
-}
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -138,12 +129,19 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-
-
 using (var scope = app.Services.CreateScope())
 {
-    var dataContext = scope.ServiceProvider.GetRequiredService<_210095Context>();
-    dataContext.Database.Migrate();
+    var context = scope.ServiceProvider.GetRequiredService<_210095Context>();
+    //context.Database.Migrate();
+}
+
+// Starting the seeding process on application startup
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<_210095Context>();
+    var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+
+    DataSeeder.Seed(context, passwordService);
 }
 
 app.Run();

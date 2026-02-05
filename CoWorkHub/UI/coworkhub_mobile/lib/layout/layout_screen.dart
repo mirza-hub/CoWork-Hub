@@ -1,5 +1,6 @@
 import 'package:coworkhub_mobile/models/extensions/user_image_extension.dart';
 import 'package:coworkhub_mobile/providers/auth_provider.dart';
+import 'package:coworkhub_mobile/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:coworkhub_mobile/models/user.dart';
 import 'package:coworkhub_mobile/screens/login_screen.dart';
@@ -7,6 +8,9 @@ import 'package:coworkhub_mobile/screens/home_page.dart';
 import 'package:coworkhub_mobile/screens/reservation_screen.dart';
 import 'package:coworkhub_mobile/screens/history_reservation_screen.dart';
 import 'package:coworkhub_mobile/screens/profile_screen.dart';
+import 'package:provider/provider.dart';
+
+_LayoutScreenState? _layoutScreenState;
 
 class LayoutScreen extends StatefulWidget {
   final User? user;
@@ -17,7 +21,8 @@ class LayoutScreen extends StatefulWidget {
   State<LayoutScreen> createState() => _LayoutScreenState();
 }
 
-class _LayoutScreenState extends State<LayoutScreen> {
+class _LayoutScreenState extends State<LayoutScreen>
+    with WidgetsBindingObserver {
   late User? currentUser;
   bool isSidebarOpen = false;
   Widget _currentScreen = const HomePage();
@@ -29,6 +34,74 @@ class _LayoutScreenState extends State<LayoutScreen> {
   void initState() {
     super.initState();
     currentUser = widget.user;
+    WidgetsBinding.instance.addObserver(this);
+    // Setuj static referencu na state (samo za root LayoutScreen)
+    _layoutScreenState = this;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLoginStatus();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkLoginStatus();
+    }
+  }
+
+  Future<void> _checkLoginStatus() async {
+    if (AuthProvider.isSignedIn && AuthProvider.userId != null) {
+      if (currentUser == null || currentUser!.usersId != AuthProvider.userId) {
+        final provider = context.read<UserProvider>();
+        try {
+          final filter = {
+            "UsersId": AuthProvider.userId,
+            "IsUserRolesIncluded": true,
+          };
+          final result = await provider.get(filter: filter);
+
+          if (result.resultList.isNotEmpty) {
+            setState(() {
+              currentUser = result.resultList.first;
+            });
+          }
+        } catch (e) {
+          debugPrint("Greška pri dohvaćanju korisnika: $e");
+        }
+      }
+    }
+  }
+
+  Future<void> refreshLayout() async {
+    if (AuthProvider.isSignedIn && AuthProvider.userId != null) {
+      final provider = context.read<UserProvider>();
+      try {
+        final filter = {
+          "UsersId": AuthProvider.userId,
+          "IsUserRolesIncluded": true,
+        };
+        final result = await provider.get(filter: filter);
+
+        if (result.resultList.isNotEmpty) {
+          setState(() {
+            currentUser = result.resultList.first;
+          });
+        }
+      } catch (e) {
+        debugPrint("Greška pri osvježavanju: $e");
+      }
+    }
   }
 
   @override
@@ -135,7 +208,13 @@ class _LayoutScreenState extends State<LayoutScreen> {
                       _menuItem(
                         title: "Moj profil",
                         icon: Icons.person_outline,
-                        page: const ProfileScreen(),
+                        page: ProfileScreen(
+                          onUserUpdated: (updatedUser) {
+                            setState(() {
+                              currentUser = updatedUser;
+                            });
+                          },
+                        ),
                       ),
                       const Spacer(),
                       _menuItem(

@@ -10,6 +10,7 @@ using CoWorkHub.Services.RabbitMqService;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace CoWorkHub.Services.Services
 {
@@ -80,6 +81,8 @@ namespace CoWorkHub.Services.Services
         public override void BeforeInsert(UserInsertRequest request, Database.User entity)
         {
             base.BeforeInsert(request, entity);
+
+            ValidateUserInsert(request);
 
             if (request.Password != request.PasswordConfirm)
                 throw new UserException("Lozinka i lozinka potvrda se moraju podudarati");
@@ -246,5 +249,78 @@ namespace CoWorkHub.Services.Services
 
             return Mapper.Map<Model.User>(userWithRoles);
         }
+
+        private void ValidateUserInsert(UserInsertRequest request)
+        {
+            // Ime
+            if (string.IsNullOrWhiteSpace(request.FirstName))
+                throw new UserException("Ime je obavezno");
+
+            if (request.FirstName.Length > 30)
+                throw new UserException("Ime ne smije biti duže od 30 karaktera");
+
+            if (!Regex.IsMatch(request.FirstName, @"^[a-zA-ZšđčćžŠĐČĆŽ]+([ -][a-zA-ZšđčćžŠĐČĆŽ]+)*$"))
+                throw new UserException("Ime može sadržavati samo slova, razmak ili crtu");
+
+            // Prezime
+            if (string.IsNullOrWhiteSpace(request.LastName))
+                throw new UserException("Prezime je obavezno");
+
+            if (request.LastName.Length > 30)
+                throw new UserException("Prezime ne smije biti duže od 30 karaktera");
+
+            if (!Regex.IsMatch(request.LastName, @"^[a-zA-ZšđčćžŠĐČĆŽ]+([ -][a-zA-ZšđčćžŠĐČĆŽ]+)*$"))
+                throw new UserException("Prezime može sadržavati samo slova, razmak ili crtu");
+
+            // Email
+            if (string.IsNullOrWhiteSpace(request.Email))
+                throw new UserException("Email je obavezan");
+
+            if (request.Email.Length > 100)
+                throw new UserException("Email ne smije biti duži od 100 karaktera");
+
+            if (!Regex.IsMatch(request.Email, @"^[\w.+-]+@([\w-]+\.)+[\w-]{2,}$"))
+                throw new UserException("Neispravan format emaila. Primjer: ime.prezime@gmail.com");
+
+            // Username
+            if (string.IsNullOrWhiteSpace(request.Username))
+                throw new UserException("Korisničko ime je obavezno");
+
+            if (request.Username.Length < 3 || request.Username.Length > 15)
+                throw new UserException("Korisničko ime mora imati 3–15 karaktera");
+
+            if (!Regex.IsMatch(request.Username, @"^[a-zA-Z0-9_-]+$"))
+                throw new UserException("Korisničko ime može sadržavati samo slova, brojeve, _ i -");
+
+            // Telefon
+            if (string.IsNullOrWhiteSpace(request.PhoneNumber))
+                throw new UserException("Broj telefona je obavezan");
+
+            if (!Regex.IsMatch(request.PhoneNumber, @"^\+?[0-9]{6,15}$"))
+                throw new UserException("Neispravan format telefona. Primjer: +38761234567");
+
+            // Lozinka
+            if (string.IsNullOrWhiteSpace(request.Password))
+                throw new UserException("Lozinka je obavezna");
+
+            if (request.Password.Length < 8 || request.Password.Length > 64)
+                throw new UserException("Lozinka mora imati 8–64 karaktera");
+
+            // Lozinka potvrda
+            if (request.Password != request.PasswordConfirm)
+                throw new UserException("Lozinka i potvrda lozinke se moraju podudarati");
+
+            // Grad
+            if (request.CityId <= 0 || !Context.Cities.Any(c => c.CityId == request.CityId))
+                throw new UserException("Morate odabrati validan grad");
+
+            // Provjera duplikata username i email
+            if (Context.Users.Any(x => x.Username.ToLower() == request.Username.ToLower()))
+                throw new UserException("Korisnik sa ovim korisničkim imenom je već registrovan");
+
+            if (Context.Users.Any(x => x.Email.ToLower() == request.Email.ToLower()))
+                throw new UserException("Korisnik sa ovim emailom je već registrovan");
+        }
+
     }
 }

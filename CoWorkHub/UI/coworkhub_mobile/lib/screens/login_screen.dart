@@ -6,9 +6,12 @@ import 'package:coworkhub_mobile/providers/user_provider.dart';
 import 'package:coworkhub_mobile/screens/register_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final Route? returnRoute;
+
+  const LoginScreen({super.key, this.returnRoute});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -55,10 +58,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => LayoutScreen(user: user)),
-          );
+          if (widget.returnRoute != null) {
+            Navigator.pushReplacement(context, widget.returnRoute!);
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => LayoutScreen(user: user)),
+            );
+          }
         });
       }
     } catch (e) {
@@ -107,9 +114,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelText: "Korisničko ime",
                     border: OutlineInputBorder(),
                   ),
-                  validator: (v) => v == null || v.isEmpty
-                      ? "Korisničko ime je obavezno"
-                      : null,
+                  inputFormatters: [LengthLimitingTextInputFormatter(15)],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return "Korisničko ime je obavezno";
+                    }
+
+                    if (v.length > 15) {
+                      return "Korisničko ime ne smije imati više od 15 karaktera";
+                    }
+
+                    final regex = RegExp(r'^[a-zA-Z0-9_-]+$');
+                    if (!regex.hasMatch(v)) {
+                      return "Dozvoljena su samo slova, brojevi, _ i -";
+                    }
+
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
                 ),
 
                 const SizedBox(height: 20),
@@ -128,8 +150,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+                  inputFormatters: [LengthLimitingTextInputFormatter(50)],
                   validator: (v) =>
                       v == null || v.isEmpty ? "Lozinka je obavezna" : null,
+                  textInputAction: TextInputAction.done,
                 ),
 
                 const SizedBox(height: 30),

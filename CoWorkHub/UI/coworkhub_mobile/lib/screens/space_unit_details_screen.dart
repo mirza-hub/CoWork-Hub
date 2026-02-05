@@ -1,16 +1,26 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:coworkhub_mobile/models/day_availability.dart';
 import 'package:coworkhub_mobile/models/review.dart';
 import 'package:coworkhub_mobile/providers/base_provider.dart';
 import 'package:coworkhub_mobile/providers/review_provider.dart';
 import 'package:coworkhub_mobile/providers/space_unit_image_provider.dart';
 import 'package:coworkhub_mobile/providers/working_space_image_provider.dart';
 import 'package:coworkhub_mobile/screens/review_form_screen.dart';
+import 'package:coworkhub_mobile/screens/space_unit_map_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 import '../../models/space_unit.dart';
+import '../../models/user.dart';
 import '../../providers/space_unit_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/reservation_provider.dart';
+import '../../providers/user_provider.dart';
 import '../../screens/login_screen.dart';
 import '../../screens/payment_method_screen.dart';
 import '../../utils/flushbar_helper.dart';
@@ -70,7 +80,11 @@ class _SpaceUnitDetailsScreenState extends State<SpaceUnitDetailsScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.popUntil(context, (route) {
+              return route.isFirst || route.settings.name == 'home';
+            });
+          },
         ),
         title: const Text(
           "Detalji",
@@ -135,11 +149,25 @@ class SpaceUnitDetailsTab extends StatefulWidget {
 
 class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
   late Future<SpaceUnit?> _future;
+  DateTimeRange? _selectedDateRange;
+  int _peopleCount = 1;
+  List<DayAvailability> _dayAvailability = [];
+  DateTime _focusedDay = DateTime.now();
+  Timer? _peopleDebounce;
+
+  late TextEditingController _peopleController;
+  final dateFormat = DateFormat('dd.MM.yyyy');
 
   @override
   void initState() {
     super.initState();
     _future = _fetchSpaceUnit();
+
+    _selectedDateRange = null;
+    _peopleCount = widget.peopleCount ?? 1;
+    _peopleController = TextEditingController(text: _peopleCount.toString());
+    _focusedDay = widget.dateRange?.start ?? DateTime.now();
+    _loadAvailabilityForMonth(_focusedDay);
   }
 
   Future<SpaceUnit?> _fetchSpaceUnit() async {
@@ -158,7 +186,83 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
     return result.resultList.first;
   }
 
-  // REZERVACIJA
+  Future<void> _loadAvailabilityForMonth(DateTime focusedDay) async {
+    final provider = context.read<SpaceUnitProvider>();
+
+    final firstDay = DateTime(focusedDay.year, focusedDay.month, 1);
+    final lastDay = DateTime(focusedDay.year, focusedDay.month + 1, 0);
+
+    _dayAvailability = await provider.getAvailability(
+      spaceUnitId: widget.spaceUnitId,
+      from: firstDay,
+      to: lastDay,
+      peopleCount: _peopleCount,
+    );
+
+    setState(() {});
+  }
+
+  void _onPeopleCountChanged(int value) {
+    _peopleDebounce?.cancel();
+
+    _peopleDebounce = Timer(const Duration(milliseconds: 400), () {
+      _reloadAvailability();
+    });
+  }
+
+  Future<void> _reloadAvailability() async {
+    final provider = context.read<SpaceUnitProvider>();
+
+    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final lastDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
+
+    _dayAvailability = await provider.getAvailability(
+      spaceUnitId: widget.spaceUnitId,
+      from: firstDayOfMonth,
+      to: lastDayOfMonth,
+      peopleCount: _peopleCount,
+    );
+
+    setState(() {});
+  }
+
+  Widget _buildDayCell(DateTime day, Color color, {bool disabled = false}) {
+    return Container(
+      margin: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '${day.day}',
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          decoration: disabled
+              ? TextDecoration.lineThrough
+              : TextDecoration.none,
+        ),
+      ),
+    );
+  }
+
+  bool _isDayAvailable(DateTime day) {
+    final match = _dayAvailability.firstWhere(
+      (d) => isSameDay(d.date, day),
+      orElse: () => DayAvailability(
+        date: day,
+        isAvailable: false,
+        capacity: 0,
+        reserved: 0,
+        free: 0,
+      ),
+    );
+
+    return match.isAvailable;
+  }
+
+  // Rezervacija
   void _handleReserve(BuildContext context, SpaceUnit su) {
     if (AuthProvider.isSignedIn != true || AuthProvider.userId == null) {
       _showLoginRequiredDialog(context);
@@ -199,26 +303,62 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
 
       final reservation = await reservationProvider.insert({
         "spaceUnitId": su.spaceUnitId,
-        "startDate": widget.dateRange!.start.toIso8601String(),
-        "endDate": widget.dateRange!.end.toIso8601String(),
-        "peopleCount": widget.peopleCount!,
+        "startDate": _selectedDateRange!.start.toIso8601String(),
+        "endDate": _selectedDateRange!.end.toIso8601String(),
+        "peopleCount": _peopleCount,
       });
 
-      Navigator.push(
+      showTopFlushBar(
+        context: context,
+        message: "Rezervacija je uspješno izvršena",
+        backgroundColor: Colors.green,
+      );
+
+      await Future.delayed(const Duration(seconds: 3));
+      await _refreshData();
+
+      final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
           builder: (_) => PaymentMethodScreen(
             spaceUnit: su,
-            dateRange: widget.dateRange!,
-            peopleCount: widget.peopleCount!,
+            dateRange: _selectedDateRange!,
+            peopleCount: _peopleCount,
             reservationId: reservation.reservationId,
           ),
         ),
       );
+
+      if (result == true) {
+        showTopFlushBar(
+          context: context,
+          message: "Rezervacija je uspješno plaćena",
+          backgroundColor: Colors.green,
+        );
+        await _refreshData();
+      } else if (result == false) {
+        showTopFlushBar(
+          context: context,
+          message:
+              "Plaćanje nije bilo uspješno, nastavite sa plaćanjem kasnije.",
+          backgroundColor: Colors.red,
+        );
+      }
     } catch (e) {
+      String message = "Greška pri rezervaciji.";
+
+      if (e is http.Response) {
+        try {
+          final errorJson = jsonDecode(e.body);
+          if (errorJson["errors"] != null &&
+              errorJson["errors"]["userError"] != null) {
+            message = errorJson["errors"]["userError"][0];
+          }
+        } catch (_) {}
+      }
       showTopFlushBar(
         context: context,
-        message: "Greška pri rezervaciji: $e",
+        message: message,
         backgroundColor: Colors.red,
       );
     }
@@ -236,9 +376,20 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
+
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                MaterialPageRoute(
+                  builder: (_) => LoginScreen(
+                    returnRoute: MaterialPageRoute(
+                      builder: (_) => SpaceUnitDetailsScreen(
+                        spaceUnitId: widget.spaceUnitId,
+                        dateRange: _selectedDateRange,
+                        peopleCount: _peopleCount,
+                      ),
+                    ),
+                  ),
+                ),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
@@ -254,6 +405,30 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
         ],
       ),
     );
+  }
+
+  Future<void> _refreshData() async {
+    _future = _fetchSpaceUnit();
+
+    final provider = context.read<SpaceUnitProvider>();
+    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final lastDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
+
+    _dayAvailability = await provider.getAvailability(
+      spaceUnitId: widget.spaceUnitId,
+      from: firstDayOfMonth,
+      to: lastDayOfMonth,
+      peopleCount: _peopleCount,
+    );
+
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _peopleDebounce?.cancel();
+    _peopleController.dispose();
+    super.dispose();
   }
 
   // UI
@@ -298,16 +473,227 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
               ),
               _readOnlyField("Firma", su.workingSpace?.name ?? "-"),
               _readOnlyField("Grad", su.workingSpace?.city?.cityName ?? "-"),
-              _readOnlyField(
+              _readOnlyFieldWithMap(
                 "Adresa",
                 su.workingSpace?.address ?? "-",
+                su,
                 maxLines: 2,
               ),
               _readOnlyField("Resursi", resourcesText, maxLines: 3),
+              // DATUM
+              TableCalendar(
+                firstDay: DateTime.now(),
+                lastDay: DateTime(2100),
+                focusedDay: _focusedDay,
+                calendarStyle: const CalendarStyle(
+                  isTodayHighlighted: false,
+                  outsideDaysVisible: false,
+                ),
+                headerStyle: HeaderStyle(formatButtonVisible: false),
+                enabledDayPredicate: (day) {
+                  return _isDayAvailable(day);
+                },
+                onPageChanged: (focusedDay) async {
+                  _focusedDay = focusedDay;
 
+                  final firstDayOfMonth = DateTime(
+                    focusedDay.year,
+                    focusedDay.month,
+                    1,
+                  );
+                  final lastDayOfMonth = DateTime(
+                    focusedDay.year,
+                    focusedDay.month + 1,
+                    0,
+                  );
+
+                  final provider = context.read<SpaceUnitProvider>();
+
+                  _dayAvailability = await provider.getAvailability(
+                    spaceUnitId: widget.spaceUnitId,
+                    from: firstDayOfMonth,
+                    to: lastDayOfMonth,
+                    peopleCount: _peopleCount,
+                  );
+
+                  print("Učitano ${_dayAvailability.length} dana");
+                  setState(() {});
+                },
+                selectedDayPredicate: (day) {
+                  if (_selectedDateRange == null) return false;
+                  return day.isAfter(
+                        _selectedDateRange!.start.subtract(
+                          const Duration(days: 1),
+                        ),
+                      ) &&
+                      day.isBefore(
+                        _selectedDateRange!.end.add(const Duration(days: 1)),
+                      );
+                },
+                onDaySelected: (selectedDay, focusedDay) {
+                  if (!_isDayAvailable(selectedDay)) return;
+
+                  setState(() {
+                    _focusedDay = focusedDay;
+
+                    if (_selectedDateRange != null &&
+                        isSameDay(_selectedDateRange!.start, selectedDay) &&
+                        isSameDay(_selectedDateRange!.end, selectedDay)) {
+                      _selectedDateRange = null;
+                      return;
+                    }
+
+                    if (_selectedDateRange == null) {
+                      _selectedDateRange = DateTimeRange(
+                        start: selectedDay,
+                        end: selectedDay,
+                      );
+                      return;
+                    }
+
+                    if (isSameDay(
+                      _selectedDateRange!.start,
+                      _selectedDateRange!.end,
+                    )) {
+                      final start = _selectedDateRange!.start;
+
+                      _selectedDateRange = DateTimeRange(
+                        start: start.isBefore(selectedDay)
+                            ? start
+                            : selectedDay,
+                        end: start.isBefore(selectedDay) ? selectedDay : start,
+                      );
+                      return;
+                    }
+
+                    _selectedDateRange = DateTimeRange(
+                      start: selectedDay,
+                      end: selectedDay,
+                    );
+                  });
+                },
+
+                calendarBuilders: CalendarBuilders(
+                  defaultBuilder: (context, day, _) {
+                    final isCurrentMonth =
+                        day.year == _focusedDay.year &&
+                        day.month == _focusedDay.month;
+
+                    if (!isCurrentMonth) {
+                      return SizedBox.shrink();
+                    }
+
+                    final availability = _dayAvailability.firstWhere(
+                      (d) => isSameDay(d.date, day),
+                      orElse: () => DayAvailability(
+                        date: day,
+                        isAvailable: false,
+                        capacity: 0,
+                        reserved: 0,
+                        free: 0,
+                      ),
+                    );
+
+                    return _buildDayCell(
+                      day,
+                      availability.isAvailable ? Colors.green : Colors.red,
+                    );
+                  },
+
+                  disabledBuilder: (context, day, _) {
+                    return _buildDayCell(day, Colors.red, disabled: true);
+                  },
+
+                  selectedBuilder: (context, day, _) {
+                    return _buildDayCell(day, Colors.orange);
+                  },
+
+                  todayBuilder: (context, day, _) {
+                    return _buildDayCell(day, Colors.blueAccent);
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // BROJ LJUDI
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _peopleController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Broj ljudi',
+                        prefixIcon: Icon(Icons.people_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (val) {
+                        final parsed = int.tryParse(val);
+                        if (parsed != null && parsed >= 1 && parsed <= 10) {
+                          setState(() {
+                            _peopleCount = parsed;
+                            _selectedDateRange = null;
+                          });
+                          _onPeopleCountChanged(parsed);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    children: [
+                      SizedBox(
+                        width: 36,
+                        height: 28,
+                        child: ElevatedButton(
+                          onPressed: _peopleCount < 10
+                              ? () {
+                                  setState(() {
+                                    _peopleCount++;
+                                    _peopleController.text = _peopleCount
+                                        .toString();
+                                    _selectedDateRange = null;
+                                  });
+
+                                  _onPeopleCountChanged(_peopleCount);
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: const Icon(Icons.add, size: 16),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: 36,
+                        height: 28,
+                        child: ElevatedButton(
+                          onPressed: _peopleCount > 1
+                              ? () {
+                                  setState(() {
+                                    _peopleCount--;
+                                    _peopleController.text = _peopleCount
+                                        .toString();
+                                    _selectedDateRange = null;
+                                  });
+
+                                  _onPeopleCountChanged(_peopleCount);
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: const Icon(Icons.remove, size: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
-
-              if (widget.canReserve)
+              if (_selectedDateRange != null && _peopleCount > 0)
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -351,6 +737,48 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
           ),
         ),
         style: const TextStyle(color: Colors.black),
+      ),
+    );
+  }
+
+  Widget _readOnlyFieldWithMap(
+    String label,
+    String value,
+    SpaceUnit su, {
+    int maxLines = 1,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: TextEditingController(text: value),
+              enabled: false,
+              maxLines: maxLines,
+              decoration: InputDecoration(
+                labelText: label,
+                border: const OutlineInputBorder(),
+                disabledBorder: const OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey),
+                ),
+              ),
+              style: const TextStyle(color: Colors.black),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.map, color: Colors.blue),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SpaceUnitMapScreen(units: [su]),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -488,7 +916,7 @@ class _SpaceUnitImagesTabState extends State<SpaceUnitImagesTab> {
             const Padding(
               padding: EdgeInsets.all(12),
               child: Text(
-                "Slike prostornejedinice",
+                "Slike prostorne jedinice",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
@@ -567,6 +995,9 @@ class _ReviewsTabState extends State<ReviewsTab> {
   final int pageSize = 10;
 
   late ScrollController _scrollController;
+  // Cache for fetched users keyed by usersId
+  final Map<int, User?> _fetchedUsers = {};
+  final Set<int> _loadingUserIds = {};
 
   @override
   void initState() {
@@ -634,6 +1065,30 @@ class _ReviewsTabState extends State<ReviewsTab> {
         message: "Greška pri dohvaćanju recenzija: $e",
         backgroundColor: Colors.red,
       );
+    }
+  }
+
+  Future<void> _fetchUserIfNeeded(int usersId) async {
+    if (_fetchedUsers.containsKey(usersId) || _loadingUserIds.contains(usersId))
+      return;
+
+    _loadingUserIds.add(usersId);
+    try {
+      final provider = context.read<UserProvider>();
+      final result = await provider.get(
+        filter: {"UsersId": usersId, "IsUserRolesIncluded": false},
+      );
+
+      if (result.resultList.isNotEmpty) {
+        _fetchedUsers[usersId] = result.resultList.first;
+      } else {
+        _fetchedUsers[usersId] = null;
+      }
+    } catch (e) {
+      _fetchedUsers[usersId] = null;
+    } finally {
+      _loadingUserIds.remove(usersId);
+      if (mounted) setState(() {});
     }
   }
 
@@ -748,12 +1203,80 @@ class _ReviewsTabState extends State<ReviewsTab> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                "${r.reservation?.users?.firstName} ${r.reservation?.users?.lastName}",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                              Builder(
+                                builder: (context) {
+                                  final usersObj = r.reservation?.users;
+                                  final usersId = r.reservation?.usersId;
+
+                                  String? first = usersObj?.firstName;
+                                  String? last = usersObj?.lastName;
+
+                                  // If users object missing but usersId exists, try cached fetched user
+                                  if ((first == null || first.isEmpty) &&
+                                      (last == null || last.isEmpty) &&
+                                      usersId != null) {
+                                    if (_fetchedUsers.containsKey(usersId)) {
+                                      final u = _fetchedUsers[usersId];
+                                      first = u?.firstName;
+                                      last = u?.lastName;
+                                    } else if (!_loadingUserIds.contains(
+                                      usersId,
+                                    )) {
+                                      // trigger fetch
+                                      _fetchUserIfNeeded(usersId);
+                                    }
+                                  }
+
+                                  final hasName =
+                                      (first != null && first.isNotEmpty) ||
+                                      (last != null && last.isNotEmpty);
+
+                                  if (!hasName) {
+                                    // show spinner if loading for this userId, otherwise fallback text
+                                    if (usersId != null &&
+                                        _loadingUserIds.contains(usersId)) {
+                                      return Row(
+                                        children: const [
+                                          SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            "Učitavanje...",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+
+                                    return const Text(
+                                      'Nepoznati korisnik',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    );
+                                  }
+
+                                  final displayName =
+                                      "${first ?? ''} ${last ?? ''}".trim();
+                                  return Text(
+                                    displayName.isNotEmpty
+                                        ? displayName
+                                        : 'Nepoznati korisnik',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  );
+                                },
                               ),
                               Text(
                                 "${r.createdAt.day}.${r.createdAt.month}.${r.createdAt.year}",

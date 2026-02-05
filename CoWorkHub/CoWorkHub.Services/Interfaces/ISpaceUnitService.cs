@@ -13,6 +13,7 @@ namespace CoWorkHub.Services.Interfaces
         public Task<SpaceUnit> SetMaintenance(int id, CancellationToken cancellationToken);
         public Task<SpaceUnit> Restore(int id, CancellationToken cancellationToken);
         public Task<List<string>> AllowedActions(int id, CancellationToken cancellationToken);
+        Task<List<DayAvailability>> GetAvailability(int spaceUnitId, DateTime from, DateTime to, int requestedPeopleCount);
         //public Task<List<DayAvailability>> GetAvailabilityForMonth(SpaceUnitSearchObject search);
     }
 }

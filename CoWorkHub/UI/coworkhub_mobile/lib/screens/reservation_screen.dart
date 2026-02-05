@@ -1,3 +1,4 @@
+import 'package:coworkhub_mobile/providers/base_provider.dart';
 import 'package:coworkhub_mobile/screens/payment_method_screen.dart';
 import 'package:coworkhub_mobile/screens/space_unit_details_screen.dart';
 import 'package:coworkhub_mobile/utils/flushbar_helper.dart';
@@ -618,7 +619,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(top: 6),
+      margin: EdgeInsets.zero,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
@@ -635,6 +636,32 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     );
   }
 
+  String buildReservationInfoMessage(Reservation r) {
+    final start = DateTime(
+      r.startDate.year,
+      r.startDate.month,
+      r.startDate.day,
+    );
+
+    final cancelDeadline = start.subtract(const Duration(days: 2));
+    final autoCancelDate = start.subtract(const Duration(days: 1));
+
+    final formattedCancelDeadline = formatDate(cancelDeadline);
+    final formattedAutoCancelDate = formatDate(autoCancelDate);
+
+    final state = r.stateMachine.toLowerCase();
+
+    if (state == "pending") {
+      return "Moguće otkazati do $formattedCancelDeadline. U protivnom sistem će je automatski otkazati $formattedAutoCancelDate kako bi drugi mogli rezervisati";
+    }
+
+    if (state == "confirmed") {
+      return "Moguće otkazati do $formattedCancelDeadline.";
+    }
+
+    return "";
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -647,7 +674,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     return Scaffold(
       body: Column(
         children: [
-          /// HEADER
+          // HEADER
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(16, 43, 16, 5),
@@ -729,7 +756,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text(
                 "Prikazano ${reservations.length} od $totalCount rezervacija",
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 15, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -742,7 +769,11 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                 ? const Center(
                     child: Text(
                       "Nema rezervacija",
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -795,210 +826,205 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                               ),
                             ],
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // IMAGE
-                              SizedBox(
-                                width: 110,
-                                height: 240,
-                                child: su.spaceUnitImages.isNotEmpty
-                                    ? ClipRRect(
-                                        borderRadius:
-                                            const BorderRadius.horizontal(
-                                              left: Radius.circular(12),
-                                            ),
-                                        child: Image.network(
-                                          su.spaceUnitImages.first.imagePath,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                    : const Icon(Icons.image, size: 30),
-                              ),
+                              // IMAGE full width
+                              su.spaceUnitImages.isNotEmpty
+                                  ? ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(12),
+                                      ),
+                                      child: Image.network(
+                                        "${BaseProvider.baseUrl}${su.spaceUnitImages.first.imagePath}",
+                                        width: double.infinity,
+                                        height: 180,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (c, o, s) =>
+                                            const Icon(Icons.broken_image),
+                                      ),
+                                    )
+                                  : Container(
+                                      height: 180,
+                                      alignment: Alignment.center,
+                                      child: const Icon(Icons.image, size: 40),
+                                    ),
 
                               // INFO
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        su.name,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                              Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      su.name,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      "Od ${formatDate(reservation.startDate.toLocal())} "
+                                      "- ${formatDate(reservation.endDate.toLocal())}",
+                                      style: const TextStyle(fontSize: 15),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        buildReservationStatus(
+                                          reservation.stateMachine,
                                         ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        "Od ${formatDate(reservation.startDate.toLocal())} "
-                                        "- ${formatDate(reservation.endDate.toLocal())}",
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                      buildReservationStatus(
-                                        reservation.stateMachine,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        "Osoba: ${reservation.peopleCount}",
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        "${reservation.totalPrice.toStringAsFixed(2)} KM",
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blueAccent,
+                                        const SizedBox(width: 10),
+                                        const Text(
+                                          "•",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 10),
-
-                                      // DUGMAD
-                                      Align(
-                                        alignment: Alignment.centerRight,
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          "Osoba: ${reservation.peopleCount}",
+                                          style: const TextStyle(fontSize: 15),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        const Text(
+                                          "•",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          "${reservation.totalPrice.toStringAsFixed(2)} KM",
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blueAccent,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    if (reservation.stateMachine
+                                                .toLowerCase() ==
+                                            "pending" ||
+                                        reservation.stateMachine
+                                                .toLowerCase() ==
+                                            "confirmed")
+                                      Container(
+                                        margin: const EdgeInsets.only(top: 6),
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blueGrey.withOpacity(
+                                            0.08,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
                                         child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            // PLATI samo ako je pending, inače je nevidljivo ali zauzima prostor radi konzistentnosti
+                                            const Icon(
+                                              Icons.info_outline,
+                                              size: 20,
+                                              color: Colors.blueGrey,
+                                            ),
+                                            const SizedBox(width: 6),
                                             Expanded(
-                                              child: Visibility(
-                                                visible:
-                                                    reservation.stateMachine
-                                                        .toLowerCase() ==
-                                                    "pending",
-                                                maintainSize: true,
-                                                maintainAnimation: true,
-                                                maintainState: true,
-                                                child: ElevatedButton(
-                                                  onPressed: () async {
-                                                    final result = await Navigator.push<bool>(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (_) => PaymentMethodScreen(
-                                                          spaceUnit: reservation
-                                                              .spaceUnit!,
-                                                          dateRange:
-                                                              DateTimeRange(
-                                                                start: reservation
-                                                                    .startDate
-                                                                    .toLocal(),
-                                                                end: reservation
-                                                                    .endDate
-                                                                    .toLocal(),
-                                                              ),
-                                                          peopleCount:
-                                                              reservation
-                                                                  .peopleCount,
-                                                          reservationId:
-                                                              reservation
-                                                                  .reservationId,
-                                                        ),
-                                                      ),
-                                                    );
-
-                                                    if (result == true) {
-                                                      showTopFlushBar(
-                                                        context: context,
-                                                        message:
-                                                            "Plaćanje uspješno!",
-                                                        backgroundColor:
-                                                            Colors.green,
-                                                      );
-
-                                                      fetchReservations(
-                                                        reset: true,
-                                                      );
-                                                    } else if (result ==
-                                                        false) {
-                                                      showTopFlushBar(
-                                                        context: context,
-                                                        message:
-                                                            "Plaćanje nije uspješno ili je otkazano",
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                      );
-                                                    }
-                                                  },
-
-                                                  style: ElevatedButton.styleFrom(
-                                                    minimumSize: const Size(
-                                                      0,
-                                                      44,
-                                                    ),
-                                                    backgroundColor:
-                                                        Colors.green,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  child: const Text(
-                                                    "Plati",
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
+                                              child: Text(
+                                                buildReservationInfoMessage(
+                                                  reservation,
+                                                ),
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.black87,
+                                                  height: 1.35,
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(width: 10),
-                                            // OTKAŽI
-                                            Expanded(
-                                              child: ElevatedButton(
-                                                onPressed: canCancel
-                                                    ? () async {
-                                                        final confirmed =
-                                                            await showCancelConfirmationDialog(
-                                                              context,
-                                                            );
-                                                        if (confirmed != true)
-                                                          return;
+                                          ],
+                                        ),
+                                      ),
 
-                                                        try {
-                                                          await context
-                                                              .read<
-                                                                ReservationProvider
-                                                              >()
-                                                              .cancel(
+                                    const SizedBox(height: 8),
+
+                                    // DUGMAD
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Row(
+                                        children: [
+                                          // PLATI samo ako je pending, inače je nevidljivo ali zauzima prostor radi konzistentnosti
+                                          Expanded(
+                                            child: Visibility(
+                                              visible:
+                                                  reservation.stateMachine
+                                                      .toLowerCase() ==
+                                                  "pending",
+                                              maintainSize: true,
+                                              maintainAnimation: true,
+                                              maintainState: true,
+                                              child: ElevatedButton(
+                                                onPressed: () async {
+                                                  final result = await Navigator.push<bool>(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (_) =>
+                                                          PaymentMethodScreen(
+                                                            spaceUnit:
+                                                                reservation
+                                                                    .spaceUnit!,
+                                                            dateRange: DateTimeRange(
+                                                              start: reservation
+                                                                  .startDate
+                                                                  .toLocal(),
+                                                              end: reservation
+                                                                  .endDate
+                                                                  .toLocal(),
+                                                            ),
+                                                            peopleCount:
+                                                                reservation
+                                                                    .peopleCount,
+                                                            reservationId:
                                                                 reservation
                                                                     .reservationId,
-                                                              );
+                                                          ),
+                                                    ),
+                                                  );
 
-                                                          showTopFlushBar(
-                                                            context: context,
-                                                            message:
-                                                                "Rezervacija je uspješno otkazana",
-                                                            backgroundColor:
-                                                                Colors.green,
-                                                          );
+                                                  if (result == true) {
+                                                    showTopFlushBar(
+                                                      context: context,
+                                                      message:
+                                                          "Plaćanje uspješno!",
+                                                      backgroundColor:
+                                                          Colors.green,
+                                                    );
 
-                                                          fetchReservations(
-                                                            reset: true,
-                                                          );
-                                                        } catch (e) {
-                                                          showTopFlushBar(
-                                                            context: context,
-                                                            message: e
-                                                                .toString(),
-                                                            backgroundColor:
-                                                                Colors.red,
-                                                          );
-                                                        }
-                                                      }
-                                                    : null,
+                                                    fetchReservations(
+                                                      reset: true,
+                                                    );
+                                                  } else if (result == false) {
+                                                    showTopFlushBar(
+                                                      context: context,
+                                                      message:
+                                                          "Plaćanje nije uspješno ili je otkazano",
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                    );
+                                                  }
+                                                },
+
                                                 style: ElevatedButton.styleFrom(
                                                   minimumSize: const Size(
                                                     0,
                                                     44,
                                                   ),
-                                                  backgroundColor: Colors.red,
+                                                  backgroundColor: Colors.green,
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -1007,19 +1033,81 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                                                   ),
                                                 ),
                                                 child: const Text(
-                                                  "Otkaži",
+                                                  "Plati",
                                                   style: TextStyle(
                                                     fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
                                                     color: Colors.white,
                                                   ),
                                                 ),
                                               ),
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          // OTKAŽI
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: canCancel
+                                                  ? () async {
+                                                      final confirmed =
+                                                          await showCancelConfirmationDialog(
+                                                            context,
+                                                          );
+                                                      if (confirmed != true)
+                                                        return;
+
+                                                      try {
+                                                        await context
+                                                            .read<
+                                                              ReservationProvider
+                                                            >()
+                                                            .cancel(
+                                                              reservation
+                                                                  .reservationId,
+                                                            );
+
+                                                        showTopFlushBar(
+                                                          context: context,
+                                                          message:
+                                                              "Rezervacija je uspješno otkazana",
+                                                          backgroundColor:
+                                                              Colors.green,
+                                                        );
+
+                                                        fetchReservations(
+                                                          reset: true,
+                                                        );
+                                                      } catch (e) {
+                                                        showTopFlushBar(
+                                                          context: context,
+                                                          message: e.toString(),
+                                                          backgroundColor:
+                                                              Colors.red,
+                                                        );
+                                                      }
+                                                    }
+                                                  : null,
+                                              style: ElevatedButton.styleFrom(
+                                                minimumSize: const Size(0, 44),
+                                                backgroundColor: Colors.red,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child: const Text(
+                                                "Otkaži",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],

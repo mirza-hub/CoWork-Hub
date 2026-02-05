@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CoWorkHub.Services.Migrations
 {
     [DbContext(typeof(_210095Context))]
-    [Migration("20251205010656_updatedTable")]
-    partial class updatedTable
+    [Migration("20260131222641_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -402,10 +402,7 @@ namespace CoWorkHub.Services.Migrations
                     b.Property<byte>("Rating")
                         .HasColumnType("tinyint");
 
-                    b.Property<int>("SpaceUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UsersId")
+                    b.Property<int>("ReservationId")
                         .HasColumnType("int");
 
                     b.Property<int?>("WorkingSpacesId")
@@ -415,9 +412,8 @@ namespace CoWorkHub.Services.Migrations
 
                     b.HasIndex("DeletedBy");
 
-                    b.HasIndex("SpaceUnitId");
-
-                    b.HasIndex("UsersId");
+                    b.HasIndex("ReservationId")
+                        .IsUnique();
 
                     b.HasIndex("WorkingSpacesId");
 
@@ -978,18 +974,11 @@ namespace CoWorkHub.Services.Migrations
                         .HasForeignKey("DeletedBy")
                         .HasConstraintName("FK_Review_DeletedBy");
 
-                    b.HasOne("CoWorkHub.Services.Database.SpaceUnit", "SpaceUnit")
-                        .WithMany("Reviews")
-                        .HasForeignKey("SpaceUnitId")
+                    b.HasOne("CoWorkHub.Services.Database.Reservation", "Reservation")
+                        .WithOne("Review")
+                        .HasForeignKey("CoWorkHub.Services.Database.Review", "ReservationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_SpaceUnit_Reviews");
-
-                    b.HasOne("CoWorkHub.Services.Database.User", "Users")
-                        .WithMany("ReviewUsers")
-                        .HasForeignKey("UsersId")
-                        .IsRequired()
-                        .HasConstraintName("FK_Review_User");
+                        .IsRequired();
 
                     b.HasOne("CoWorkHub.Services.Database.WorkingSpace", null)
                         .WithMany("Reviews")
@@ -997,9 +986,7 @@ namespace CoWorkHub.Services.Migrations
 
                     b.Navigation("DeletedByNavigation");
 
-                    b.Navigation("SpaceUnit");
-
-                    b.Navigation("Users");
+                    b.Navigation("Reservation");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.SpaceUnit", b =>
@@ -1180,6 +1167,8 @@ namespace CoWorkHub.Services.Migrations
             modelBuilder.Entity("CoWorkHub.Services.Database.Reservation", b =>
                 {
                     b.Navigation("Payments");
+
+                    b.Navigation("Review");
                 });
 
             modelBuilder.Entity("CoWorkHub.Services.Database.Resource", b =>
@@ -1196,8 +1185,6 @@ namespace CoWorkHub.Services.Migrations
                 {
                     b.Navigation("Reservations");
 
-                    b.Navigation("Reviews");
-
                     b.Navigation("SpaceUnitImages");
 
                     b.Navigation("SpaceUnitResources");
@@ -1212,8 +1199,6 @@ namespace CoWorkHub.Services.Migrations
                     b.Navigation("Reservations");
 
                     b.Navigation("ReviewDeletedByNavigations");
-
-                    b.Navigation("ReviewUsers");
 
                     b.Navigation("SpaceUnitResourceCreatedByNavigations");
 

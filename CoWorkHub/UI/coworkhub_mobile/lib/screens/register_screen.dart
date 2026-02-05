@@ -7,6 +7,7 @@ import 'package:coworkhub_mobile/screens/login_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:another_flushbar/flushbar.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 class RegisterScreen extends StatefulWidget {
@@ -131,49 +132,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   String? _validateName(String? value) {
-    if (value == null || value.isEmpty) return 'Polje je obavezno';
-    final regex = RegExp(r'^[a-zA-ZšđčćžŠĐČĆŽ\s-]+$');
-    if (!regex.hasMatch(value)) {
-      return 'Ne smije sadržavati brojeve ili specijalne znakove';
+    if (value == null || value.trim().isEmpty) {
+      return 'Polje je obavezno';
     }
-    if (value.length > 10) {
-      return 'Ne smije biti duže od 10 karaktera';
+
+    final v = value.trim();
+
+    if (v.length > 30) {
+      return 'Ne smije biti duže od 30 karaktera';
     }
+
+    final regex = RegExp(r'^[a-zA-ZšđčćžŠĐČĆŽ]+([ -][a-zA-ZšđčćžŠĐČĆŽ]+)*$');
+    if (!regex.hasMatch(v)) {
+      return 'Dozvoljena su samo slova';
+    }
+
     return null;
   }
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) return 'Email je obavezan';
-    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!regex.hasMatch(value)) return 'Neispravan format emaila';
+
+    if (value.length > 100) return 'Email ne smije biti duži od 100 karaktera';
+
+    final regex = RegExp(r'^[\w.+-]+@([\w-]+\.)+[\w-]{2,}$');
+    if (!regex.hasMatch(value)) {
+      return 'Neispravan format emaila. Primjer: ime.prezime@gmail.com';
+    }
+
     return null;
   }
 
   String? _validateUsername(String? value) {
-    if (value == null || value.isEmpty) return 'Korisničko ime je obavezno';
-    if (value.length < 3) {
-      return 'Korisničko ime mora imati najmanje 3 karaktera';
+    if (value == null || value.trim().isEmpty) {
+      return 'Korisničko ime je obavezno';
     }
-    if (value.length > 10) {
-      return 'Korisničko ime ne smije biti duže od 10 karaktera';
-    }
+
+    final v = value.trim();
+    if (v.length < 3) return 'Mora imati najmanje 3 karaktera';
+    if (v.length > 15) return 'Ne smije biti duže od 15 karaktera';
+
+    final regex = RegExp(r'^[a-zA-Z0-9_-]+$');
+    if (!regex.hasMatch(v)) return 'Dozvoljena su samo slova, brojevi, _ i -';
+
     return null;
   }
 
   String? _validatePhone(String? value) {
-    if (value == null || value.isEmpty) return 'Broj telefona je obavezan';
+    if (value == null || value.trim().isEmpty)
+      return 'Broj telefona je obavezan';
+
     final regex = RegExp(r'^\+?[0-9]{6,15}$');
     if (!regex.hasMatch(value)) return 'Neispravan format telefona';
-    if (value.length > 10) {
-      return 'Broj telefona ne smije biti duže od 10 karaktera';
-    }
+
     return null;
   }
 
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Lozinka je obavezna';
-    if (value.length < 4) return 'Lozinka mora imati najmanje 6 karaktera';
-    if (value.length > 10) return 'Lozinka ne smije imati više od 10 karaktera';
+    if (value.length < 8) return 'Lozinka mora imati najmanje 8 karaktera';
+    if (value.length > 64) return 'Lozinka je preduga';
     return null;
   }
 
@@ -191,190 +209,233 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
+      body: SafeArea(
+        // ovo rješava status bar / notch problem
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                const Text(
-                  'Registracija',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 24),
-
-                // Ime
-                TextFormField(
-                  controller: _firstNameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Ime',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _validateName,
-                ),
-                const SizedBox(height: 16),
-
-                // Prezime
-                TextFormField(
-                  controller: _lastNameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Prezime',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _validateName,
-                ),
-                const SizedBox(height: 16),
-
-                // Email
-                TextFormField(
-                  controller: _emailCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _validateEmail,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-
-                // Username
-                TextFormField(
-                  controller: _usernameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Korisničko ime',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _validateUsername,
-                ),
-                const SizedBox(height: 16),
-
-                // Mobitel
-                TextFormField(
-                  controller: _phoneCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Telefon',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _validatePhone,
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 16),
-
-                // Grad dropdown
-                DropdownButtonFormField<City>(
-                  initialValue: _selectedCity,
-                  items: _cities
-                      .map(
-                        (c) =>
-                            DropdownMenuItem(value: c, child: Text(c.cityName)),
-                      )
-                      .toList(),
-                  onChanged: (c) {
-                    setState(() {
-                      _selectedCity = c;
-                    });
-                  },
-                  decoration: const InputDecoration(
-                    labelText: 'Grad',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (v) => _validateCity(v),
-                ),
-                const SizedBox(height: 16),
-
-                // Šifra
-                TextFormField(
-                  controller: _passwordCtrl,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Lozinka',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                    ),
-                  ),
-                  validator: _validatePassword,
-                ),
-                const SizedBox(height: 16),
-
-                // Šifra potvrda
-                TextFormField(
-                  controller: _passwordConfirmCtrl,
-                  obscureText: _obscureConfirm,
-                  decoration: InputDecoration(
-                    labelText: 'Potvrdi lozinku',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      onPressed: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
-                      icon: Icon(
-                        _obscureConfirm
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                    ),
-                  ),
-                  validator: _validateConfirm,
-                ),
-                const SizedBox(height: 24),
-
-                // Dugme za registraciju
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _loading ? null : _register,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _loading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Registrirajte se',
-                            style: TextStyle(fontSize: 16, color: Colors.white),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Registracija',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
                           ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Link nazad na login
-                RichText(
-                  text: TextSpan(
-                    text: 'Već imate račun? ',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                    children: [
-                      TextSpan(
-                        text: 'Prijavite se',
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.bold,
+                          textAlign: TextAlign.center,
                         ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
+                        const SizedBox(height: 24),
+                        // Ime
+                        TextFormField(
+                          controller: _firstNameCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Ime',
+                            border: OutlineInputBorder(),
+                          ),
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(30),
+                          ],
+                          validator: _validateName,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Prezime
+                        TextFormField(
+                          controller: _lastNameCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Prezime',
+                            border: OutlineInputBorder(),
+                          ),
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(30),
+                          ],
+                          validator: _validateName,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Email
+                        TextFormField(
+                          controller: _emailCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            border: OutlineInputBorder(),
+                          ),
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(100),
+                          ],
+                          validator: _validateEmail,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Username
+                        TextFormField(
+                          controller: _usernameCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Korisničko ime',
+                            border: OutlineInputBorder(),
+                          ),
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(15),
+                          ],
+                          validator: _validateUsername,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Mobitel
+                        TextFormField(
+                          controller: _phoneCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Telefon',
+                            border: OutlineInputBorder(),
+                          ),
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(15),
+                          ],
+                          validator: _validatePhone,
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Grad dropdown
+                        DropdownButtonFormField<City>(
+                          value: _selectedCity,
+                          items: _cities
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(c.cityName),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (c) => setState(() => _selectedCity = c),
+                          decoration: const InputDecoration(
+                            labelText: 'Grad',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: _validateCity,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Šifra
+                        TextFormField(
+                          controller: _passwordCtrl,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Lozinka',
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
                               ),
-                            );
-                          },
-                      ),
-                    ],
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                            ),
+                          ),
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(64),
+                          ],
+                          validator: _validatePassword,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 16),
+                        // Šifra potvrda
+                        TextFormField(
+                          controller: _passwordConfirmCtrl,
+                          obscureText: _obscureConfirm,
+                          decoration: InputDecoration(
+                            labelText: 'Potvrdi lozinku',
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              onPressed: () => setState(
+                                () => _obscureConfirm = !_obscureConfirm,
+                              ),
+                              icon: Icon(
+                                _obscureConfirm
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                            ),
+                          ),
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(64),
+                          ],
+                          validator: _validateConfirm,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _register,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: _loading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    'Registrirajte se',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              // Dugme za login fiksno pri dnu
+              RichText(
+                text: TextSpan(
+                  text: 'Već imate račun? ',
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  children: [
+                    TextSpan(
+                      text: 'Prijavite se',
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
         ),
       ),
