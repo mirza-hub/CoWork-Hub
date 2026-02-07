@@ -30,6 +30,7 @@ class SpaceUnitDetailsScreen extends StatefulWidget {
   final SpaceUnit? spaceUnit;
   final DateTimeRange? dateRange;
   final int? peopleCount;
+  final bool? showReservationControls;
   final bool openReviewsTab;
   final bool showLeaveReviewButton;
   final int? highlightedReservationId;
@@ -40,12 +41,14 @@ class SpaceUnitDetailsScreen extends StatefulWidget {
     this.spaceUnit,
     this.dateRange,
     this.peopleCount,
+    this.showReservationControls,
     this.openReviewsTab = false,
     this.showLeaveReviewButton = false,
     this.highlightedReservationId,
   });
 
-  bool get canReserve => dateRange != null && peopleCount != null;
+  bool get canReserve =>
+      showReservationControls ?? (dateRange != null && peopleCount != null);
 
   @override
   State<SpaceUnitDetailsScreen> createState() => _SpaceUnitDetailsScreenState();
@@ -80,11 +83,7 @@ class _SpaceUnitDetailsScreenState extends State<SpaceUnitDetailsScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.popUntil(context, (route) {
-              return route.isFirst || route.settings.name == 'home';
-            });
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Detalji",
@@ -113,6 +112,7 @@ class _SpaceUnitDetailsScreenState extends State<SpaceUnitDetailsScreen>
         children: [
           SpaceUnitDetailsTab(
             spaceUnitId: widget.spaceUnitId,
+            spaceUnit: widget.spaceUnit,
             dateRange: widget.dateRange,
             peopleCount: widget.peopleCount,
             canReserve: widget.canReserve,
@@ -131,6 +131,7 @@ class _SpaceUnitDetailsScreenState extends State<SpaceUnitDetailsScreen>
 
 class SpaceUnitDetailsTab extends StatefulWidget {
   final int spaceUnitId;
+  final SpaceUnit? spaceUnit;
   final DateTimeRange? dateRange;
   final int? peopleCount;
   final bool canReserve;
@@ -138,6 +139,7 @@ class SpaceUnitDetailsTab extends StatefulWidget {
   const SpaceUnitDetailsTab({
     super.key,
     required this.spaceUnitId,
+    this.spaceUnit,
     this.dateRange,
     this.peopleCount,
     required this.canReserve,
@@ -163,27 +165,35 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
     super.initState();
     _future = _fetchSpaceUnit();
 
-    _selectedDateRange = null;
+    _selectedDateRange = widget.dateRange;
     _peopleCount = widget.peopleCount ?? 1;
     _peopleController = TextEditingController(text: _peopleCount.toString());
     _focusedDay = widget.dateRange?.start ?? DateTime.now();
-    _loadAvailabilityForMonth(_focusedDay);
+    if (widget.canReserve) {
+      _loadAvailabilityForMonth(_focusedDay);
+    }
   }
 
   Future<SpaceUnit?> _fetchSpaceUnit() async {
-    final provider = context.read<SpaceUnitProvider>();
+    try {
+      final provider = context.read<SpaceUnitProvider>();
 
-    final result = await provider.get(
-      filter: {
-        "SpaceUnitId": widget.spaceUnitId,
-        "IncludeWorkingSpace": true,
-        "IncludeWorkspaceType": true,
-        "IncludeResources": true,
-      },
-    );
+      final result = await provider.get(
+        filter: {
+          "SpaceUnitId": widget.spaceUnitId,
+          "IncludeWorkingSpace": true,
+          "IncludeWorkspaceType": true,
+          "IncludeResources": true,
+          "IncludeAll": true,
+        },
+      );
 
-    if (result.resultList.isEmpty) return null;
-    return result.resultList.first;
+      if (result.resultList.isNotEmpty) {
+        return result.resultList.first;
+      }
+    } catch (_) {}
+
+    return widget.spaceUnit;
   }
 
   Future<void> _loadAvailabilityForMonth(DateTime focusedDay) async {
@@ -480,241 +490,273 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
                 maxLines: 2,
               ),
               _readOnlyField("Resursi", resourcesText, maxLines: 3),
-              // DATUM
-              TableCalendar(
-                firstDay: DateTime.now(),
-                lastDay: DateTime(2100),
-                focusedDay: _focusedDay,
-                calendarStyle: const CalendarStyle(
-                  isTodayHighlighted: false,
-                  outsideDaysVisible: false,
-                ),
-                headerStyle: HeaderStyle(formatButtonVisible: false),
-                enabledDayPredicate: (day) {
-                  return _isDayAvailable(day);
-                },
-                onPageChanged: (focusedDay) async {
-                  _focusedDay = focusedDay;
-
-                  final firstDayOfMonth = DateTime(
-                    focusedDay.year,
-                    focusedDay.month,
-                    1,
-                  );
-                  final lastDayOfMonth = DateTime(
-                    focusedDay.year,
-                    focusedDay.month + 1,
-                    0,
-                  );
-
-                  final provider = context.read<SpaceUnitProvider>();
-
-                  _dayAvailability = await provider.getAvailability(
-                    spaceUnitId: widget.spaceUnitId,
-                    from: firstDayOfMonth,
-                    to: lastDayOfMonth,
-                    peopleCount: _peopleCount,
-                  );
-
-                  print("Učitano ${_dayAvailability.length} dana");
-                  setState(() {});
-                },
-                selectedDayPredicate: (day) {
-                  if (_selectedDateRange == null) return false;
-                  return day.isAfter(
-                        _selectedDateRange!.start.subtract(
-                          const Duration(days: 1),
-                        ),
-                      ) &&
-                      day.isBefore(
-                        _selectedDateRange!.end.add(const Duration(days: 1)),
-                      );
-                },
-                onDaySelected: (selectedDay, focusedDay) {
-                  if (!_isDayAvailable(selectedDay)) return;
-
-                  setState(() {
-                    _focusedDay = focusedDay;
-
-                    if (_selectedDateRange != null &&
-                        isSameDay(_selectedDateRange!.start, selectedDay) &&
-                        isSameDay(_selectedDateRange!.end, selectedDay)) {
-                      _selectedDateRange = null;
-                      return;
-                    }
-
-                    if (_selectedDateRange == null) {
-                      _selectedDateRange = DateTimeRange(
-                        start: selectedDay,
-                        end: selectedDay,
-                      );
-                      return;
-                    }
-
-                    if (isSameDay(
-                      _selectedDateRange!.start,
-                      _selectedDateRange!.end,
-                    )) {
-                      final start = _selectedDateRange!.start;
-
-                      _selectedDateRange = DateTimeRange(
-                        start: start.isBefore(selectedDay)
-                            ? start
-                            : selectedDay,
-                        end: start.isBefore(selectedDay) ? selectedDay : start,
-                      );
-                      return;
-                    }
-
-                    _selectedDateRange = DateTimeRange(
-                      start: selectedDay,
-                      end: selectedDay,
-                    );
-                  });
-                },
-
-                calendarBuilders: CalendarBuilders(
-                  defaultBuilder: (context, day, _) {
-                    final isCurrentMonth =
-                        day.year == _focusedDay.year &&
-                        day.month == _focusedDay.month;
-
-                    if (!isCurrentMonth) {
-                      return SizedBox.shrink();
-                    }
-
-                    final availability = _dayAvailability.firstWhere(
-                      (d) => isSameDay(d.date, day),
-                      orElse: () => DayAvailability(
-                        date: day,
-                        isAvailable: false,
-                        capacity: 0,
-                        reserved: 0,
-                        free: 0,
-                      ),
-                    );
-
-                    return _buildDayCell(
-                      day,
-                      availability.isAvailable ? Colors.green : Colors.red,
-                    );
-                  },
-
-                  disabledBuilder: (context, day, _) {
-                    return _buildDayCell(day, Colors.red, disabled: true);
-                  },
-
-                  selectedBuilder: (context, day, _) {
-                    return _buildDayCell(day, Colors.orange);
-                  },
-
-                  todayBuilder: (context, day, _) {
-                    return _buildDayCell(day, Colors.blueAccent);
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // BROJ LJUDI
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _peopleController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Broj ljudi',
-                        prefixIcon: Icon(Icons.people_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (val) {
-                        final parsed = int.tryParse(val);
-                        if (parsed != null && parsed >= 1 && parsed <= 10) {
-                          setState(() {
-                            _peopleCount = parsed;
-                            _selectedDateRange = null;
-                          });
-                          _onPeopleCountChanged(parsed);
-                        }
-                      },
-                    ),
+              if (widget.canReserve) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  const SizedBox(width: 8),
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: 36,
-                        height: 28,
-                        child: ElevatedButton(
-                          onPressed: _peopleCount < 10
-                              ? () {
-                                  setState(() {
-                                    _peopleCount++;
-                                    _peopleController.text = _peopleCount
-                                        .toString();
-                                    _selectedDateRange = null;
-                                  });
-
-                                  _onPeopleCountChanged(_peopleCount);
-                                }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: const Icon(Icons.add, size: 16),
-                        ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Icon(
+                        Icons.info_outline,
+                        size: 20,
+                        color: Colors.blueGrey,
                       ),
-                      const SizedBox(height: 4),
-                      SizedBox(
-                        width: 36,
-                        height: 28,
-                        child: ElevatedButton(
-                          onPressed: _peopleCount > 1
-                              ? () {
-                                  setState(() {
-                                    _peopleCount--;
-                                    _peopleController.text = _peopleCount
-                                        .toString();
-                                    _selectedDateRange = null;
-                                  });
-
-                                  _onPeopleCountChanged(_peopleCount);
-                                }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          "Rezervacija pokriva cijele dane od početnog do završnog datuma uključujući završni dan",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            height: 1.35,
                           ),
-                          child: const Icon(Icons.remove, size: 16),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              if (_selectedDateRange != null && _peopleCount > 0)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _handleReserve(context, su),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 11,
-                      ),
-                      minimumSize: Size(0, 40),
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      "Rezerviši",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                ),
+                // DATUM
+                TableCalendar(
+                  firstDay: DateTime.now(),
+                  lastDay: DateTime(2100),
+                  focusedDay: _focusedDay,
+                  calendarStyle: const CalendarStyle(
+                    isTodayHighlighted: false,
+                    outsideDaysVisible: false,
+                  ),
+                  headerStyle: HeaderStyle(formatButtonVisible: false),
+                  enabledDayPredicate: (day) {
+                    return _isDayAvailable(day);
+                  },
+                  onPageChanged: (focusedDay) async {
+                    _focusedDay = focusedDay;
+
+                    final firstDayOfMonth = DateTime(
+                      focusedDay.year,
+                      focusedDay.month,
+                      1,
+                    );
+                    final lastDayOfMonth = DateTime(
+                      focusedDay.year,
+                      focusedDay.month + 1,
+                      0,
+                    );
+
+                    final provider = context.read<SpaceUnitProvider>();
+
+                    _dayAvailability = await provider.getAvailability(
+                      spaceUnitId: widget.spaceUnitId,
+                      from: firstDayOfMonth,
+                      to: lastDayOfMonth,
+                      peopleCount: _peopleCount,
+                    );
+
+                    print("Učitano ${_dayAvailability.length} dana");
+                    setState(() {});
+                  },
+                  selectedDayPredicate: (day) {
+                    if (_selectedDateRange == null) return false;
+                    final start = _selectedDateRange!.start;
+                    final end = _selectedDateRange!.end;
+                    final isOnOrAfterStart =
+                        isSameDay(day, start) || day.isAfter(start);
+                    final isOnOrBeforeEnd =
+                        isSameDay(day, end) || day.isBefore(end);
+                    return isOnOrAfterStart && isOnOrBeforeEnd;
+                  },
+                  onDaySelected: (selectedDay, focusedDay) {
+                    if (!_isDayAvailable(selectedDay)) return;
+
+                    setState(() {
+                      _focusedDay = focusedDay;
+
+                      if (_selectedDateRange != null &&
+                          isSameDay(_selectedDateRange!.start, selectedDay) &&
+                          isSameDay(_selectedDateRange!.end, selectedDay)) {
+                        _selectedDateRange = null;
+                        return;
+                      }
+
+                      if (_selectedDateRange == null) {
+                        _selectedDateRange = DateTimeRange(
+                          start: selectedDay,
+                          end: selectedDay,
+                        );
+                        return;
+                      }
+
+                      if (isSameDay(
+                        _selectedDateRange!.start,
+                        _selectedDateRange!.end,
+                      )) {
+                        final start = _selectedDateRange!.start;
+
+                        _selectedDateRange = DateTimeRange(
+                          start: start.isBefore(selectedDay)
+                              ? start
+                              : selectedDay,
+                          end: start.isBefore(selectedDay)
+                              ? selectedDay
+                              : start,
+                        );
+                        return;
+                      }
+
+                      _selectedDateRange = DateTimeRange(
+                        start: selectedDay,
+                        end: selectedDay,
+                      );
+                    });
+                  },
+
+                  calendarBuilders: CalendarBuilders(
+                    defaultBuilder: (context, day, _) {
+                      final isCurrentMonth =
+                          day.year == _focusedDay.year &&
+                          day.month == _focusedDay.month;
+
+                      if (!isCurrentMonth) {
+                        return SizedBox.shrink();
+                      }
+
+                      final availability = _dayAvailability.firstWhere(
+                        (d) => isSameDay(d.date, day),
+                        orElse: () => DayAvailability(
+                          date: day,
+                          isAvailable: false,
+                          capacity: 0,
+                          reserved: 0,
+                          free: 0,
+                        ),
+                      );
+
+                      return _buildDayCell(
+                        day,
+                        availability.isAvailable ? Colors.green : Colors.red,
+                      );
+                    },
+
+                    disabledBuilder: (context, day, _) {
+                      return _buildDayCell(day, Colors.red, disabled: true);
+                    },
+
+                    selectedBuilder: (context, day, _) {
+                      return _buildDayCell(day, Colors.orange);
+                    },
+
+                    todayBuilder: (context, day, _) {
+                      return _buildDayCell(day, Colors.blueAccent);
+                    },
                   ),
                 ),
+
+                const SizedBox(height: 16),
+
+                // BROJ LJUDI
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _peopleController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Broj ljudi',
+                          prefixIcon: Icon(Icons.people_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (val) {
+                          final parsed = int.tryParse(val);
+                          if (parsed != null && parsed >= 1 && parsed <= 10) {
+                            setState(() {
+                              _peopleCount = parsed;
+                              _selectedDateRange = null;
+                            });
+                            _onPeopleCountChanged(parsed);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      children: [
+                        SizedBox(
+                          width: 36,
+                          height: 28,
+                          child: ElevatedButton(
+                            onPressed: _peopleCount < 10
+                                ? () {
+                                    setState(() {
+                                      _peopleCount++;
+                                      _peopleController.text = _peopleCount
+                                          .toString();
+                                      _selectedDateRange = null;
+                                    });
+
+                                    _onPeopleCountChanged(_peopleCount);
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: const Icon(Icons.add, size: 16),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          width: 36,
+                          height: 28,
+                          child: ElevatedButton(
+                            onPressed: _peopleCount > 1
+                                ? () {
+                                    setState(() {
+                                      _peopleCount--;
+                                      _peopleController.text = _peopleCount
+                                          .toString();
+                                      _selectedDateRange = null;
+                                    });
+
+                                    _onPeopleCountChanged(_peopleCount);
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: const Icon(Icons.remove, size: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                if (_selectedDateRange != null && _peopleCount > 0)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => _handleReserve(context, su),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 11,
+                        ),
+                        minimumSize: Size(0, 40),
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "Rezerviši",
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ),
+              ],
             ],
           ),
         );

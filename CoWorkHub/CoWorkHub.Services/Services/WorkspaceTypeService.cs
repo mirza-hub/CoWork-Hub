@@ -58,5 +58,25 @@ namespace CoWorkHub.Services.Services
 
             entity.ModifiedAt = DateTime.UtcNow;
         }
+
+        public Model.WorkspaceType RestoreWorkspaceType(int id)
+        {
+            var set = Context.Set<Database.WorkspaceType>();
+
+            var entity = set.Find(id);
+
+            if (entity == null)
+                throw new UserException("Tip prostora nije pronađen.");
+
+            if (entity.IsDeleted == false)
+                throw new UserException("Tip prostora nije moguće vratiti jer nije obrisan.");
+
+            entity.IsDeleted = false;
+            entity.DeletedAt = null;
+
+            Context.SaveChanges();
+
+            return Mapper.Map<Model.WorkspaceType>(entity);
+        }
     }
 }

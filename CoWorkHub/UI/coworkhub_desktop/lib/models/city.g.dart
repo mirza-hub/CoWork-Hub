@@ -14,6 +14,7 @@ City _$CityFromJson(Map<String, dynamic> json) => City(
   longitude: (json['longitude'] as num?)?.toDouble(),
   countryId: (json['countryId'] as num).toInt(),
   country: Country.fromJson(json['country'] as Map<String, dynamic>),
+  isDeleted: json['isDeleted'] as bool?,
 );
 
 Map<String, dynamic> _$CityToJson(City instance) => <String, dynamic>{
@@ -24,4 +25,5 @@ Map<String, dynamic> _$CityToJson(City instance) => <String, dynamic>{
   'longitude': instance.longitude,
   'countryId': instance.countryId,
   'country': instance.country,
+  'isDeleted': instance.isDeleted,
 };

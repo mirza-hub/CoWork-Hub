@@ -8,5 +8,6 @@ namespace CoWorkHub.Model
     {
         public int CountryId { get; set; }
         public string CountryName { get; set; }
+        public bool IsDeleted { get; set; } = false;
     }
 }

@@ -44,5 +44,12 @@ namespace CoWorkHub.Api.Controllers
         {
             return base.GetById(id);
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}/restore")]
+        public Country RestoreCountry(int id)
+        {
+            return (_service as ICountryService).RestoreCountry(id);
+        }
     }
 }

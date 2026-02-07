@@ -46,5 +46,12 @@ namespace CoWorkHub.Api.Controllers
         {
             return base.GetById(id);
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}/restore")]
+        public WorkingSpace RestoreWorkingSpace(int id)
+        {
+            return (_service as IWorkingSpaceService).RestoreWorkingSpace(id);
+        }
     }
 }

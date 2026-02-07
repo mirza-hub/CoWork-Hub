@@ -13,5 +13,6 @@ namespace CoWorkHub.Model
         public double? Longitude { get; set; }
         public int CountryId { get; set; }
         public virtual Country Country { get; set; } = null!;
+        public bool IsDeleted { get; set; } = false;
     }
 }

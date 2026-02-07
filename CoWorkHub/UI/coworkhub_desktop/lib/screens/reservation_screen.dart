@@ -1,9 +1,8 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:coworkhub_desktop/models/reservation.dart';
 import 'package:coworkhub_desktop/providers/reservation_provider.dart';
-import 'package:coworkhub_desktop/providers/space_unit_provider.dart';
-import 'package:coworkhub_desktop/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 
 class ReservationScreen extends StatefulWidget {
@@ -19,8 +18,6 @@ class _ReservationScreenState extends State<ReservationScreen> {
   final TextEditingController _userFullName = TextEditingController();
   final TextEditingController _spaceUnitName = TextEditingController();
   final ReservationProvider _reservationProvider = ReservationProvider();
-  final SpaceUnitProvider _spaceUnitProvider = SpaceUnitProvider();
-  final UserProvider _userProvider = UserProvider();
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
 
   List<Reservation> _reservations = [];
@@ -28,19 +25,11 @@ class _ReservationScreenState extends State<ReservationScreen> {
   int page = 1;
   int pageSize = 10;
   int totalPages = 1;
+  int totalCount = 0;
   String? sortColumn;
   String? sortDirection = "asc";
   Timer? _debounce;
   bool _isLoadingReservations = true;
-
-  final Map<int, String> _sortMap = {
-    0: "ReservationId",
-    3: "StartDate",
-    4: "PeopleCount",
-    5: "TotalPrice",
-    6: "StateMachine",
-    7: "CreatedAt",
-  };
 
   DateTime? filterDateFrom;
   DateTime? filterDateTo;
@@ -49,7 +38,14 @@ class _ReservationScreenState extends State<ReservationScreen> {
   int? filterPeopleFrom;
   int? filterPeopleTo;
   String? filterState;
-  final stateOptions = ['All', 'Pending', 'Confirmed', 'Cancelled'];
+  final stateOptions = ['All', 'Pending', 'Confirmed', 'Canceled', 'Completed'];
+  final Map<String, String> _stateLabels = const {
+    'All': 'Svi',
+    'Pending': 'Na čekanju',
+    'Confirmed': 'Potvrđeno',
+    'Canceled': 'Otkazano',
+    'Completed': 'Završeno',
+  };
 
   @override
   void initState() {
@@ -67,10 +63,6 @@ class _ReservationScreenState extends State<ReservationScreen> {
       'IncludeSpaceUnit': true,
       'UserFullName': _userFullName.text,
       'SpaceUnitName': _spaceUnitName.text,
-      'Page': page,
-      'PageSize': pageSize,
-      'SortColumn': sortColumn,
-      'SortDirection': sortDirection,
       if (filterDateFrom != null) 'DateFrom': filterDateFrom!.toIso8601String(),
       if (filterDateTo != null) 'DateTo': filterDateTo!.toIso8601String(),
       if (filterPriceFrom != null) 'PriceFrom': filterPriceFrom,
@@ -82,10 +74,17 @@ class _ReservationScreenState extends State<ReservationScreen> {
     };
 
     try {
-      final result = await _reservationProvider.get(filter: filter);
+      final result = await _reservationProvider.get(
+        filter: filter,
+        page: page,
+        pageSize: pageSize,
+        orderBy: sortColumn,
+        sortDirection: sortDirection,
+      );
       setState(() {
         _reservations = result.resultList;
         totalPages = result.totalPages!;
+        totalCount = result.count ?? 0;
       });
     } catch (e) {
       debugPrint("Greška pri učitavanju rezervacija: $e");
@@ -102,14 +101,11 @@ class _ReservationScreenState extends State<ReservationScreen> {
     });
   }
 
-  void _onSort(int columnIndex) {
-    final backendColumn = _sortMap[columnIndex];
-    if (backendColumn == null) return;
-
-    if (sortColumn == backendColumn) {
+  void _onSortBy(String columnKey) {
+    if (sortColumn == columnKey) {
       sortDirection = sortDirection == "asc" ? "desc" : "asc";
     } else {
-      sortColumn = backendColumn;
+      sortColumn = columnKey;
       sortDirection = "asc";
     }
 
@@ -144,6 +140,28 @@ class _ReservationScreenState extends State<ReservationScreen> {
     int? tempPeopleFrom = filterPeopleFrom;
     int? tempPeopleTo = filterPeopleTo;
     String? tempState = filterState ?? 'All';
+    final dateFromController = TextEditingController(
+      text: tempDateFrom != null
+          ? DateFormat('dd/MM/yyyy').format(tempDateFrom)
+          : "",
+    );
+    final dateToController = TextEditingController(
+      text: tempDateTo != null
+          ? DateFormat('dd/MM/yyyy').format(tempDateTo)
+          : "",
+    );
+    final priceFromController = TextEditingController(
+      text: tempPriceFrom?.toString() ?? "",
+    );
+    final priceToController = TextEditingController(
+      text: tempPriceTo?.toString() ?? "",
+    );
+    final peopleFromController = TextEditingController(
+      text: tempPeopleFrom?.toString() ?? "",
+    );
+    final peopleToController = TextEditingController(
+      text: tempPeopleTo?.toString() ?? "",
+    );
 
     showDialog(
       context: context,
@@ -169,8 +187,14 @@ class _ReservationScreenState extends State<ReservationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Datum od"),
-                    InkWell(
+                    TextField(
+                      controller: dateFromController,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: "Datum od",
+                        prefixIcon: Icon(Icons.calendar_today_outlined),
+                        border: OutlineInputBorder(),
+                      ),
                       onTap: () async {
                         final date = await showDatePicker(
                           context: context,
@@ -178,29 +202,25 @@ class _ReservationScreenState extends State<ReservationScreen> {
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
                         );
-                        if (date != null)
-                          setDialogState(() => tempDateFrom = date);
+                        if (date != null) {
+                          setDialogState(() {
+                            tempDateFrom = date;
+                            dateFromController.text = DateFormat(
+                              'dd/MM/yyyy',
+                            ).format(date);
+                          });
+                        }
                       },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 8,
-                        ),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          tempDateFrom != null
-                              ? DateFormat('dd/MM/yyyy').format(tempDateFrom!)
-                              : "Odaberite datum",
-                          style: const TextStyle(color: Colors.black87),
-                        ),
-                      ),
                     ),
-                    const Text("Datum do"),
-                    InkWell(
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: dateToController,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: "Datum do",
+                        prefixIcon: Icon(Icons.calendar_today_outlined),
+                        border: OutlineInputBorder(),
+                      ),
                       onTap: () async {
                         final date = await showDatePicker(
                           context: context,
@@ -209,101 +229,97 @@ class _ReservationScreenState extends State<ReservationScreen> {
                           lastDate: DateTime(2100),
                         );
                         if (date != null) {
-                          setDialogState(() => tempDateTo = date);
+                          setDialogState(() {
+                            tempDateTo = date;
+                            dateToController.text = DateFormat(
+                              'dd/MM/yyyy',
+                            ).format(date);
+                          });
                         }
                       },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 8,
-                        ),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          tempDateTo != null
-                              ? DateFormat('dd/MM/yyyy').format(tempDateTo!)
-                              : "Odaberite datum",
-                          style: const TextStyle(color: Colors.black87),
-                        ),
-                      ),
                     ),
-                    const Text("Cijena od"),
+                    const SizedBox(height: 10),
                     TextField(
+                      controller: priceFromController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        LengthLimitingTextInputFormatter(10),
+                      ],
                       decoration: const InputDecoration(
-                        hintText: "npr. 50.0",
+                        labelText: "Cijena od (KM)",
+                        prefixIcon: Icon(Icons.attach_money_outlined),
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
-                        ),
                       ),
                       onChanged: (v) => setDialogState(
                         () => tempPriceFrom = double.tryParse(v),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text("Cijena do"),
+                    const SizedBox(height: 10),
                     TextField(
+                      controller: priceToController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                        LengthLimitingTextInputFormatter(10),
+                      ],
                       decoration: const InputDecoration(
-                        hintText: "npr. 200.0",
+                        labelText: "Cijena do (KM)",
+                        prefixIcon: Icon(Icons.attach_money_outlined),
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
-                        ),
                       ),
                       onChanged: (v) => setDialogState(
                         () => tempPriceTo = double.tryParse(v),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text("Osobe od"),
+                    const SizedBox(height: 10),
                     TextField(
+                      controller: peopleFromController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(6),
+                      ],
                       decoration: const InputDecoration(
-                        hintText: "npr. 1",
+                        labelText: "Osobe od",
+                        prefixIcon: Icon(Icons.people_outlined),
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
-                        ),
                       ),
                       onChanged: (v) => setDialogState(
                         () => tempPeopleFrom = int.tryParse(v),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text("Osobe do"),
+                    const SizedBox(height: 10),
                     TextField(
+                      controller: peopleToController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(6),
+                      ],
                       decoration: const InputDecoration(
-                        hintText: "npr. 5",
+                        labelText: "Osobe do",
+                        prefixIcon: Icon(Icons.people_outlined),
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
-                        ),
                       ),
                       onChanged: (v) =>
                           setDialogState(() => tempPeopleTo = int.tryParse(v)),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     const Text("Status"),
                     DropdownButton<String>(
                       isExpanded: true,
                       value: tempState,
                       items: stateOptions
                           .map(
-                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                            (s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(_stateLabels[s] ?? s),
+                            ),
                           )
                           .toList(),
                       onChanged: (v) => setDialogState(() => tempState = v),
@@ -390,6 +406,50 @@ class _ReservationScreenState extends State<ReservationScreen> {
         width: 120,
         child: Center(
           child: Text(text, textAlign: TextAlign.center, softWrap: true),
+        ),
+      ),
+    );
+  }
+
+  Widget buildReservationStatus(String state) {
+    late String text;
+    late Color color;
+
+    switch (state.toLowerCase()) {
+      case "pending":
+        text = "NA ČEKANJU";
+        color = Colors.orange;
+        break;
+      case "confirmed":
+        text = "POTVRĐENO";
+        color = Colors.blueAccent;
+        break;
+      case "canceled":
+        text = "OTKAZANO";
+        color = Colors.red;
+        break;
+      case "completed":
+        text = "ZAVRŠENO";
+        color = Colors.green;
+        break;
+      default:
+        text = state.toUpperCase();
+        color = Colors.grey;
+    }
+
+    return Container(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: color,
         ),
       ),
     );
@@ -493,19 +553,10 @@ class _ReservationScreenState extends State<ReservationScreen> {
                                       242,
                                     ),
                                   ),
-                              sortColumnIndex: sortColumn != null
-                                  ? _sortMap.entries
-                                        .firstWhere(
-                                          (e) => e.value == sortColumn,
-                                          orElse: () => const MapEntry(0, ""),
-                                        )
-                                        .key
-                                  : null,
-                              sortAscending: sortDirection == "asc",
                               columns: [
                                 _centeredColumn(
                                   _sortableHeader("ID", "ReservationId"),
-                                  onSort: (i, _) => _onSort(0),
+                                  onSort: (i, _) => _onSortBy("ReservationId"),
                                 ),
                                 _centeredColumn(const Text("Korisnik")),
                                 _centeredColumn(
@@ -513,24 +564,21 @@ class _ReservationScreenState extends State<ReservationScreen> {
                                 ),
                                 _centeredColumn(
                                   _sortableHeader("Period", "StartDate"),
-                                  onSort: (i, _) => _onSort(3),
+                                  onSort: (i, _) => _onSortBy("StartDate"),
                                 ),
-                                _centeredColumn(
-                                  _sortableHeader("Količina", "PeopleCount"),
-                                  onSort: (i, _) => _onSort(4),
-                                ),
+                                _centeredColumn(const Text("Broj ljudi")),
                                 _centeredColumn(
                                   _sortableHeader("Cijena", "TotalPrice"),
-                                  onSort: (i, _) => _onSort(5),
+                                  onSort: (i, _) => _onSortBy("TotalPrice"),
                                 ),
                                 _centeredColumn(
                                   _sortableHeader("Status", "StateMachine"),
-                                  onSort: (i, _) => _onSort(6),
+                                  onSort: (i, _) => _onSortBy("StateMachine"),
                                 ),
-                                _centeredColumn(
-                                  _sortableHeader("Kreirano", "CreatedAt"),
-                                  onSort: (i, _) => _onSort(7),
-                                ),
+                                // _centeredColumn(
+                                //   _sortableHeader("Kreirano", "CreatedAt"),
+                                //   onSort: (i, _) => _onSortBy("CreatedAt"),
+                                // ),
                               ],
                               rows: _reservations
                                   .map(
@@ -548,12 +596,21 @@ class _ReservationScreenState extends State<ReservationScreen> {
                                         ),
                                         _centeredCell(r.peopleCount.toString()),
                                         _centeredCell(
-                                          r.totalPrice.toStringAsFixed(2),
+                                          "${r.totalPrice.toStringAsFixed(2)} KM",
                                         ),
-                                        _centeredCell(r.stateMachine),
-                                        _centeredCell(
-                                          _dateFormat.format(r.createdAt!),
+                                        DataCell(
+                                          SizedBox(
+                                            width: 120,
+                                            child: Center(
+                                              child: buildReservationStatus(
+                                                r.stateMachine,
+                                              ),
+                                            ),
+                                          ),
                                         ),
+                                        // _centeredCell(
+                                        //   _dateFormat.format(r.createdAt!),
+                                        // ),
                                       ],
                                     ),
                                   )
@@ -592,6 +649,12 @@ class _ReservationScreenState extends State<ReservationScreen> {
               ),
               Row(
                 children: [
+                  Text(
+                    totalCount == 0
+                        ? "0 od 0"
+                        : "${((page - 1) * pageSize) + 1}–${((page - 1) * pageSize) + _reservations.length} od $totalCount",
+                  ),
+                  const SizedBox(width: 16),
                   IconButton(
                     onPressed: page > 1
                         ? () {

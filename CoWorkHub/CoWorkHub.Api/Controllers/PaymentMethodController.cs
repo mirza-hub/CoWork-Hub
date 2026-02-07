@@ -44,5 +44,12 @@ namespace CoWorkHub.Api.Controllers
         {
             return base.GetById(id);
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}/restore")]
+        public PaymentMethod RestorePaymentMethod(int id)
+        {
+            return (_service as IPaymentMethodService).RestorePaymentMethod(id);
+        }
     }
 }

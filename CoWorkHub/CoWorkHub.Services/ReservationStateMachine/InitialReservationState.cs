@@ -29,8 +29,13 @@ namespace CoWorkHub.Services.ReservationStateMachine
         {
             var set = Context.Set<Reservation>();
 
-            if (request.StartDate >= request.EndDate)
-                throw new UserException("Početni datum mora biti raniji od kranjeg datuma.");
+            if (!request.EndDate.HasValue)
+                request.EndDate = request.StartDate;
+
+            var numberOfDays = (request.EndDate.Value - request.StartDate).Days + 1;
+
+            if (numberOfDays <= 0)
+                throw new UserException("Rezervacija mora biti najmanje 1 dan.");
 
             if (request.PeopleCount <= 0)
                 throw new UserException("Broj ljudi mora biti veći od nule.");
@@ -43,7 +48,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
             {
                 // ukupno ljudi u istom periodu
                 var totalPeople = set
-                    .Where(r => r.SpaceUnitId == request.SpaceUnitId && !r.IsDeleted &&
+                    .Where(r => r.SpaceUnitId == request.SpaceUnitId && !r.IsDeleted && r.StateMachine != "canceled" &&
                                 r.StartDate < request.EndDate && r.EndDate > request.StartDate)
                     .Sum(r => r.PeopleCount);
 
@@ -53,10 +58,10 @@ namespace CoWorkHub.Services.ReservationStateMachine
             else
             {
                 // Private/Exclusive spaces → nema preklapanja
-                bool overlaps = set.Any(r => r.SpaceUnitId == request.SpaceUnitId && !r.IsDeleted &&
+                bool overlaps = set.Any(r => r.SpaceUnitId == request.SpaceUnitId && !r.IsDeleted && r.StateMachine != "canceled" &&
                                              r.StartDate < request.EndDate && r.EndDate > request.StartDate);
                 if (overlaps)
-                    throw new UserException("Ova prostorna jedinica je već zauzeta za odabrane datume.");
+                    throw new UserException("Ova prostorna jedinica je već zauzeta za odabrani raspon datuma.");
 
                 // provjeri da PeopleCount nije veći od kapaciteta
                 if (request.PeopleCount > spaceUnit.Capacity)
@@ -64,10 +69,6 @@ namespace CoWorkHub.Services.ReservationStateMachine
             }
 
             var entity = Mapper.Map<Reservation>(request);
-            var numberOfDays = (request.EndDate - request.StartDate).Days;
-
-            if (numberOfDays <= 0)
-                throw new UserException("Rezervacija mora biti najmanje 1 dan.");
 
             entity.UsersId = (int)_currentUserService.GetUserId();
             entity.StateMachine = "pending";

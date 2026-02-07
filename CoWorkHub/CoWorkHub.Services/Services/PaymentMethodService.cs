@@ -57,5 +57,25 @@ namespace CoWorkHub.Services.Services
                 throw new UserException("Način plaćanja sa ovim imenom već postoji u bazi.");
             }
         }
+
+        public Model.PaymentMethod RestorePaymentMethod(int id)
+        {
+            var set = Context.Set<Database.PaymentMethod>();
+
+            var entity = set.Find(id);
+
+            if (entity == null)
+                throw new UserException("Metoda plaćanja nije pronađena.");
+
+            if (entity.IsDeleted == false)
+                throw new UserException("Metodu plaćanja nije moguće vratiti jer nije obrisana.");
+
+            entity.IsDeleted = false;
+            entity.DeletedAt = null;
+
+            Context.SaveChanges();
+
+            return Mapper.Map<Model.PaymentMethod>(entity);
+        }
     }
 }

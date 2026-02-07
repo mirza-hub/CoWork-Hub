@@ -1,5 +1,7 @@
 import 'package:coworkhub_desktop/screens/country_screen.dart';
+import 'package:coworkhub_desktop/screens/payment_method_screen.dart';
 import 'package:coworkhub_desktop/screens/resource_screen.dart';
+import 'package:coworkhub_desktop/screens/role_screen.dart';
 import 'package:coworkhub_desktop/screens/workspace_type_screen.dart';
 import 'package:flutter/material.dart';
 import 'city_screen.dart';
@@ -18,6 +20,10 @@ class SettingsScreen extends StatelessWidget {
       onChangeScreen(ResourceScreen(onChangeScreen: onChangeScreen));
     } else if (name == "Tipovi prostora") {
       onChangeScreen(WorkspaceTypeScreen(onChangeScreen: onChangeScreen));
+    } else if (name == "Metode plaćanja") {
+      onChangeScreen(PaymentMethodScreen(onChangeScreen: onChangeScreen));
+    } else if (name == "Uloge") {
+      onChangeScreen(RoleScreen(onChangeScreen: onChangeScreen));
     }
   }
 
@@ -28,6 +34,8 @@ class SettingsScreen extends StatelessWidget {
       "Gradovi",
       "Resursi",
       "Tipovi prostora",
+      "Metode plaćanja",
+      "Uloge",
     ];
 
     return Padding(

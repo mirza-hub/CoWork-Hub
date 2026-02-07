@@ -321,6 +321,27 @@ namespace CoWorkHub.Services.Services
             Context.SaveChanges();
         }
 
+        public Model.User RestoreUser(int id)
+        {
+            var set = Context.Set<Database.User>();
+
+            var entity = set.Find(id);
+
+            if (entity == null)
+                throw new UserException("Korisnik nije pronađen.");
+
+            if (entity.IsDeleted == false)
+                throw new UserException("Korisnika nije moguće vratiti jer nije obrisan.");
+
+            entity.IsDeleted = false;
+            entity.IsActive = true;
+            entity.DeletedAt = null;
+
+            Context.SaveChanges();
+
+            return Mapper.Map<Model.User>(entity);
+        }
+
         private void ValidateUserInsert(UserInsertRequest request)
         {
             // Ime
@@ -392,6 +413,5 @@ namespace CoWorkHub.Services.Services
             if (Context.Users.Any(x => x.Email.ToLower() == request.Email.ToLower()))
                 throw new UserException("Korisnik sa ovim emailom je već registrovan");
         }
-
     }
 }

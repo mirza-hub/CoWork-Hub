@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:coworkhub_desktop/models/city.dart';
+import 'package:coworkhub_desktop/providers/auth_provider.dart';
 import 'package:coworkhub_desktop/providers/city_provider.dart';
 import 'package:coworkhub_desktop/screens/user_details_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
+import '../main.dart';
 import '../models/user.dart';
 import '../providers/user_provider.dart';
 
@@ -30,14 +32,34 @@ class _UsersScreenState extends State<UsersScreen> {
   String? selectedCityId;
   String selectedActive = "true";
   String selectedDeleted = "false";
-  String? sortColumn;
+  String? sortColumn = "UsersId";
   bool sortAscending = true;
-  String? sortDirection;
-  static const double columnWidth = 160;
+
+  void _forceLogout() {
+    AuthProvider.username = null;
+    AuthProvider.password = null;
+    AuthProvider.userId = null;
+    AuthProvider.firstName = null;
+    AuthProvider.lastName = null;
+    AuthProvider.email = null;
+    AuthProvider.isActive = null;
+    AuthProvider.isDeleted = null;
+    AuthProvider.userRoles = null;
+    AuthProvider.isSignedIn = false;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (_) => false,
+    );
+  }
+
+  String? sortDirection = "asc";
+  static const double columnWidth = 140;
   static const double actionColumnWidth = 120;
   int page = 1;
   int pageSize = 10;
   int totalPages = 1;
+  int totalCount = 0;
 
   List<DropdownMenuItem<String>> activeOptions = const [
     DropdownMenuItem(value: "All", child: Text("Svi")),
@@ -57,14 +79,6 @@ class _UsersScreenState extends State<UsersScreen> {
     DropdownMenuItem(value: "2", child: Text("Mostar")),
     DropdownMenuItem(value: "3", child: Text("Tuzla")),
   ];
-
-  final Map<int, String> _sortMap = {
-    0: "UsersId",
-    1: "FirstName",
-    2: "LastName",
-    3: "Email",
-    4: "Username",
-  };
 
   @override
   void initState() {
@@ -116,6 +130,7 @@ class _UsersScreenState extends State<UsersScreen> {
       setState(() {
         users = result.resultList;
         totalPages = result.totalPages ?? 1;
+        totalCount = result.count ?? 0;
       });
     } catch (e) {
       debugPrint("Greška: $e");
@@ -168,6 +183,25 @@ class _UsersScreenState extends State<UsersScreen> {
       sortDirection = "asc";
     }
     _fetchUsers();
+  }
+
+  Widget _sortableHeader(String title, String columnKey) {
+    Widget icon;
+
+    if (sortColumn != columnKey) {
+      icon = const Icon(Icons.unfold_more, size: 18, color: Colors.grey);
+    } else {
+      icon = Icon(
+        sortDirection == "asc" ? Icons.arrow_downward : Icons.arrow_upward,
+        size: 16,
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [Text(title), const SizedBox(width: 6), icon],
+    );
   }
 
   void _openFilterDialog() {
@@ -228,7 +262,12 @@ class _UsersScreenState extends State<UsersScreen> {
                       value: tempDeleted,
                       items: deletedOptions,
                       onChanged: (val) {
-                        setDialogState(() => tempDeleted = val!);
+                        setDialogState(() {
+                          tempDeleted = val!;
+                          if (tempDeleted == "true") {
+                            tempActive = "false";
+                          }
+                        });
                       },
                     ),
                   ],
@@ -296,22 +335,50 @@ class _UsersScreenState extends State<UsersScreen> {
     );
   }
 
-  DataColumn _centeredColumn(Widget label, {void Function(int, bool)? onSort}) {
+  DataColumn _centeredColumn(
+    Widget label, {
+    double width = columnWidth,
+    bool numeric = false,
+    void Function(int, bool)? onSort,
+  }) {
     return DataColumn(
+      numeric: numeric,
       onSort: onSort,
       label: SizedBox(
-        width: columnWidth,
+        width: width,
         child: Center(child: label),
       ),
     );
   }
 
-  DataCell _centeredCell(String text) {
+  DataCell _centeredCell(String text, {double width = columnWidth}) {
     return DataCell(
       SizedBox(
-        width: columnWidth,
+        width: width,
         child: Center(
           child: Text(text, textAlign: TextAlign.center, softWrap: true),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusBadge(bool isActive) {
+    final text = isActive ? "AKTIVAN" : "NEAKTIVAN";
+    final color = isActive ? Colors.green : Colors.red;
+
+    return Container(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: color,
         ),
       ),
     );
@@ -395,168 +462,163 @@ class _UsersScreenState extends State<UsersScreen> {
                             minWidth: constraints.maxWidth,
                           ),
                           child: DataTable(
-                            headingRowColor:
-                                MaterialStateProperty.resolveWith<Color?>((
-                                  Set<MaterialState> states,
-                                ) {
-                                  return const Color.fromARGB(
-                                    255,
-                                    243,
-                                    242,
-                                    242,
-                                  );
-                                }),
-
-                            sortColumnIndex: sortColumn == "UsersId"
-                                ? 0
-                                : sortColumn == "FirstName"
-                                ? 1
-                                : sortColumn == "LastName"
-                                ? 2
-                                : sortColumn == "Email"
-                                ? 3
-                                : sortColumn == "Username"
-                                ? 4
-                                : null,
-                            sortAscending: sortDirection == "asc",
+                            headingRowHeight: 50,
+                            dataRowHeight: 48,
+                            columnSpacing: 0,
+                            horizontalMargin: 0,
+                            headingRowColor: MaterialStateProperty.all(
+                              const Color.fromARGB(255, 243, 242, 242),
+                            ),
                             columns: [
-                              DataColumn(
-                                label: Text("ID"),
+                              _centeredColumn(
+                                _sortableHeader("ID", "UsersId"),
                                 numeric: true,
-                                onSort: (columnIndex, ascending) {
-                                  _onSort("UsersId");
-                                },
+                                onSort: (i, __) => _onSort("UsersId"),
                               ),
-
-                              DataColumn(
-                                label: Text("Ime"),
-                                onSort: (columnIndex, ascending) =>
-                                    _onSort("FirstName"),
+                              _centeredColumn(
+                                _sortableHeader("Ime", "FirstName"),
+                                onSort: (i, __) => _onSort("FirstName"),
                               ),
-                              DataColumn(
-                                label: Text("Prezime"),
-                                onSort: (columnIndex, ascending) =>
-                                    _onSort("LastName"),
+                              _centeredColumn(
+                                _sortableHeader("Prezime", "LastName"),
+                                onSort: (i, __) => _onSort("LastName"),
                               ),
-                              DataColumn(
-                                label: Text("Email"),
-                                onSort: (columnIndex, ascending) =>
-                                    _onSort("Email"),
+                              _centeredColumn(
+                                _sortableHeader("Email", "Email"),
+                                onSort: (i, __) => _onSort("Email"),
                               ),
-                              DataColumn(
-                                label: Text("Username"),
-                                onSort: (columnIndex, ascending) =>
-                                    _onSort("Username"),
+                              _centeredColumn(
+                                _sortableHeader("Username", "Username"),
+                                onSort: (i, __) => _onSort("Username"),
                               ),
-                              DataColumn(label: Text("Status")),
-                              DataColumn(label: Text("Akcije")),
+                              _centeredColumn(const Text("Status")),
+                              _centeredColumn(
+                                const Text("Akcije"),
+                                width: actionColumnWidth,
+                              ),
                             ],
                             rows: users
                                 .map(
                                   (user) => DataRow(
                                     cells: [
-                                      DataCell(Text(user.usersId.toString())),
-                                      DataCell(Text(user.firstName)),
-                                      DataCell(Text(user.lastName)),
-                                      DataCell(Text(user.email)),
-                                      DataCell(Text(user.username)),
+                                      _centeredCell(user.usersId.toString()),
+                                      _centeredCell(user.firstName),
+                                      _centeredCell(user.lastName),
+                                      _centeredCell(user.email),
+                                      _centeredCell(user.username),
                                       DataCell(
-                                        Text(
-                                          user.isActive
-                                              ? "Aktivan"
-                                              : "Neaktivan",
+                                        SizedBox(
+                                          width: columnWidth,
+                                          child: Center(
+                                            child: _statusBadge(user.isActive),
+                                          ),
                                         ),
                                       ),
                                       DataCell(
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.info_outline,
-                                              ),
-                                              onPressed: () {
-                                                widget.onChangeScreen(
-                                                  UserDetailsScreen(
-                                                    user: user,
-                                                    onChangeScreen:
-                                                        widget.onChangeScreen,
+                                        SizedBox(
+                                          width: actionColumnWidth,
+                                          child: Center(
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.info_outline,
                                                   ),
-                                                );
-                                              },
-                                            ),
-                                            if (!user.isDeleted!)
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.delete,
-                                                  color: Colors.red,
+                                                  onPressed: () {
+                                                    widget.onChangeScreen(
+                                                      UserDetailsScreen(
+                                                        user: user,
+                                                        onChangeScreen: widget
+                                                            .onChangeScreen,
+                                                      ),
+                                                    );
+                                                  },
                                                 ),
-                                                onPressed: () async {
-                                                  final confirmed = await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (context) => AlertDialog(
-                                                      title: const Text(
-                                                        "Potvrda brisanja",
-                                                      ),
-                                                      content: const Text(
-                                                        "Da li ste sigurni da želite obrisati korisnika?",
-                                                      ),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.of(
-                                                                context,
-                                                              ).pop(true),
-                                                          style:
-                                                              ElevatedButton.styleFrom(
+                                                if (!user.isDeleted!)
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                      Icons.delete,
+                                                      color: Colors.red,
+                                                    ),
+                                                    onPressed: () async {
+                                                      final confirmed = await showDialog<bool>(
+                                                        context: context,
+                                                        builder: (context) => AlertDialog(
+                                                          title: const Text(
+                                                            "Potvrda brisanja",
+                                                          ),
+                                                          content: const Text(
+                                                            "Da li ste sigurni da želite obrisati korisnika?",
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(true),
+                                                              style: ElevatedButton.styleFrom(
                                                                 backgroundColor:
                                                                     Colors.blue,
                                                               ),
-                                                          child: const Text(
-                                                            "Da",
-                                                            style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
+                                                              child: const Text(
+                                                                "Da",
+                                                                style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                              ),
                                                             ),
-                                                          ),
+                                                            TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(false),
+                                                              child: const Text(
+                                                                "Ne",
+                                                              ),
+                                                            ),
+                                                          ],
                                                         ),
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.of(
-                                                                context,
-                                                              ).pop(false),
-                                                          child: const Text(
-                                                            "Ne",
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
+                                                      );
 
-                                                  if (confirmed == true) {
-                                                    try {
-                                                      await _userProvider
-                                                          .delete(user.usersId);
-                                                      showTopFlushBar(
-                                                        context: context,
-                                                        message:
-                                                            "Korisnik uspješno obrisan",
-                                                        backgroundColor:
-                                                            Colors.green,
-                                                      );
-                                                      await _fetchUsers();
-                                                    } catch (e) {
-                                                      showTopFlushBar(
-                                                        context: context,
-                                                        message:
-                                                            "Brisanje nije uspjelo",
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                      );
-                                                    }
-                                                  }
-                                                },
-                                              ),
-                                          ],
+                                                      if (confirmed == true) {
+                                                        try {
+                                                          await _userProvider
+                                                              .delete(
+                                                                user.usersId,
+                                                              );
+                                                          showTopFlushBar(
+                                                            context: context,
+                                                            message:
+                                                                "Korisnik uspješno obrisan",
+                                                            backgroundColor:
+                                                                Colors.green,
+                                                          );
+                                                          if (user.usersId ==
+                                                              AuthProvider
+                                                                  .userId) {
+                                                            _forceLogout();
+                                                            return;
+                                                          }
+                                                          await _fetchUsers();
+                                                        } catch (e) {
+                                                          showTopFlushBar(
+                                                            context: context,
+                                                            message:
+                                                                "Brisanje nije uspjelo",
+                                                            backgroundColor:
+                                                                Colors.red,
+                                                          );
+                                                        }
+                                                      }
+                                                    },
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -596,6 +658,12 @@ class _UsersScreenState extends State<UsersScreen> {
               ),
               Row(
                 children: [
+                  Text(
+                    totalCount == 0
+                        ? "0 od 0"
+                        : "${((page - 1) * pageSize) + 1}–${((page - 1) * pageSize) + users.length} od $totalCount",
+                  ),
+                  const SizedBox(width: 16),
                   IconButton(
                     onPressed: page > 1
                         ? () async {
@@ -622,44 +690,6 @@ class _UsersScreenState extends State<UsersScreen> {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-// HEADER ćelija
-class _HeaderCell extends StatelessWidget {
-  final String text;
-  final int flex;
-
-  const _HeaderCell(this.text, {this.flex = 1, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-}
-
-// BODY ćelija
-class _TableCell extends StatelessWidget {
-  final String text;
-  final int flex;
-
-  const _TableCell(this.text, {this.flex = 1, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(text),
       ),
     );
   }

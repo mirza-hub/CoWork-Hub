@@ -35,9 +35,12 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
   int page = 1;
   int pageSize = 10;
   int totalPages = 1;
+  int totalCount = 0;
   String? sortColumn;
   String? sortDirection;
   Timer? _debounce;
+  static const double columnWidth = 140;
+  static const double actionColumnWidth = 120;
 
   @override
   void initState() {
@@ -74,6 +77,7 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
     setState(() {
       spaces = result.resultList;
       totalPages = result.totalPages!;
+      totalCount = result.count ?? 0;
       _isLoadingSpaces = false;
     });
   }
@@ -119,7 +123,19 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
         bool? selectedDeleted = filterIsDeleted ?? false;
 
         return AlertDialog(
-          title: const Text("Filteri"),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Filteri",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              InkWell(
+                child: const Icon(Icons.close, size: 22),
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -222,6 +238,80 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
     _loadSpaces();
   }
 
+  Widget _sortableHeader(String title, String columnKey) {
+    Widget icon;
+
+    if (sortColumn != columnKey) {
+      icon = const Icon(Icons.unfold_more, size: 18, color: Colors.grey);
+    } else {
+      icon = Icon(
+        sortDirection == "asc" ? Icons.arrow_downward : Icons.arrow_upward,
+        size: 16,
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [Text(title), const SizedBox(width: 6), icon],
+    );
+  }
+
+  DataColumn _centeredColumn(
+    Widget label, {
+    double width = columnWidth,
+    bool numeric = false,
+    void Function(int, bool)? onSort,
+  }) {
+    return DataColumn(
+      numeric: numeric,
+      onSort: onSort,
+      label: SizedBox(
+        width: width,
+        child: Center(child: label),
+      ),
+    );
+  }
+
+  DataCell _centeredCell(String text, {double width = columnWidth}) {
+    return DataCell(
+      SizedBox(
+        width: width,
+        child: Center(
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusBadge(bool isActive) {
+    final text = isActive ? "AKTIVAN" : "NEAKTIVAN";
+    final color = isActive ? Colors.green : Colors.red;
+
+    return Container(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -261,17 +351,7 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                   ),
                 ),
               ),
-              // Expanded(
-              //   child: TextField(
-              //     decoration: const InputDecoration(labelText: "Adresa"),
-              //     onChanged: (v) => searchAddress = v,
-              //   ),
-              // ),
               const SizedBox(width: 8),
-              // ElevatedButton(
-              //   onPressed: _openFilterDialog,
-              //   child: const Text("Filter"),
-              // ),
               ElevatedButton.icon(
                 onPressed: _openFilterDialog,
                 icon: const Icon(Icons.filter_list),
@@ -334,6 +414,10 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                             minWidth: constraints.maxWidth,
                           ),
                           child: DataTable(
+                            headingRowHeight: 50,
+                            dataRowHeight: 48,
+                            columnSpacing: 0,
+                            horizontalMargin: 0,
                             headingRowColor:
                                 MaterialStateProperty.resolveWith<Color?>((
                                   Set<MaterialState> states,
@@ -345,115 +429,130 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                                     242,
                                   );
                                 }),
-                            sortColumnIndex: sortColumn == "WorkingSpacesId"
-                                ? 0
-                                : sortColumn == "Name"
-                                ? 1
-                                : null,
-                            sortAscending: sortDirection == "asc",
                             columns: [
-                              DataColumn(
-                                label: const Text("ID"),
+                              _centeredColumn(
+                                _sortableHeader("ID", "WorkingSpacesId"),
                                 numeric: true,
                                 onSort: (columnIndex, ascending) {
                                   _onSort("WorkingSpacesId");
                                 },
                               ),
-                              DataColumn(
-                                label: const Text("Naziv"),
+                              _centeredColumn(
+                                _sortableHeader("Naziv", "Name"),
                                 onSort: (columnIndex, ascending) =>
                                     _onSort("Name"),
                               ),
-                              DataColumn(label: const Text("Adresa")),
-                              DataColumn(label: const Text("Opis")),
-                              DataColumn(label: const Text("Aktivan")),
-                              DataColumn(label: const Text("Akcije")),
+                              _centeredColumn(const Text("Adresa")),
+                              _centeredColumn(const Text("Status")),
+                              _centeredColumn(
+                                const Text("Akcije"),
+                                width: actionColumnWidth,
+                              ),
                             ],
                             rows: spaces.map((ws) {
                               return DataRow(
                                 cells: [
-                                  DataCell(Text(ws.workingSpacesId.toString())),
-                                  DataCell(Text(ws.name)),
-                                  DataCell(Text(ws.address)),
-                                  DataCell(Text(ws.description)),
+                                  _centeredCell(ws.workingSpacesId.toString()),
+                                  _centeredCell(ws.name),
+                                  _centeredCell(ws.address),
                                   DataCell(
-                                    Text(ws.isDeleted == true ? "Ne" : "Da"),
+                                    SizedBox(
+                                      width: columnWidth,
+                                      child: Center(
+                                        child: _statusBadge(
+                                          ws.isDeleted != true,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                   DataCell(
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          onPressed: () {
-                                            widget.onChangeScreen(
-                                              WorkingSpaceDetailsScreen(
-                                                space: ws,
-                                                onChangeScreen:
-                                                    widget.onChangeScreen,
+                                    SizedBox(
+                                      width: actionColumnWidth,
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            IconButton(
+                                              onPressed: () {
+                                                widget.onChangeScreen(
+                                                  WorkingSpaceDetailsScreen(
+                                                    space: ws,
+                                                    onChangeScreen:
+                                                        widget.onChangeScreen,
+                                                  ),
+                                                );
+                                              },
+                                              icon: const Icon(
+                                                Icons.info_outline,
                                               ),
-                                            );
-                                          },
-                                          icon: const Icon(Icons.info_outline),
-                                        ),
-                                        if (ws.isDeleted != true)
-                                          IconButton(
-                                            onPressed: () async {
-                                              bool?
-                                              confirm = await showDialog<bool>(
-                                                context: context,
-                                                builder: (context) => AlertDialog(
-                                                  title: const Text(
-                                                    "Potvrda brisanja",
-                                                  ),
-                                                  content: const Text(
-                                                    "Da li želite obrisati ovaj zapis?",
-                                                  ),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () =>
-                                                          Navigator.pop(
-                                                            context,
-                                                            true,
-                                                          ),
-                                                      style:
-                                                          ElevatedButton.styleFrom(
-                                                            backgroundColor:
-                                                                Colors.blue,
-                                                          ),
-                                                      child: const Text(
-                                                        "Da",
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    TextButton(
-                                                      onPressed: () =>
-                                                          Navigator.pop(
-                                                            context,
-                                                            false,
-                                                          ),
-                                                      child: const Text("Ne"),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-
-                                              if (confirm == true) {
-                                                await provider.delete(
-                                                  ws.workingSpacesId,
-                                                );
-                                                _loadSpaces();
-                                                showSuccessFlushbar(
-                                                  "Uspješno brisanje",
-                                                );
-                                              }
-                                            },
-                                            icon: const Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
                                             ),
-                                          ),
-                                      ],
+                                            if (ws.isDeleted != true)
+                                              IconButton(
+                                                onPressed: () async {
+                                                  bool?
+                                                  confirm = await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (context) => AlertDialog(
+                                                      title: const Text(
+                                                        "Potvrda brisanja",
+                                                      ),
+                                                      content: const Text(
+                                                        "Da li želite obrisati ovaj zapis?",
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                true,
+                                                              ),
+                                                          style:
+                                                              ElevatedButton.styleFrom(
+                                                                backgroundColor:
+                                                                    Colors.blue,
+                                                              ),
+                                                          child: const Text(
+                                                            "Da",
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                false,
+                                                              ),
+                                                          child: const Text(
+                                                            "Ne",
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+
+                                                  if (confirm == true) {
+                                                    await provider.delete(
+                                                      ws.workingSpacesId,
+                                                    );
+                                                    _loadSpaces();
+                                                    showSuccessFlushbar(
+                                                      "Uspješno brisanje",
+                                                    );
+                                                  }
+                                                },
+                                                icon: const Icon(
+                                                  Icons.delete,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -492,6 +591,12 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
               ),
               Row(
                 children: [
+                  Text(
+                    totalCount == 0
+                        ? "0 od 0"
+                        : "${((page - 1) * pageSize) + 1}–${((page - 1) * pageSize) + spaces.length} od $totalCount",
+                  ),
+                  const SizedBox(width: 16),
                   IconButton(
                     onPressed: page > 1
                         ? () async {

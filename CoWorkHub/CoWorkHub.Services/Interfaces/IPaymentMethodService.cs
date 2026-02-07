@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model.Requests;
+﻿using CoWorkHub.Model;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 using System;
@@ -10,5 +11,7 @@ using System.Threading.Tasks;
 namespace CoWorkHub.Services.Interfaces
 {
     public interface IPaymentMethodService : ICRUDService<Model.PaymentMethod, PaymentMethodSearchObject, PaymentMethodInsertRequest, PaymentMethodUpdateRequest>
-    { }
+    {
+        PaymentMethod RestorePaymentMethod(int id);
+    }
 }

@@ -7,6 +7,6 @@ namespace CoWorkHub.Services.Interfaces
 {
     public interface IWorkingSpaceService : ICRUDService<WorkingSpace, WorkingSpaceSearchObject, WorkingSpaceInsertRequest, WorkingSpaceUpdateRequest>
     {
-       
+        WorkingSpace RestoreWorkingSpace(int id);
     }
 }

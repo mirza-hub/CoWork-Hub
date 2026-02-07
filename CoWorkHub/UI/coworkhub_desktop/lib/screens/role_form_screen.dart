@@ -1,55 +1,59 @@
 import 'dart:convert';
 
-import 'package:coworkhub_desktop/models/country.dart';
-import 'package:coworkhub_desktop/providers/country_provider.dart';
-import 'package:coworkhub_desktop/screens/country_screen.dart';
+import 'package:coworkhub_desktop/models/role.dart';
+import 'package:coworkhub_desktop/providers/role_provider.dart';
+import 'package:coworkhub_desktop/screens/role_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-class CountryFormScreen extends StatefulWidget {
-  final Country? country;
+class RoleFormScreen extends StatefulWidget {
+  final Role? role;
   final void Function(Widget) onChangeScreen;
 
-  const CountryFormScreen({
-    super.key,
-    this.country,
-    required this.onChangeScreen,
-  });
+  const RoleFormScreen({super.key, this.role, required this.onChangeScreen});
 
   @override
-  State<CountryFormScreen> createState() => _CountryFormScreenState();
+  State<RoleFormScreen> createState() => _RoleFormScreenState();
 }
 
-class _CountryFormScreenState extends State<CountryFormScreen> {
+class _RoleFormScreenState extends State<RoleFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final CountryProvider _countryProvider = CountryProvider();
+  final RoleProvider _roleProvider = RoleProvider();
 
   late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
   String _initialName = "";
+  String? _initialDescription;
 
-  bool get isEdit => widget.country != null;
-  bool get isDeleted => widget.country?.isDeleted == true;
+  bool get isEdit => widget.role != null;
+  bool get isDeleted => widget.role?.isDeleted == true;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.country?.countryName ?? "",
+    _nameController = TextEditingController(text: widget.role?.roleName ?? "");
+    _descriptionController = TextEditingController(
+      text: widget.role?.description ?? "",
     );
-    _initialName = widget.country?.countryName ?? "";
+    _initialName = widget.role?.roleName ?? "";
+    _initialDescription = widget.role?.description;
   }
 
   Future<void> _save() async {
     if (isDeleted) return;
     if (!_formKey.currentState!.validate()) return;
 
-    final request = {"countryName": _nameController.text};
+    final request = {
+      "roleName": _nameController.text.trim(),
+      "description": _descriptionController.text.trim(),
+    };
 
     try {
       if (isEdit) {
-        if (_nameController.text.trim() == _initialName.trim()) {
+        if (_nameController.text.trim() == _initialName &&
+            _descriptionController.text.trim() == (_initialDescription ?? "")) {
           showTopFlushBar(
             context: context,
             message: "Niste ništa promijenili",
@@ -57,25 +61,25 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
           );
           return;
         }
-        await _countryProvider.update(widget.country!.countryId, request);
+        await _roleProvider.update(widget.role!.rolesId, request);
         setState(() {
           _initialName = _nameController.text;
+          _initialDescription = _descriptionController.text;
         });
         showTopFlushBar(
           context: context,
-          message: "Država uspješno ažurirana",
+          message: "Uloga uspješno ažurirana",
           backgroundColor: Colors.green,
         );
       } else {
-        await _countryProvider.insert(request);
+        await _roleProvider.insert(request);
         showTopFlushBar(
           context: context,
-          message: "Država uspješno dodana",
+          message: "Uloga uspješno dodana",
           backgroundColor: Colors.green,
         );
-        setState(() {
-          _nameController.clear();
-        });
+        _nameController.clear();
+        _descriptionController.clear();
       }
     } catch (e) {
       if (e is http.Response) {
@@ -115,19 +119,17 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
 
   Future<void> _restore() async {
     try {
-      await _countryProvider.restore(widget.country!.countryId);
+      await _roleProvider.restore(widget.role!.rolesId);
       showTopFlushBar(
         context: context,
-        message: "Država uspješno vraćena",
+        message: "Uloga uspješno vraćena",
         backgroundColor: Colors.green,
       );
-      widget.onChangeScreen(
-        CountryScreen(onChangeScreen: widget.onChangeScreen),
-      );
+      widget.onChangeScreen(RoleScreen(onChangeScreen: widget.onChangeScreen));
     } catch (e) {
       showTopFlushBar(
         context: context,
-        message: "Greška pri vraćanju države",
+        message: "Greška pri vraćanju uloge",
         backgroundColor: Colors.red,
       );
     }
@@ -146,7 +148,7 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
             iconSize: 28,
             onPressed: () {
               widget.onChangeScreen(
-                CountryScreen(onChangeScreen: widget.onChangeScreen),
+                RoleScreen(onChangeScreen: widget.onChangeScreen),
               );
             },
           ),
@@ -166,7 +168,7 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                     children: [
                       Center(
                         child: Text(
-                          isEdit ? "Uredi državu" : "Dodaj novu državu",
+                          isEdit ? "Uredi ulogu" : "Dodaj novu ulogu",
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -178,15 +180,10 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                         controller: _nameController,
                         enabled: !isDeleted,
                         decoration: const InputDecoration(
-                          labelText: "Naziv države",
+                          labelText: "Naziv uloge",
                           border: OutlineInputBorder(),
                         ),
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(30),
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r"[a-zA-ZčćžšđČĆŽŠĐ\s\-']"),
-                          ),
-                        ],
+                        inputFormatters: [LengthLimitingTextInputFormatter(30)],
                         validator: (value) {
                           if (value == null) return "Naziv je obavezan";
 
@@ -200,24 +197,37 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                             return "Naziv mora imati barem 2 slova";
                           }
 
-                          if (v.length > 56) {
-                            return "Naziv ne može biti duži od 56 znakova";
+                          if (v.length > 30) {
+                            return "Naziv ne može biti duži od 30 znakova";
                           }
 
                           final regex = RegExp(
                             r"^[a-zA-ZčćžšđČĆŽŠĐ]+([\s\-'][a-zA-ZčćžšđČĆŽŠĐ]+)*$",
                           );
-                          if (!regex.hasMatch(v)) {
-                            return "Naziv može sadržavati samo slova, razmake i crticu";
-                          }
+
                           if (!RegExp(
                             r'^[A-Za-zČĆŽŠĐčćžšđ]+(?:[ -][A-Za-zČĆŽŠĐčćžšđ]+)*$',
                           ).hasMatch(value)) {
                             return "Naziv ne može počinjati ili završavati razmakom ili -";
                           }
 
+                          if (!regex.hasMatch(v)) {
+                            return "Naziv može sadržavati samo slova, razmake i crticu";
+                          }
+
                           return null;
                         },
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _descriptionController,
+                        enabled: !isDeleted,
+                        decoration: const InputDecoration(
+                          labelText: "Opis (opciono)",
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLength: 200,
+                        maxLines: 3,
                       ),
                       const SizedBox(height: 30),
                       Center(
@@ -241,7 +251,7 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                                   ),
                             child: Text(
                               isDeleted
-                                  ? "Vrati državu"
+                                  ? "Vrati ulogu"
                                   : (isEdit ? "Sačuvaj" : "Spasi"),
                               style: const TextStyle(
                                 fontSize: 15,

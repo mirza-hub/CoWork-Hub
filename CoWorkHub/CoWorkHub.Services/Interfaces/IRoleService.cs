@@ -12,5 +12,6 @@ namespace CoWorkHub.Services.Interfaces
 {
     public interface IRoleService : ICRUDService<Role, RoleSearchObject, RoleInsertRequest, RoleUpdateRequest>
     {
+        Role RestoreRole(int id);
     }
 }

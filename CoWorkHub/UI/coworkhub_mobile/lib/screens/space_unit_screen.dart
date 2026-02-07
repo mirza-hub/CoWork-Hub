@@ -333,6 +333,10 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
           backgroundColor: Colors.red,
         );
       }
+      if (result != true) {
+        if (!mounted) return;
+        await fetchUnits(reset: true);
+      }
     } catch (e) {
       showTopFlushBar(
         context: context,
@@ -766,8 +770,8 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                       final su = units[index];
 
                       return InkWell(
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => SpaceUnitDetailsScreen(
@@ -777,6 +781,8 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
                               ),
                             ),
                           );
+                          if (!mounted) return;
+                          fetchUnits(reset: true);
                         },
                         child: Container(
                           margin: EdgeInsets.fromLTRB(

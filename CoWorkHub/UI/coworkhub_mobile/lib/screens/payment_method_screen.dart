@@ -59,7 +59,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final days = widget.dateRange.end.difference(widget.dateRange.start).inDays;
+    final days =
+        widget.dateRange.end.difference(widget.dateRange.start).inDays + 1;
 
     double totalPrice;
 

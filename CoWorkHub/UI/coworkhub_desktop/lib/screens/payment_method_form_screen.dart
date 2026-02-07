@@ -1,51 +1,52 @@
 import 'dart:convert';
 
-import 'package:coworkhub_desktop/models/country.dart';
-import 'package:coworkhub_desktop/providers/country_provider.dart';
-import 'package:coworkhub_desktop/screens/country_screen.dart';
+import 'package:coworkhub_desktop/models/payment_method.dart';
+import 'package:coworkhub_desktop/providers/payment_method_provider.dart';
+import 'package:coworkhub_desktop/screens/payment_method_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-class CountryFormScreen extends StatefulWidget {
-  final Country? country;
+class PaymentMethodFormScreen extends StatefulWidget {
+  final PaymentMethod? paymentMethod;
   final void Function(Widget) onChangeScreen;
 
-  const CountryFormScreen({
+  const PaymentMethodFormScreen({
     super.key,
-    this.country,
+    this.paymentMethod,
     required this.onChangeScreen,
   });
 
   @override
-  State<CountryFormScreen> createState() => _CountryFormScreenState();
+  State<PaymentMethodFormScreen> createState() =>
+      _PaymentMethodFormScreenState();
 }
 
-class _CountryFormScreenState extends State<CountryFormScreen> {
+class _PaymentMethodFormScreenState extends State<PaymentMethodFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final CountryProvider _countryProvider = CountryProvider();
+  final PaymentMethodProvider _provider = PaymentMethodProvider();
 
   late TextEditingController _nameController;
   String _initialName = "";
 
-  bool get isEdit => widget.country != null;
-  bool get isDeleted => widget.country?.isDeleted == true;
+  bool get isEdit => widget.paymentMethod != null;
+  bool get isDeleted => widget.paymentMethod?.isDeleted == true;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(
-      text: widget.country?.countryName ?? "",
+      text: widget.paymentMethod?.paymentMethodName ?? "",
     );
-    _initialName = widget.country?.countryName ?? "";
+    _initialName = widget.paymentMethod?.paymentMethodName ?? "";
   }
 
   Future<void> _save() async {
     if (isDeleted) return;
     if (!_formKey.currentState!.validate()) return;
 
-    final request = {"countryName": _nameController.text};
+    final request = {"paymentMethodName": _nameController.text};
 
     try {
       if (isEdit) {
@@ -57,25 +58,21 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
           );
           return;
         }
-        await _countryProvider.update(widget.country!.countryId, request);
-        setState(() {
-          _initialName = _nameController.text;
-        });
+        await _provider.update(widget.paymentMethod!.paymentMethodId, request);
+        _initialName = _nameController.text;
         showTopFlushBar(
           context: context,
-          message: "Država uspješno ažurirana",
+          message: "Metoda plaćanja uspješno ažurirana",
           backgroundColor: Colors.green,
         );
       } else {
-        await _countryProvider.insert(request);
+        await _provider.insert(request);
         showTopFlushBar(
           context: context,
-          message: "Država uspješno dodana",
+          message: "Metoda plaćanja uspješno dodana",
           backgroundColor: Colors.green,
         );
-        setState(() {
-          _nameController.clear();
-        });
+        _nameController.clear();
       }
     } catch (e) {
       if (e is http.Response) {
@@ -115,19 +112,19 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
 
   Future<void> _restore() async {
     try {
-      await _countryProvider.restore(widget.country!.countryId);
+      await _provider.restore(widget.paymentMethod!.paymentMethodId);
       showTopFlushBar(
         context: context,
-        message: "Država uspješno vraćena",
+        message: "Metoda plaćanja uspješno vraćena",
         backgroundColor: Colors.green,
       );
       widget.onChangeScreen(
-        CountryScreen(onChangeScreen: widget.onChangeScreen),
+        PaymentMethodScreen(onChangeScreen: widget.onChangeScreen),
       );
     } catch (e) {
       showTopFlushBar(
         context: context,
-        message: "Greška pri vraćanju države",
+        message: "Greška pri vraćanju",
         backgroundColor: Colors.red,
       );
     }
@@ -138,7 +135,6 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Strelica nazad
         Padding(
           padding: const EdgeInsets.only(top: 16, left: 16),
           child: IconButton(
@@ -146,13 +142,11 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
             iconSize: 28,
             onPressed: () {
               widget.onChangeScreen(
-                CountryScreen(onChangeScreen: widget.onChangeScreen),
+                PaymentMethodScreen(onChangeScreen: widget.onChangeScreen),
               );
             },
           ),
         ),
-
-        // Forma
         Expanded(
           child: Center(
             child: ConstrainedBox(
@@ -166,7 +160,9 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                     children: [
                       Center(
                         child: Text(
-                          isEdit ? "Uredi državu" : "Dodaj novu državu",
+                          isEdit
+                              ? "Uredi metodu plaćanja"
+                              : "Dodaj novu metodu plaćanja",
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -178,15 +174,10 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                         controller: _nameController,
                         enabled: !isDeleted,
                         decoration: const InputDecoration(
-                          labelText: "Naziv države",
+                          labelText: "Naziv metode",
                           border: OutlineInputBorder(),
                         ),
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(30),
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r"[a-zA-ZčćžšđČĆŽŠĐ\s\-']"),
-                          ),
-                        ],
+                        inputFormatters: [LengthLimitingTextInputFormatter(30)],
                         validator: (value) {
                           if (value == null) return "Naziv je obavezan";
 
@@ -200,20 +191,22 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                             return "Naziv mora imati barem 2 slova";
                           }
 
-                          if (v.length > 56) {
-                            return "Naziv ne može biti duži od 56 znakova";
+                          if (v.length > 30) {
+                            return "Naziv ne može biti duži od 30 znakova";
                           }
 
                           final regex = RegExp(
                             r"^[a-zA-ZčćžšđČĆŽŠĐ]+([\s\-'][a-zA-ZčćžšđČĆŽŠĐ]+)*$",
                           );
-                          if (!regex.hasMatch(v)) {
-                            return "Naziv može sadržavati samo slova, razmake i crticu";
-                          }
+
                           if (!RegExp(
                             r'^[A-Za-zČĆŽŠĐčćžšđ]+(?:[ -][A-Za-zČĆŽŠĐčćžšđ]+)*$',
                           ).hasMatch(value)) {
                             return "Naziv ne može počinjati ili završavati razmakom ili -";
+                          }
+
+                          if (!regex.hasMatch(v)) {
+                            return "Naziv može sadržavati samo slova, razmake i crticu";
                           }
 
                           return null;
@@ -226,27 +219,19 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
                           height: 40,
                           child: ElevatedButton(
                             onPressed: isDeleted ? _restore : _save,
-                            style: isDeleted
-                                ? ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  )
-                                : ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDeleted
+                                  ? Colors.orange
+                                  : Colors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                             child: Text(
                               isDeleted
-                                  ? "Vrati državu"
+                                  ? "Vrati"
                                   : (isEdit ? "Sačuvaj" : "Spasi"),
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Colors.white,
-                              ),
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                         ),

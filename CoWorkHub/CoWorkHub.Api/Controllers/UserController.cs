@@ -63,6 +63,13 @@ namespace CoWorkHub.Api.Controllers
             return base.GetById(id);
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}/restore")]
+        public User RestoreUser(int id)
+        {
+            return (_service as IUserService).RestoreUser(id);
+        }
+
         [AllowAnonymous]
         [HttpPost("password-reset/send-code")]
         public Model.PasswordResetRequest SendPasswordResetCode([FromBody] PasswordResetRequestRequest request)

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:coworkhub_desktop/models/dashboard_stats.dart';
 import 'package:coworkhub_desktop/models/revenue_by_month.dart';
+import 'package:coworkhub_desktop/providers/base_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'auth_provider.dart';
@@ -19,12 +20,7 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      String baseUrl = const String.fromEnvironment(
-        "baseUrl",
-        defaultValue: "http://localhost:5084/",
-      );
-
-      final url = Uri.parse("${baseUrl}Dashboard/stats");
+      final url = Uri.parse("${BaseProvider.baseUrl}Dashboard/stats");
 
       String username = AuthProvider.username ?? "";
       String password = AuthProvider.password ?? "";
@@ -58,12 +54,9 @@ class DashboardProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      String baseUrl = const String.fromEnvironment(
-        "baseUrl",
-        defaultValue: "http://localhost:5084/",
+      final url = Uri.parse(
+        "${BaseProvider.baseUrl}Dashboard/revenue-by-month",
       );
-
-      final url = Uri.parse("${baseUrl}Dashboard/revenue-by-month");
 
       String username = AuthProvider.username ?? "";
       String password = AuthProvider.password ?? "";

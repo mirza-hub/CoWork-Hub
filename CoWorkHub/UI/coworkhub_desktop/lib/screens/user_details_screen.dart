@@ -37,6 +37,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   bool loading = true;
   bool? activeValue;
   bool isLoadingCity = true;
+  bool? _initialActiveValue;
+  String? _initialProfileImageBase64;
+  Set<int> _initialRolesId = {};
 
   List<Role> roles = [];
 
@@ -47,6 +50,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     activeValue = widget.user.isActive;
     _loadRoles();
     profileImageBase64 = widget.user.profileImageBase64;
+    _initialActiveValue = widget.user.isActive;
+    _initialProfileImageBase64 = widget.user.profileImageBase64;
+    _initialRolesId = widget.user.userRoles.map((ur) => ur.roleId).toSet();
   }
 
   Future<void> _loadCity() async {
@@ -115,9 +121,79 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     }
   }
 
+  Future<void> _saveUser() async {
+    try {
+      List<int> rolesId = selectedRoles.map((r) => r.rolesId).toList();
+      final bool isActiveCurrent = activeValue ?? widget.user.isActive;
+      final String? imageCurrent = profileImageBase64;
+      final Set<int> rolesCurrent = rolesId.toSet();
+
+      final bool hasChanges =
+          isActiveCurrent != (_initialActiveValue ?? widget.user.isActive) ||
+          imageCurrent != _initialProfileImageBase64 ||
+          rolesCurrent.length != _initialRolesId.length ||
+          !rolesCurrent.containsAll(_initialRolesId);
+
+      if (!hasChanges) {
+        showTopFlushBar(
+          context: context,
+          message: "Niste ništa promijenili",
+          backgroundColor: Colors.orange,
+        );
+        return;
+      }
+
+      final request = {
+        "ProfileImageBase64": profileImageBase64,
+        "IsActive": isActiveCurrent,
+        "RolesId": rolesId,
+      };
+
+      await _userProvider.updateForAdmin(widget.user.usersId, request);
+      setState(() {
+        _initialActiveValue = isActiveCurrent;
+        _initialProfileImageBase64 = imageCurrent;
+        _initialRolesId = rolesCurrent;
+      });
+
+      showTopFlushBar(
+        context: context,
+        message: "Korisnik je uspješno ažuriran",
+        backgroundColor: Colors.green,
+      );
+    } catch (e) {
+      showTopFlushBar(
+        context: context,
+        message: e.toString(),
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
+  Future<void> _restoreUser() async {
+    try {
+      await _userProvider.restore(widget.user.usersId);
+
+      showTopFlushBar(
+        context: context,
+        message: "Korisnik je uspješno vraćen",
+        backgroundColor: Colors.green,
+      );
+
+      widget.onChangeScreen(UsersScreen(onChangeScreen: widget.onChangeScreen));
+    } catch (e) {
+      showTopFlushBar(
+        context: context,
+        message: e.toString(),
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = widget.user;
+    final bool isDeleted = widget.user.isDeleted == true;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -166,6 +242,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       _buildField("Username", user.username),
                       _buildField("Broj mobitela", user.phoneNumber ?? ""),
                       _buildField("Grad", city?.cityName ?? "Učitavanje..."),
+                      _buildField("Kreiran profil", formatDate(user.createdAt)),
                     ],
                   ),
                 ),
@@ -178,40 +255,48 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       // Slika profila + dugme za promjenu
                       Column(
                         children: [
-                          GestureDetector(
-                            onTap: _pickImage,
-                            child: Container(
-                              width: 160,
-                              height: 160,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey.shade300),
-                                color: Colors.grey.shade200,
-                                image:
-                                    (profileImageBase64 != null &&
-                                        profileImageBase64!.isNotEmpty)
-                                    ? DecorationImage(
-                                        image: MemoryImage(
-                                          base64Decode(profileImageBase64!),
-                                        ),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
+                          IgnorePointer(
+                            ignoring: isDeleted,
+                            child: GestureDetector(
+                              onTap: _pickImage,
+                              child: Opacity(
+                                opacity: isDeleted ? 0.5 : 1,
+                                child: Container(
+                                  width: 160,
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                    color: Colors.grey.shade200,
+                                    image:
+                                        (profileImageBase64 != null &&
+                                            profileImageBase64!.isNotEmpty)
+                                        ? DecorationImage(
+                                            image: MemoryImage(
+                                              base64Decode(profileImageBase64!),
+                                            ),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
+                                  ),
+                                  child:
+                                      (profileImageBase64 == null ||
+                                          profileImageBase64!.isEmpty)
+                                      ? const Icon(
+                                          Icons.person,
+                                          size: 100,
+                                          color: Colors.grey,
+                                        )
+                                      : null,
+                                ),
                               ),
-                              child:
-                                  (profileImageBase64 == null ||
-                                      profileImageBase64!.isEmpty)
-                                  ? const Icon(
-                                      Icons.person,
-                                      size: 100,
-                                      color: Colors.grey,
-                                    )
-                                  : null,
                             ),
                           ),
                           const SizedBox(height: 8),
                           TextButton(
-                            onPressed: _pickImage,
+                            onPressed: isDeleted ? null : _pickImage,
                             child: const Text(
                               "Odaberite drugu sliku",
                               style: TextStyle(
@@ -232,67 +317,47 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                         "Obrisan/Neobrisan",
                         user.isDeleted == true ? "Obrisan" : "Neobrisan",
                       ),
-                      // Datum kreiranja profila
-                      _buildField("Kreiran profil", formatDate(user.createdAt)),
                       // Role toggles
                       _buildRoleToggles(),
-
                       const SizedBox(height: 25),
-
                       // Dugme sačuvaj
                       Center(
                         child: SizedBox(
-                          width: 150,
+                          width: 180,
                           height: 40,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              try {
-                                List<int> rolesId = selectedRoles
-                                    .map((r) => r.rolesId)
-                                    .toList();
-
-                                final request = {
-                                  "ProfileImageBase64": profileImageBase64,
-                                  "IsActive": activeValue,
-                                  "RolesId": rolesId,
-                                };
-
-                                final updatedUser = await _userProvider
-                                    .updateForAdmin(
-                                      widget.user.usersId,
-                                      request,
-                                    );
-                                showTopFlushBar(
-                                  context: context,
-                                  message: "Korisnik je uspješno ažuriran",
-                                  backgroundColor: Colors.green,
-                                );
-                              } catch (e, stack) {
-                                debugPrint("UPDATE ERROR: $e");
-                                debugPrint(stack.toString());
-
-                                showTopFlushBar(
-                                  context: context,
-                                  message: e.toString(),
-                                  backgroundColor: Colors.red,
-                                );
-                              }
-                            },
-
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                            child: const Text(
-                              "Sačuvaj",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+                          child: widget.user.isDeleted == true
+                              ? ElevatedButton(
+                                  onPressed: _restoreUser,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "Vrati korisnika",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : ElevatedButton(
+                                  onPressed: _saveUser,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "Sačuvaj",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -312,44 +377,24 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       padding: const EdgeInsets.only(bottom: 16),
       child: SizedBox(
         width: 450,
-        height: 75,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Colors.black54,
+        child: isLoadingCity
+            ? const CircularProgressIndicator()
+            : TextFormField(
+                initialValue: value ?? "Nije odabrano",
+                enabled: enabled,
+                decoration: const InputDecoration(
+                  labelText: " ",
+                  border: OutlineInputBorder(),
+                ).copyWith(labelText: label),
               ),
-            ),
-            const SizedBox(height: 6),
-            isLoadingCity
-                ? const CircularProgressIndicator()
-                : TextFormField(
-                    initialValue: value ?? "Nije odabrano",
-                    enabled: enabled,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: enabled ? Colors.white : Colors.grey.shade200,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                    ),
-                  ),
-          ],
-        ),
       ),
     );
   }
 
-  // Role toggles (barem jedna rola mora biti izabrana)
+  // Role toggles (barem jedna rola mora biti izabrana ili obe)
   Widget _buildRoleToggles() {
+    final bool isDeleted = widget.user.isDeleted == true;
+
     bool isAdminSelected = selectedRoles.any(
       (role) => role.roleName.toLowerCase() == "admin",
     );
@@ -358,47 +403,33 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     );
 
     void toggleRole(String roleName) {
+      if (isDeleted) return;
+
       setState(() {
-        if (roleName.toLowerCase() == "admin") {
-          if (isAdminSelected) {
-            if (selectedRoles.length > 1) {
-              selectedRoles.removeWhere(
-                (role) => role.roleName.toLowerCase() == "admin",
-              );
-            }
-          } else {
-            selectedRoles.add(
-              roles.firstWhere(
-                (role) => role.roleName.toLowerCase() == "admin",
-                orElse: () => Role(
-                  rolesId: 0,
-                  roleName: "Admin",
-                  description: "",
-                  isDeleted: false,
-                ),
-              ),
+        final roleNameLower = roleName.toLowerCase();
+        final isSelected = selectedRoles.any(
+          (r) => r.roleName.toLowerCase() == roleNameLower,
+        );
+
+        if (isSelected) {
+          if (selectedRoles.length > 1) {
+            selectedRoles.removeWhere(
+              (r) => r.roleName.toLowerCase() == roleNameLower,
             );
           }
-        } else if (roleName.toLowerCase() == "user") {
-          if (isUserSelected) {
-            if (selectedRoles.length > 1) {
-              selectedRoles.removeWhere(
-                (role) => role.roleName.toLowerCase() == "user",
-              );
-            }
-          } else {
-            selectedRoles.add(
-              roles.firstWhere(
-                (role) => role.roleName.toLowerCase() == "user",
-                orElse: () => Role(
-                  rolesId: 0,
-                  roleName: "User",
-                  description: "",
-                  isDeleted: false,
-                ),
+        } else {
+          // dodaj rolu
+          selectedRoles.add(
+            roles.firstWhere(
+              (r) => r.roleName.toLowerCase() == roleNameLower,
+              orElse: () => Role(
+                rolesId: 0,
+                roleName: roleName,
+                description: "",
+                isDeleted: false,
               ),
-            );
-          }
+            ),
+          );
         }
       });
     }
@@ -411,11 +442,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Role",
+              "Uloge",
               style: TextStyle(
-                fontWeight: FontWeight.bold,
                 fontSize: 14,
-                color: Colors.black54,
+                color: Colors.black,
+                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 6),
@@ -424,25 +455,30 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 // Admin toggle
                 GestureDetector(
                   onTap: () => toggleRole("Admin"),
-                  child: Container(
-                    width: 80,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isAdminSelected
-                          ? Colors.lightBlue[300]
-                          : Colors.white,
-                      border: Border.all(color: Colors.grey.shade400),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      "Admin",
-                      style: TextStyle(
-                        color: isAdminSelected ? Colors.white : Colors.black87,
-                        fontWeight: FontWeight.w500,
+                  child: Opacity(
+                    opacity: isDeleted ? 0.5 : 1,
+                    child: Container(
+                      width: 80,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isAdminSelected
+                            ? Colors.lightBlue[300]
+                            : Colors.white,
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        "Admin",
+                        style: TextStyle(
+                          color: isAdminSelected
+                              ? Colors.white
+                              : Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -451,25 +487,28 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 // User toggle
                 GestureDetector(
                   onTap: () => toggleRole("User"),
-                  child: Container(
-                    width: 80,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isUserSelected
-                          ? Colors.lightBlue[300]
-                          : Colors.white,
-                      border: Border.all(color: Colors.grey.shade400),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      "User",
-                      style: TextStyle(
-                        color: isUserSelected ? Colors.white : Colors.black87,
-                        fontWeight: FontWeight.w500,
+                  child: Opacity(
+                    opacity: isDeleted ? 0.5 : 1,
+                    child: Container(
+                      width: 80,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isUserSelected
+                            ? Colors.lightBlue[300]
+                            : Colors.white,
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        "User",
+                        style: TextStyle(
+                          color: isUserSelected ? Colors.white : Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -488,39 +527,24 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       padding: const EdgeInsets.only(bottom: 16),
       child: SizedBox(
         width: 450,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Aktivan",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<bool>(
-              isExpanded: true,
-              value: activeValue,
-              items: const [
-                DropdownMenuItem(value: true, child: Text("Aktivan")),
-                DropdownMenuItem(value: false, child: Text("Neaktivan")),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  activeValue = value;
-                });
-              },
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-            ),
+        child: DropdownButtonFormField<bool>(
+          isExpanded: true,
+          value: activeValue,
+          items: const [
+            DropdownMenuItem(value: true, child: Text("Aktivan")),
+            DropdownMenuItem(value: false, child: Text("Neaktivan")),
           ],
+          onChanged: widget.user.isDeleted!
+              ? null
+              : (value) {
+                  setState(() {
+                    activeValue = value;
+                  });
+                },
+          decoration: const InputDecoration(
+            labelText: "Aktivan",
+            border: OutlineInputBorder(),
+          ),
         ),
       ),
     );
