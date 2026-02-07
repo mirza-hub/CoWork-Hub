@@ -107,5 +107,26 @@ namespace CoWorkHub.Services.Services
 
             entity.DeletedBy = _currentUserService.GetUserId();
         }
+
+        public Model.WorkingSpace RestoreWorkingSpace(int id)
+        {
+            var set = Context.Set<Database.WorkingSpace>();
+
+            var entity = set.Find(id);
+
+            if (entity == null)
+                throw new UserException("Prostor nije pronađen.");
+
+            if (entity.IsDeleted == false)
+                throw new UserException("Prostor nije moguće vratiti jer nije obrisan.");
+
+            entity.IsDeleted = false;
+            entity.DeletedAt = null;
+            entity.DeletedBy = null;
+
+            Context.SaveChanges();
+
+            return Mapper.Map<Model.WorkingSpace>(entity);
+        }
     }
 }

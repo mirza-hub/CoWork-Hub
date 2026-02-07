@@ -68,7 +68,14 @@ class _HomePageState extends State<HomePage> {
 
     if (picked != null) {
       setState(() {
-        selectedDateRange = picked;
+        if (picked.end.isAtSameMomentAs(picked.start)) {
+          selectedDateRange = DateTimeRange(
+            start: picked.start,
+            end: picked.start,
+          );
+        } else {
+          selectedDateRange = picked;
+        }
       });
     }
   }
@@ -494,10 +501,8 @@ class _RecommendedSpaceUnitsWidgetState
                 MaterialPageRoute(
                   builder: (_) => SpaceUnitDetailsScreen(
                     spaceUnitId: su.spaceUnitId,
-                    dateRange: DateTimeRange(
-                      start: DateTime.now(),
-                      end: DateTime.now().add(const Duration(days: 1)),
-                    ),
+                    showReservationControls: true,
+                    dateRange: null,
                     peopleCount: 1,
                   ),
                 ),

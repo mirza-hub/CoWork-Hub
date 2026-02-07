@@ -22,7 +22,7 @@ class DashboardScreen extends StatelessWidget {
 
           final stats = provider.stats;
           if (stats == null) {
-            return const Center(child: Text("No data"));
+            return const Center(child: Text("Nema podataka"));
           }
 
           return SizedBox.expand(
@@ -144,7 +144,7 @@ class DashboardScreen extends StatelessWidget {
                     if (stats.reservationsByWorkspaceType != null &&
                         stats.reservationsByWorkspaceType!.isNotEmpty) ...[
                       Text(
-                        "Rezervacije po tipu workspace-a",
+                        "Rezervacije po tipu prostora",
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 10),

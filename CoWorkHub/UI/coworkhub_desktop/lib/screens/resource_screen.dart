@@ -24,6 +24,7 @@ class _ResourceScreenState extends State<ResourceScreen> {
 
   List<Resource> resources = [];
   bool isLoading = true;
+  bool? filterIsDeleted = false;
 
   final Map<int, String> _sortMap = {0: "ResourcesId", 1: "ResourceName"};
 
@@ -32,6 +33,7 @@ class _ResourceScreenState extends State<ResourceScreen> {
   int page = 1;
   int pageSize = 5;
   int totalPages = 1;
+  int totalCount = 0;
 
   String? sortColumn = "ResourcesId";
   String? sortDirection = "asc";
@@ -48,10 +50,13 @@ class _ResourceScreenState extends State<ResourceScreen> {
   Future<void> _fetchResources() async {
     setState(() => isLoading = true);
 
-    final Map<String, dynamic> filter = {"IsDeleted": false};
+    final Map<String, dynamic> filter = {};
 
     if (_searchController.text.isNotEmpty) {
       filter["ResourceNameGTE"] = _searchController.text;
+    }
+    if (filterIsDeleted != null) {
+      filter["IsDeleted"] = filterIsDeleted;
     }
 
     try {
@@ -66,6 +71,7 @@ class _ResourceScreenState extends State<ResourceScreen> {
       setState(() {
         resources = result.resultList;
         totalPages = result.totalPages ?? 1;
+        totalCount = result.count ?? 0;
       });
     } catch (e) {
       debugPrint("Greška pri učitavanju resursa: $e");
@@ -113,6 +119,111 @@ class _ResourceScreenState extends State<ResourceScreen> {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [Text(title), const SizedBox(width: 6), icon],
+    );
+  }
+
+  void _openFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (_) {
+        bool? tempDeleted = filterIsDeleted ?? false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Filteri",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  InkWell(
+                    child: const Icon(Icons.close, size: 22),
+                    onTap: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Obrisani"),
+                    DropdownButton<bool?>(
+                      isExpanded: true,
+                      value: tempDeleted,
+                      items: const [
+                        DropdownMenuItem(value: null, child: Text("Svi")),
+                        DropdownMenuItem(
+                          value: false,
+                          child: Text("Neobrisani"),
+                        ),
+                        DropdownMenuItem(value: true, child: Text("Obrisani")),
+                      ],
+                      onChanged: (val) {
+                        setDialogState(() => tempDeleted = val);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            filterIsDeleted = tempDeleted;
+                            page = 1;
+                          });
+                          Navigator.pop(context);
+                          _fetchResources();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "Primijeni",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            filterIsDeleted = false;
+                            page = 1;
+                          });
+                          Navigator.pop(context);
+                          _fetchResources();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[300],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "Resetiraj",
+                          style: TextStyle(fontSize: 16, color: Colors.black),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -186,6 +297,20 @@ class _ResourceScreenState extends State<ResourceScreen> {
                     prefixIcon: Icon(Icons.search),
                     labelStyle: TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: _openFilterDialog,
+                icon: const Icon(Icons.filter_list),
+                label: const Text("Filteri"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
                   ),
                 ),
               ),
@@ -289,76 +414,82 @@ class _ResourceScreenState extends State<ResourceScreen> {
                                                 );
                                               },
                                             ),
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.delete,
-                                                color: Colors.red,
-                                              ),
-                                              onPressed: () async {
-                                                final confirmed = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: const Text(
-                                                      "Potvrda brisanja",
-                                                    ),
-                                                    content: Text(
-                                                      "Da li želite obrisati resurs?",
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                              context,
-                                                              true,
+                                            if (r.isDeleted == false)
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete,
+                                                  color: Colors.red,
+                                                ),
+                                                onPressed: () async {
+                                                  final confirmed = await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (context) => AlertDialog(
+                                                      title: const Text(
+                                                        "Potvrda brisanja",
+                                                      ),
+                                                      content: Text(
+                                                        "Da li želite obrisati resurs?",
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                true,
+                                                              ),
+                                                          style:
+                                                              ElevatedButton.styleFrom(
+                                                                backgroundColor:
+                                                                    Colors.blue,
+                                                              ),
+                                                          child: const Text(
+                                                            "Da",
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
                                                             ),
-                                                        style:
-                                                            ElevatedButton.styleFrom(
-                                                              backgroundColor:
-                                                                  Colors.blue,
-                                                            ),
-                                                        child: const Text(
-                                                          "Da",
-                                                          style: TextStyle(
-                                                            color: Colors.white,
                                                           ),
                                                         ),
-                                                      ),
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                              context,
-                                                              false,
-                                                            ),
-                                                        child: const Text("Ne"),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                false,
+                                                              ),
+                                                          child: const Text(
+                                                            "Ne",
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
 
-                                                if (confirmed == true) {
-                                                  try {
-                                                    await _resourceProvider
-                                                        .delete(r.resourcesId);
-                                                    _fetchResources();
-                                                    showTopFlushBar(
-                                                      context: context,
-                                                      message:
-                                                          "Resurs je obrisan",
-                                                      backgroundColor:
-                                                          Colors.green,
-                                                    );
-                                                  } catch (e) {
-                                                    showTopFlushBar(
-                                                      context: context,
-                                                      message:
-                                                          "Greška pri brisanju resursa: $e",
-                                                      backgroundColor:
-                                                          Colors.red,
-                                                    );
+                                                  if (confirmed == true) {
+                                                    try {
+                                                      await _resourceProvider
+                                                          .delete(
+                                                            r.resourcesId,
+                                                          );
+                                                      _fetchResources();
+                                                      showTopFlushBar(
+                                                        context: context,
+                                                        message:
+                                                            "Resurs je obrisan",
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                      );
+                                                    } catch (e) {
+                                                      showTopFlushBar(
+                                                        context: context,
+                                                        message:
+                                                            "Greška pri brisanju resursa: $e",
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      );
+                                                    }
                                                   }
-                                                }
-                                              },
-                                            ),
+                                                },
+                                              ),
                                           ],
                                         ),
                                       ),
@@ -401,6 +532,12 @@ class _ResourceScreenState extends State<ResourceScreen> {
               ),
               Row(
                 children: [
+                  Text(
+                    totalCount == 0
+                        ? "0 od 0"
+                        : "${((page - 1) * pageSize) + 1}–${((page - 1) * pageSize) + resources.length} od $totalCount",
+                  ),
+                  const SizedBox(width: 16),
                   IconButton(
                     icon: const Icon(Icons.arrow_back),
                     onPressed: page > 1

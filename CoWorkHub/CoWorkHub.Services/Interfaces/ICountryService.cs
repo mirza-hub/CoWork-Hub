@@ -6,5 +6,7 @@ using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 namespace CoWorkHub.Services.Interfaces
 {
     public interface ICountryService : ICRUDService<Country, CountrySearchObject, CountryInsertRequest, CountryUpdateRequest> 
-    {  }
+    {
+        Country RestoreCountry(int id);
+    }
 }

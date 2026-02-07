@@ -36,6 +36,12 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
   bool _loadingCities = true;
   double? _latitude;
   double? _longitude;
+  String _initialName = "";
+  String _initialAddress = "";
+  String _initialDescription = "";
+  int? _initialCityId;
+  double? _initialLatitude;
+  double? _initialLongitude;
 
   final WorkingSpaceProvider provider = WorkingSpaceProvider();
   final CityProvider _cityProvider = CityProvider();
@@ -58,6 +64,12 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
     );
 
     _cityId = widget.workspace?.cityId;
+    _initialName = widget.workspace?.name ?? "";
+    _initialAddress = widget.workspace?.address ?? "";
+    _initialDescription = widget.workspace?.description ?? "";
+    _initialCityId = widget.workspace?.cityId;
+    _initialLatitude = widget.workspace?.latitude;
+    _initialLongitude = widget.workspace?.longitude;
     _loadCities();
   }
 
@@ -76,7 +88,7 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
       showTopFlushBar(
         context: context,
         message: "Molimo odaberite lokaciju na karti",
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.orange,
       );
       return;
     }
@@ -91,7 +103,32 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
     };
     try {
       if (isEdit) {
+        final bool hasChanges =
+            _nameController.text.trim() != _initialName.trim() ||
+            _addressController.text.trim() != _initialAddress.trim() ||
+            _descriptionController.text.trim() != _initialDescription.trim() ||
+            _cityId != _initialCityId ||
+            _latitude != _initialLatitude ||
+            _longitude != _initialLongitude;
+
+        if (!hasChanges) {
+          showTopFlushBar(
+            context: context,
+            message: "Niste ništa promijenili",
+            backgroundColor: Colors.orange,
+          );
+          return;
+        }
+
         await provider.update(widget.workspace!.workingSpacesId, request);
+        setState(() {
+          _initialName = _nameController.text;
+          _initialAddress = _addressController.text;
+          _initialDescription = _descriptionController.text;
+          _initialCityId = _cityId;
+          _initialLatitude = _latitude;
+          _initialLongitude = _longitude;
+        });
         showTopFlushBar(
           context: context,
           message: "Prostor je uspješno ažuriran",
@@ -134,7 +171,6 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
             backgroundColor: Colors.red,
           );
         }
-      } else {
         showTopFlushBar(
           context: context,
           message: "Došlo je do greške: $e",
@@ -213,15 +249,34 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                         inputFormatters: [
                           LengthLimitingTextInputFormatter(40),
                           FilteringTextInputFormatter.allow(
-                            RegExp(r'[a-zA-Z0-9\s\-]'),
+                            RegExp(r'[a-zA-Z0-9\- ]'),
                           ),
                         ],
-                        validator: (v) =>
-                            v == null || v.isEmpty ? "Naziv je obavezan" : null,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return "Naziv je obavezan";
+                          }
+
+                          final pattern = RegExp(
+                            r'^[a-zA-Z0-9](?:[a-zA-Z0-9\- ]*[a-zA-Z0-9])?$',
+                          );
+
+                          if (!pattern.hasMatch(v)) {
+                            return "Naziv mora početi i završiti slovom ili brojem, a unutar može imati razmake ili crtice";
+                          }
+
+                          if (v.contains('--')) {
+                            return "Naziv ne smije sadržavati dvije uzastopne crtice";
+                          }
+
+                          if (v.contains('  ')) {
+                            return "Naziv ne smije sadržavati dva uzastopna razmaka";
+                          }
+
+                          return null;
+                        },
                       ),
-
                       const SizedBox(height: 16),
-
                       TextFormField(
                         controller: _addressController,
                         decoration: InputDecoration(

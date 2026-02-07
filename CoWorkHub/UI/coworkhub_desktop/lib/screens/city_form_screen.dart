@@ -35,8 +35,12 @@ class _CityFormScreenState extends State<CityFormScreen> {
   List<Country> countries = [];
   int? selectedCountryId;
   bool loadingCountries = true;
+  String _initialName = "";
+  String _initialPostal = "";
+  int? _initialCountryId;
 
   bool get isEdit => widget.city != null;
+  bool get isDeleted => widget.city?.isDeleted == true;
 
   @override
   void initState() {
@@ -47,6 +51,9 @@ class _CityFormScreenState extends State<CityFormScreen> {
       text: widget.city?.postalCode ?? "",
     );
     selectedCountryId = widget.city?.countryId;
+    _initialName = widget.city?.cityName ?? "";
+    _initialPostal = widget.city?.postalCode ?? "";
+    _initialCountryId = widget.city?.countryId;
 
     _loadCountries();
   }
@@ -62,6 +69,7 @@ class _CityFormScreenState extends State<CityFormScreen> {
   }
 
   Future<void> _save() async {
+    if (isDeleted) return;
     if (!_formKey.currentState!.validate()) return;
 
     final request = {
@@ -71,7 +79,25 @@ class _CityFormScreenState extends State<CityFormScreen> {
     };
     try {
       if (isEdit) {
+        final bool hasChanges =
+            _nameController.text.trim() != _initialName.trim() ||
+            _postalController.text.trim() != _initialPostal.trim() ||
+            selectedCountryId != _initialCountryId;
+
+        if (!hasChanges) {
+          showTopFlushBar(
+            context: context,
+            message: "Niste ništa promijenili",
+            backgroundColor: Colors.orange,
+          );
+          return;
+        }
         await _cityProvider.update(widget.city!.cityId, request);
+        setState(() {
+          _initialName = _nameController.text;
+          _initialPostal = _postalController.text;
+          _initialCountryId = selectedCountryId;
+        });
         showTopFlushBar(
           context: context,
           message: "Grad je uspješno ažuriran",
@@ -127,6 +153,24 @@ class _CityFormScreenState extends State<CityFormScreen> {
     }
   }
 
+  Future<void> _restore() async {
+    try {
+      await _cityProvider.restore(widget.city!.cityId);
+      showTopFlushBar(
+        context: context,
+        message: "Grad je uspješno vraćen",
+        backgroundColor: Colors.green,
+      );
+      widget.onChangeScreen(CityScreen(onChangeScreen: widget.onChangeScreen));
+    } catch (e) {
+      showTopFlushBar(
+        context: context,
+        message: "Greška pri vraćanju grada: $e",
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -172,6 +216,7 @@ class _CityFormScreenState extends State<CityFormScreen> {
 
                       TextFormField(
                         controller: _nameController,
+                        enabled: !isDeleted,
                         decoration: const InputDecoration(
                           labelText: "Naziv grada",
                           border: OutlineInputBorder(),
@@ -179,34 +224,55 @@ class _CityFormScreenState extends State<CityFormScreen> {
                         inputFormatters: [
                           LengthLimitingTextInputFormatter(30),
                           FilteringTextInputFormatter.allow(
-                            RegExp(r'[a-zA-Z0-9\s\-]'),
+                            RegExp(r'[A-Za-zČĆŽŠĐčćžšđ\s\-]'),
                           ),
                         ],
                         validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return "Naziv je obavezan";
+                          if (v == null || v.trim().isEmpty) {
+                            return "Naziv grada je obavezan";
                           }
+
+                          final value = v.trim();
+
+                          if (value.length < 2) {
+                            return "Naziv grada mora imati najmanje 2 slova";
+                          }
+
+                          final regex = RegExp(r'^[A-Za-zČĆŽŠĐčćžšđ\s\-]+$');
+                          if (!regex.hasMatch(value)) {
+                            return "Naziv grada smije sadržavati samo slova";
+                          }
+                          if (!RegExp(
+                            r'^[A-Za-zČĆŽŠĐčćžšđ]+(?:[ -][A-Za-zČĆŽŠĐčćžšđ]+)*$',
+                          ).hasMatch(value)) {
+                            return "Naziv ne može počinjati ili završavati razmakom ili -";
+                          }
+
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 16),
-
                       TextFormField(
                         controller: _postalController,
+                        enabled: !isDeleted,
                         decoration: const InputDecoration(
                           labelText: "Poštanski broj",
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          LengthLimitingTextInputFormatter(10),
+                          LengthLimitingTextInputFormatter(6),
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         validator: (v) {
-                          if (v == null || v.isEmpty) {
+                          if (v == null || v.trim().isEmpty) {
                             return "Poštanski broj je obavezan";
                           }
+
+                          if (v.length < 4 || v.length > 6) {
+                            return "Poštanski broj mora imati 4 do 6 cifara";
+                          }
+
                           return null;
                         },
                       ),
@@ -229,8 +295,10 @@ class _CityFormScreenState extends State<CityFormScreen> {
                                     ),
                                   )
                                   .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedCountryId = v),
+                              onChanged: isDeleted
+                                  ? null
+                                  : (v) =>
+                                        setState(() => selectedCountryId = v),
                               validator: (v) =>
                                   v == null ? "Izaberite državu" : null,
                             ),
@@ -242,15 +310,24 @@ class _CityFormScreenState extends State<CityFormScreen> {
                           width: 150,
                           height: 40,
                           child: ElevatedButton(
-                            onPressed: _save,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                            onPressed: isDeleted ? _restore : _save,
+                            style: isDeleted
+                                ? ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  )
+                                : ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
                             child: Text(
-                              isEdit ? "Sačuvaj" : "Spasi",
+                              isDeleted
+                                  ? "Vrati grad"
+                                  : (isEdit ? "Sačuvaj" : "Spasi"),
                               style: const TextStyle(
                                 fontSize: 15,
                                 color: Colors.white,

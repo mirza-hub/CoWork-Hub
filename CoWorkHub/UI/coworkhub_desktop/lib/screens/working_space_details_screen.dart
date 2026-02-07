@@ -35,6 +35,54 @@ class WorkingSpaceDetailsScreen extends StatefulWidget {
 
 class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     with SingleTickerProviderStateMixin {
+  final Map<String, Color> _stateColors = {
+    'draft': const Color.fromARGB(217, 239, 220, 47),
+    'active': Colors.green,
+    'maintenance': Colors.blue,
+    'hidden': Colors.grey,
+    'deleted': Colors.red,
+  };
+
+  String _stateLabel(String state) {
+    switch (state.toLowerCase()) {
+      case 'draft':
+        return 'draft';
+      case 'active':
+        return 'aktivan';
+      case 'maintenance':
+        return 'odrzavanje';
+      case 'hidden':
+        return 'sakriven';
+      case 'deleted':
+        return 'obrisan';
+      default:
+        return state.toLowerCase();
+    }
+  }
+
+  Widget _stateBadge(String state) {
+    final key = state.toLowerCase();
+    final color = _stateColors[key] ?? Colors.grey;
+    final text = _stateLabel(state).toUpperCase();
+
+    return Container(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    );
+  }
+
   late TabController _tabController;
 
   final SpaceUnitProvider _spaceUnitProvider = SpaceUnitProvider();
@@ -54,13 +102,26 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
   bool _loadingUnits = true;
   bool _loadingImages = true;
   int page = 1;
+  final int _unitsPageSize = 10;
+  int _unitsTotalCount = 0;
+  bool _unitsHasMore = true;
+  late ScrollController _unitsScrollController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _unitsScrollController = ScrollController();
+    _unitsScrollController.addListener(_onUnitsScroll);
     _loadUnitsWithFilters();
     _loadImages();
+  }
+
+  @override
+  void dispose() {
+    _unitsScrollController.dispose();
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadImages() async {
@@ -80,7 +141,7 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
     }
   }
 
-  Future<void> _loadUnitsWithFilters() async {
+  Future<void> _loadUnitsWithFilters({bool reset = false}) async {
     setState(() => _loadingUnits = true);
 
     try {
@@ -89,29 +150,70 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
       );
       _workspaceTypes = workspaceTypeResult.resultList;
 
+      if (reset) {
+        _units.clear();
+        _filteredUnits.clear();
+        page = 1;
+        _unitsHasMore = true;
+        _unitsTotalCount = 0;
+      }
+
       Map<String, dynamic> filter = {
         'WorkingSpaceId': widget.space.workingSpacesId,
         'IncludeWorkspaceType': true,
         'IncludeAll': true,
-        'RetrieveAll': true,
         'IsDeleted': false,
       };
 
       if (filterCityId != null) filter['CityId'] = filterCityId;
-      if (filterWorkspaceTypeId != null)
+      if (filterWorkspaceTypeId != null) {
         filter['WorkspaceTypeId'] = filterWorkspaceTypeId;
+      }
       if (filterIsDeleted != null) filter['IsDeleted'] = filterIsDeleted;
 
-      var result = await _spaceUnitProvider.get(filter: filter);
+      var result = await _spaceUnitProvider.get(
+        filter: filter,
+        page: page,
+        pageSize: _unitsPageSize,
+      );
 
       setState(() {
-        _units = result.resultList;
-        _filteredUnits = _units;
+        if (reset) {
+          _units = result.resultList;
+        } else {
+          _units.addAll(result.resultList);
+        }
+        _unitsTotalCount = result.count ?? 0;
+        _unitsHasMore = _units.length < _unitsTotalCount;
+        _applyUnitFilter();
       });
     } catch (e) {
       debugPrint("Greška pri učitavanju space unita: $e");
     } finally {
       setState(() => _loadingUnits = false);
+    }
+  }
+
+  void _applyUnitFilter() {
+    if (_searchQuery.isEmpty) {
+      _filteredUnits = List<SpaceUnit>.from(_units);
+      return;
+    }
+
+    _filteredUnits = _units.where((unit) {
+      final name = unit.name?.toLowerCase() ?? "";
+      final type = unit.workspaceType?.typeName?.toLowerCase() ?? "";
+      return name.contains(_searchQuery) || type.contains(_searchQuery);
+    }).toList();
+  }
+
+  void _onUnitsScroll() {
+    if (_unitsScrollController.position.pixels >=
+            _unitsScrollController.position.maxScrollExtent - 200 &&
+        !_loadingUnits &&
+        _unitsHasMore) {
+      page++;
+      _loadUnitsWithFilters();
     }
   }
 
@@ -227,7 +329,7 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                 filterWorkspaceTypeId = selectedWorkspaceType;
                 filterIsDeleted = selectedDeleted;
                 page = 1;
-                _loadUnitsWithFilters();
+                _loadUnitsWithFilters(reset: true);
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
@@ -253,7 +355,7 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                   filterIsDeleted = false;
                   page = 1;
                 });
-                _loadUnitsWithFilters();
+                _loadUnitsWithFilters(reset: true);
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
@@ -334,7 +436,9 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
   }
 
   Widget _buildSpaceUnitsTab() {
-    if (_loadingUnits) return const Center(child: CircularProgressIndicator());
+    if (_loadingUnits && _filteredUnits.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -354,13 +458,7 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                   onChanged: (value) {
                     setState(() {
                       _searchQuery = value.toLowerCase();
-                      _filteredUnits = _units.where((unit) {
-                        final name = unit.name?.toLowerCase() ?? "";
-                        final type =
-                            unit.workspaceType?.typeName?.toLowerCase() ?? "";
-                        return name.contains(_searchQuery) ||
-                            type.contains(_searchQuery);
-                      }).toList();
+                      _applyUnitFilter();
                     });
                   },
                 ),
@@ -412,68 +510,110 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
                 border: Border.all(color: Colors.black12),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: _filteredUnits.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "Nema podataka za prikaz",
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _filteredUnits.length,
-                      itemBuilder: (_, index) {
-                        final unit = _filteredUnits[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          elevation: 2,
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            title: Text(
-                              unit.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      _unitsTotalCount == 0
+                          ? "0 od 0"
+                          : "Prikazano ${_filteredUnits.length} od $_unitsTotalCount",
+                      style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Expanded(
+                    child: _filteredUnits.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "Nema podataka za prikaz",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            subtitle: Text("Kapacitet: ${unit.capacity}"),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  unit.workspaceType?.typeName ?? "",
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.blueGrey,
-                                    fontWeight: FontWeight.w600,
+                          )
+                        : ListView.builder(
+                            controller: _unitsScrollController,
+                            itemCount:
+                                _filteredUnits.length + (_unitsHasMore ? 1 : 0),
+                            itemBuilder: (_, index) {
+                              if (index == _filteredUnits.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
                                   ),
-                                ),
-                                const SizedBox(width: 10),
-                                const Icon(
-                                  Icons.arrow_forward_ios_rounded,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                            onTap: () {
-                              widget.onChangeScreen(
-                                SpaceUnitFormScreen(
-                                  spaceUnit: unit,
-                                  space: widget.space,
-                                  onChangeScreen: widget.onChangeScreen,
+                                );
+                              }
+
+                              final unit = _filteredUnits[index];
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 6),
+                                elevation: 2,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  title: Text(
+                                    unit.name,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  subtitle: Wrap(
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    spacing: 6,
+                                    children: [
+                                      Text("Kapacitet: ${unit.capacity}"),
+                                      const Text("•"),
+                                      _stateBadge(unit.stateMachine),
+                                    ],
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        unit.workspaceType?.typeName ?? "",
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.blueGrey,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      const Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    widget.onChangeScreen(
+                                      SpaceUnitFormScreen(
+                                        spaceUnit: unit,
+                                        space: widget.space,
+                                        onChangeScreen: widget.onChangeScreen,
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             },
                           ),
-                        );
-                      },
-                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -666,8 +806,9 @@ class _ImageViewerState extends State<ImageViewer> {
   }
 
   void _next() {
-    if (_currentIndex < widget.images.length - 1)
+    if (_currentIndex < widget.images.length - 1) {
       setState(() => _currentIndex++);
+    }
   }
 
   void _prev() {

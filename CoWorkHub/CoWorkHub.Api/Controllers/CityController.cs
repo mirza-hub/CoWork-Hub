@@ -44,5 +44,12 @@ namespace CoWorkHub.Api.Controllers
         {
             return base.GetById(id);
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}/restore")]
+        public City RestoreCity(int id)
+        {
+            return (_service as ICityService).RestoreCity(id);
+        }
     }
 }

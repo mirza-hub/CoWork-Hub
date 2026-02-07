@@ -58,5 +58,25 @@ namespace CoWorkHub.Services.Services
                 throw new UserException("Uloga sa ovim imenom već postoji u bazi.");
             }
         }
+
+        public Model.Role RestoreRole(int id)
+        {
+            var set = Context.Set<Database.Role>();
+
+            var entity = set.Find(id);
+
+            if (entity == null)
+                throw new UserException("Uloga nije pronađen.");
+
+            if (entity.IsDeleted == false)
+                throw new UserException("Ulogu nije moguće vratiti jer nije obrisana.");
+
+            entity.IsDeleted = false;
+            entity.DeletedAt = null;
+
+            Context.SaveChanges();
+
+            return Mapper.Map<Model.Role>(entity);
+        }
     }
 }

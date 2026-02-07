@@ -44,5 +44,12 @@ namespace CoWorkHub.Api.Controllers
         {
             return base.GetById(id);
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}/restore")]
+        public Resource RestoreUser(int id)
+        {
+            return (_service as IResourcesService).RestoreResource(id);
+        }
     }
 }

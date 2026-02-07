@@ -38,11 +38,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
         final addr = data['address'] as Map<String, dynamic>?;
 
         String shortAddress = '';
-
         if (addr != null) {
           final road = addr['road'];
           final houseNumber = addr['house_number'];
@@ -51,18 +49,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
           if (road != null) {
             shortAddress = road;
-            if (houseNumber != null) {
-              shortAddress += ' $houseNumber';
-            }
+            if (houseNumber != null) shortAddress += ' $houseNumber';
           }
-
           if (city != null) {
-            if (shortAddress.isNotEmpty) {
-              shortAddress += ', ';
-            }
+            if (shortAddress.isNotEmpty) shortAddress += ', ';
             shortAddress += city;
           }
-
           if (postcode != null) {
             if (shortAddress.isNotEmpty) shortAddress += ' ';
             shortAddress += postcode;
@@ -76,7 +68,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         });
       } else {
         setState(() {
-          address = '';
+          address = "Adresa nije dostupna, molimo unesite ručno";
         });
       }
     } catch (e) {
@@ -110,7 +102,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  tileProvider: NetworkTileProvider(
+                    headers: {
+                      'User-Agent': 'CoWorkHubDesktop/1.0 (your@email.com)',
+                    },
+                  ),
                 ),
                 if (selectedLatLng != null)
                   MarkerLayer(

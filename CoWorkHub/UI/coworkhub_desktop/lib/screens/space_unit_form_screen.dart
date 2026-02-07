@@ -45,6 +45,12 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
   late TextEditingController _descriptionController;
   late TextEditingController _capacityController;
   late TextEditingController _priceController;
+  String _initialName = "";
+  String _initialDescription = "";
+  int? _initialCapacity;
+  double? _initialPrice;
+  int? _initialWorkspaceTypeId;
+  Set<int> _initialResourceIds = {};
 
   List<Resource> _resources = [];
   List<int> _selectedResourceIds = [];
@@ -78,7 +84,7 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
   bool _canEdit = false;
 
   Map<String, Color> stateColors = {
-    'draft': Colors.orange,
+    'draft': const Color.fromARGB(217, 239, 220, 47),
     'active': Colors.green,
     'maintenance': Colors.blue,
     'hidden': Colors.grey,
@@ -110,6 +116,12 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
             .map((r) => r.resourcesId)
             .toList() ??
         [];
+    _initialName = _currentSpaceUnit?.name ?? "";
+    _initialDescription = _currentSpaceUnit?.description ?? "";
+    _initialCapacity = _currentSpaceUnit?.capacity;
+    _initialPrice = _currentSpaceUnit?.pricePerDay;
+    _initialWorkspaceTypeId = _currentSpaceUnit?.workspaceTypeId;
+    _initialResourceIds = _selectedResourceIds.toSet();
 
     _imageProvider = SpaceUnitImageProvider();
 
@@ -145,6 +157,7 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
 
       setState(() {
         _selectedResourceIds = resourceIds;
+        _initialResourceIds = resourceIds.toSet();
       });
     } catch (e) {
       String message = "Greška prilikom učitavanja selektovani hresursa.";
@@ -420,12 +433,41 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
             .toList(),
       };
       try {
+        final int? currentCapacity = int.tryParse(_capacityController.text);
+        final double? currentPrice = double.tryParse(_priceController.text);
+        final int? currentWorkspaceTypeId =
+            _selectedWorkspaceType?.workspaceTypeId;
+        final Set<int> currentResourceIds = _selectedResourceIds.toSet();
+        final bool hasChanges =
+            _nameController.text.trim() != _initialName.trim() ||
+            _descriptionController.text.trim() != _initialDescription.trim() ||
+            currentCapacity != _initialCapacity ||
+            currentPrice != _initialPrice ||
+            currentWorkspaceTypeId != _initialWorkspaceTypeId ||
+            currentResourceIds.length != _initialResourceIds.length ||
+            !currentResourceIds.containsAll(_initialResourceIds);
+
+        if (!hasChanges) {
+          showTopFlushBar(
+            context: context,
+            message: "Niste ništa mijenjali",
+            backgroundColor: Colors.orange,
+          );
+          return;
+        }
+
         final updated = await _spaceUnitProvider.update(
           _currentSpaceUnit!.spaceUnitId,
           request2,
         );
         setState(() {
           _currentSpaceUnit = updated;
+          _initialName = _nameController.text;
+          _initialDescription = _descriptionController.text;
+          _initialCapacity = currentCapacity;
+          _initialPrice = currentPrice;
+          _initialWorkspaceTypeId = currentWorkspaceTypeId;
+          _initialResourceIds = currentResourceIds;
         });
         await _loadImages();
         await _loadAllowedActions();
@@ -550,18 +592,19 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
+
                 try {
                   await _spaceUnitProvider.delete(
                     _currentSpaceUnit!.spaceUnitId!,
                   );
-                  await Flushbar(
+
+                  if (!mounted) return;
+
+                  showTopFlushBar(
+                    context: context,
                     message: "Prostorna jedinica uspješno obrisana!",
                     backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 3),
-                    flushbarPosition: FlushbarPosition.TOP,
-                    margin: const EdgeInsets.all(8),
-                    borderRadius: BorderRadius.circular(8),
-                  ).show(context);
+                  );
 
                   widget.onChangeScreen(
                     WorkingSpaceDetailsScreen(
@@ -570,16 +613,16 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                     ),
                   );
                 } catch (e) {
-                  await Flushbar(
+                  if (!mounted) return;
+
+                  showTopFlushBar(
+                    context: context,
                     message: "Greška pri brisanju: ${parseServerError(e)}",
                     backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 3),
-                    flushbarPosition: FlushbarPosition.TOP,
-                    margin: const EdgeInsets.all(8),
-                    borderRadius: BorderRadius.circular(8),
-                  ).show(context);
+                  );
                 }
               },
+
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
               child: const Text("Da", style: TextStyle(color: Colors.white)),
             ),
@@ -720,7 +763,40 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
             _loadingResources
                 ? const Center(child: CircularProgressIndicator())
                 : _buildResourceMultiSelect(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
+            if (isEdit)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Icon(
+                        Icons.info_outline,
+                        size: 20,
+                        color: Colors.blueGrey,
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          "Moguće je uređivati samo kada je prostor u stanju DRAFT(Uredi).",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.black87,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 10),
             if (isEdit)
               Row(
                 children: [
@@ -770,10 +846,10 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                       buttonColor = Colors.blue;
                       break;
                     case "edit":
-                      buttonColor = Colors.orange;
+                      buttonColor = const Color.fromARGB(217, 239, 220, 47);
                       break;
                     case "restore":
-                      buttonColor = Colors.purple;
+                      buttonColor = Colors.orange;
                       break;
                     default:
                       return const SizedBox.shrink();
@@ -1313,6 +1389,7 @@ class _AdminReviewsTabState extends State<AdminReviewsTab> {
   int page = 1;
   bool hasMore = true;
   final int pageSize = 10;
+  int totalCount = 0;
 
   late ScrollController _scrollController;
 
@@ -1371,8 +1448,9 @@ class _AdminReviewsTabState extends State<AdminReviewsTab> {
           reviews.addAll(result.resultList);
         }
 
+        totalCount = result.count ?? 0;
         loading = false;
-        if (result.resultList.length < pageSize) hasMore = false;
+        if (reviews.length >= totalCount) hasMore = false;
       });
     } catch (e) {
       setState(() => loading = false);
@@ -1386,86 +1464,120 @@ class _AdminReviewsTabState extends State<AdminReviewsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return reviews.isEmpty && !loading
-        ? const Center(
-            child: Text(
-              "Nema recenzija za prikaz",
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          )
-        : ListView.separated(
-            controller: _scrollController,
-            itemCount: reviews.length + (hasMore ? 1 : 0),
-            separatorBuilder: (_, __) =>
-                const Divider(height: 1, color: Colors.grey),
-            itemBuilder: (context, index) {
-              if (index == reviews.length) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              final r = reviews[index];
-              final isHighlighted =
-                  widget.highlightedReservationId != null &&
-                  r.reservation?.reservationId ==
-                      widget.highlightedReservationId;
-
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isHighlighted ? Colors.blue[50] : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: isHighlighted
-                      ? Border.all(color: Colors.blue, width: 1.5)
-                      : null,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "${r.reservation?.users?.firstName} ${r.reservation?.users?.lastName}",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          "${r.createdAt.day}.${r.createdAt.month}.${r.createdAt.year}",
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            totalCount == 0
+                ? "0 od 0"
+                : "Prikazano ${reviews.length} od $totalCount",
+            style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Expanded(
+          child: reviews.isEmpty && !loading
+              ? const Center(
+                  child: Text(
+                    "Nema recenzija za prikaz",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: List.generate(
-                        5,
-                        (i) => Icon(
-                          i < r.rating ? Icons.star : Icons.star_border,
-                          color: Colors.orange,
-                          size: 16,
-                        ),
+                  ),
+                )
+              : ListView.separated(
+                  controller: _scrollController,
+                  itemCount: reviews.length + (hasMore ? 1 : 0),
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: Colors.grey),
+                  itemBuilder: (context, index) {
+                    if (index == reviews.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final r = reviews[index];
+                    final isHighlighted =
+                        widget.highlightedReservationId != null &&
+                        r.reservation?.reservationId ==
+                            widget.highlightedReservationId;
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(r.comment, style: const TextStyle(fontSize: 14)),
-                  ],
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isHighlighted ? Colors.blue[50] : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: isHighlighted
+                            ? Border.all(color: Colors.blue, width: 1.5)
+                            : null,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              if (r.reservation?.users == null)
+                                const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              else
+                                Text(
+                                  "${r.reservation?.users?.firstName} ${r.reservation?.users?.lastName}",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              Text(
+                                "${r.createdAt.day}.${r.createdAt.month}.${r.createdAt.year}",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: List.generate(
+                              5,
+                              (i) => Icon(
+                                i < r.rating ? Icons.star : Icons.star_border,
+                                color: Colors.orange,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(r.comment, style: const TextStyle(fontSize: 14)),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          );
+        ),
+      ],
+    );
   }
 }
 

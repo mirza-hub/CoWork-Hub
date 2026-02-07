@@ -28,8 +28,10 @@ class _WorkspaceTypeFormScreenState extends State<WorkspaceTypeFormScreen> {
   final WorkspaceTypeProvider _provider = WorkspaceTypeProvider();
 
   late TextEditingController _nameController;
+  String _initialName = "";
 
   bool get isEdit => widget.workspaceType != null;
+  bool get isDeleted => widget.workspaceType?.isDeleted == true;
 
   @override
   void initState() {
@@ -37,16 +39,29 @@ class _WorkspaceTypeFormScreenState extends State<WorkspaceTypeFormScreen> {
     _nameController = TextEditingController(
       text: widget.workspaceType?.typeName ?? "",
     );
+    _initialName = widget.workspaceType?.typeName ?? "";
   }
 
   Future<void> _save() async {
+    if (isDeleted) return;
     if (!_formKey.currentState!.validate()) return;
 
     final request = {"typeName": _nameController.text};
 
     try {
       if (isEdit) {
+        if (_nameController.text.trim() == _initialName.trim()) {
+          showTopFlushBar(
+            context: context,
+            message: "Niste ništa promijenili",
+            backgroundColor: Colors.orange,
+          );
+          return;
+        }
         await _provider.update(widget.workspaceType!.workspaceTypeId, request);
+        setState(() {
+          _initialName = _nameController.text;
+        });
         showTopFlushBar(
           context: context,
           message: "Tip prostora uspješno ažuriran",
@@ -69,9 +84,7 @@ class _WorkspaceTypeFormScreenState extends State<WorkspaceTypeFormScreen> {
           final errorData = jsonDecode(e.body);
           if (errorData['errors'] != null &&
               errorData['errors']['userError'] != null) {
-            String message = (errorData['errors']['userError'] as List).join(
-              "\n",
-            );
+            String message = errorData['errors']['userError'].join("\n");
             showTopFlushBar(
               context: context,
               message: message,
@@ -98,6 +111,26 @@ class _WorkspaceTypeFormScreenState extends State<WorkspaceTypeFormScreen> {
           backgroundColor: Colors.red,
         );
       }
+    }
+  }
+
+  Future<void> _restore() async {
+    try {
+      await _provider.restore(widget.workspaceType!.workspaceTypeId);
+      showTopFlushBar(
+        context: context,
+        message: "Tip prostora je uspješno vraćen",
+        backgroundColor: Colors.green,
+      );
+      widget.onChangeScreen(
+        WorkspaceTypeScreen(onChangeScreen: widget.onChangeScreen),
+      );
+    } catch (e) {
+      showTopFlushBar(
+        context: context,
+        message: "Greška prilikom vraćanja tipa prostora",
+        backgroundColor: Colors.red,
+      );
     }
   }
 
@@ -148,13 +181,31 @@ class _WorkspaceTypeFormScreenState extends State<WorkspaceTypeFormScreen> {
                       // Naziv tipa prostora
                       TextFormField(
                         controller: _nameController,
+                        enabled: !isDeleted,
                         decoration: const InputDecoration(
                           labelText: "Naziv tipa prostora",
                           border: OutlineInputBorder(),
                         ),
-                        inputFormatters: [LengthLimitingTextInputFormatter(20)],
-                        validator: (v) =>
-                            v == null || v.isEmpty ? "Naziv je obavezan" : null,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(20),
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[a-zA-Z\s\-_]'),
+                          ),
+                        ],
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return "Naziv je obavezan";
+                          }
+                          if (v.trim().length < 2) {
+                            return "Naziv mora imati barem 2 karaktera";
+                          }
+                          if (!RegExp(
+                            r'^[a-zA-Z0-9][a-zA-Z0-9_\-\s]*[a-zA-Z0-9]$',
+                          ).hasMatch(v)) {
+                            return "Naziv ne može počinjati ili završavati razmakom, - ili _";
+                          }
+                          return null;
+                        },
                       ),
 
                       const SizedBox(height: 30),
@@ -165,15 +216,24 @@ class _WorkspaceTypeFormScreenState extends State<WorkspaceTypeFormScreen> {
                           width: 150,
                           height: 40,
                           child: ElevatedButton(
-                            onPressed: _save,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                            onPressed: isDeleted ? _restore : _save,
+                            style: isDeleted
+                                ? ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  )
+                                : ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
                             child: Text(
-                              isEdit ? "Sačuvaj" : "Spasi",
+                              isDeleted
+                                  ? "Vrati tip"
+                                  : (isEdit ? "Sačuvaj" : "Spasi"),
                               style: const TextStyle(
                                 fontSize: 15,
                                 color: Colors.white,

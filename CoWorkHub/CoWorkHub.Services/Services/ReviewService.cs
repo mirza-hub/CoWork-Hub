@@ -52,7 +52,7 @@ namespace CoWorkHub.Services.Services
                 query = query.Where(x => x.CreatedAt <= search.CreatedTo.Value);
 
             if (search.IncludeReservation)
-                query = query.Include(r => r.Reservation);
+                query = query.Include(r => r.Reservation).ThenInclude(r=>r.Users);
 
             if (search.IncludeReservationSpaceUnit)
                 query = query

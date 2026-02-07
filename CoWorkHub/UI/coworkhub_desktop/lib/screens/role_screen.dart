@@ -1,32 +1,36 @@
 import 'dart:async';
 
-import 'package:coworkhub_desktop/models/workspace_type.dart';
-import 'package:coworkhub_desktop/providers/workspace_type_provider.dart';
+import 'package:coworkhub_desktop/models/role.dart';
+import 'package:coworkhub_desktop/providers/role_provider.dart';
+import 'package:coworkhub_desktop/screens/role_form_screen.dart';
 import 'package:coworkhub_desktop/screens/settings_screen.dart';
-import 'package:coworkhub_desktop/screens/workspace_type_form_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 
-class WorkspaceTypeScreen extends StatefulWidget {
+class RoleScreen extends StatefulWidget {
   final void Function(Widget) onChangeScreen;
 
-  const WorkspaceTypeScreen({super.key, required this.onChangeScreen});
+  const RoleScreen({super.key, required this.onChangeScreen});
 
   @override
-  State<WorkspaceTypeScreen> createState() => _WorkspaceTypeScreenState();
+  State<RoleScreen> createState() => _RoleScreenState();
 }
 
-class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
-  final WorkspaceTypeProvider _provider = WorkspaceTypeProvider();
+class _RoleScreenState extends State<RoleScreen> {
+  final RoleProvider _roleProvider = RoleProvider();
   final TextEditingController _searchController = TextEditingController();
 
   static const double actionColumnWidth = 120;
 
-  List<WorkspaceType> types = [];
+  List<Role> roles = [];
   bool isLoading = true;
   bool? filterIsDeleted = false;
 
-  final Map<int, String> _sortMap = {0: "WorkspaceTypeId", 1: "TypeName"};
+  final Map<int, String> _sortMap = {
+    0: "RolesId",
+    1: "RoleName",
+    2: "Description",
+  };
 
   Timer? _debounce;
 
@@ -35,31 +39,34 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
   int totalPages = 1;
   int totalCount = 0;
 
-  String? sortColumn = "WorkspaceTypeId";
-  String? sortDirection = "asc";
+  String? sortColumn;
+  String? sortDirection;
 
   @override
   void initState() {
     super.initState();
+    sortColumn = "RolesId";
+    sortDirection = "asc";
+
     _searchController.addListener(() {
       _onSearchChanged(_searchController.text);
     });
-    _fetchTypes();
+    _fetchRoles();
   }
 
-  Future<void> _fetchTypes() async {
+  Future<void> _fetchRoles() async {
     setState(() => isLoading = true);
 
     final Map<String, dynamic> filter = {};
     if (_searchController.text.isNotEmpty) {
-      filter["TypeNameGTE"] = _searchController.text;
+      filter["RoleNameGTE"] = _searchController.text;
     }
     if (filterIsDeleted != null) {
       filter["IsDeleted"] = filterIsDeleted;
     }
 
     try {
-      final result = await _provider.get(
+      final result = await _roleProvider.get(
         filter: filter,
         page: page,
         pageSize: pageSize,
@@ -68,12 +75,12 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
       );
 
       setState(() {
-        types = result.resultList;
+        roles = result.resultList;
         totalPages = result.totalPages ?? 1;
         totalCount = result.count ?? 0;
       });
     } catch (e) {
-      debugPrint("Greška pri učitavanju tipova prostora: $e");
+      debugPrint("Greška pri učitavanju uloga: $e");
     } finally {
       setState(() => isLoading = false);
     }
@@ -83,7 +90,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       page = 1;
-      _fetchTypes();
+      _fetchRoles();
     });
   }
 
@@ -99,17 +106,19 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
     }
 
     page = 1;
-    _fetchTypes();
+    _fetchRoles();
   }
 
   Widget _sortableHeader(String title, String columnKey) {
     Widget icon;
+
     if (sortColumn != columnKey) {
       icon = const Icon(Icons.unfold_more, size: 18, color: Colors.grey);
     } else {
       icon = Icon(
-        sortDirection == "asc" ? Icons.arrow_upward : Icons.arrow_downward,
+        sortDirection == "asc" ? Icons.arrow_downward : Icons.arrow_upward,
         size: 16,
+        color: Colors.black,
       );
     }
 
@@ -178,7 +187,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                             page = 1;
                           });
                           Navigator.pop(context);
-                          _fetchTypes();
+                          _fetchRoles();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
@@ -201,7 +210,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                             page = 1;
                           });
                           Navigator.pop(context);
-                          _fetchTypes();
+                          _fetchRoles();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey[300],
@@ -225,21 +234,26 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
     );
   }
 
-  DataColumn _centeredColumn(Widget label, {void Function(int, bool)? onSort}) {
-    return DataColumn(
-      label: SizedBox(width: 160, child: Center(child: label)),
-      onSort: onSort,
-    );
-  }
-
-  DataCell _centeredCell(String text) {
+  DataCell _centeredCell(String text, double width) {
     return DataCell(
       SizedBox(
-        width: 160,
+        width: width,
         child: Center(
           child: Text(text, textAlign: TextAlign.center, softWrap: true),
         ),
       ),
+    );
+  }
+
+  DataColumn _centeredColumn(
+    Widget label, {
+    bool numeric = false,
+    void Function(int, bool)? onSort,
+  }) {
+    return DataColumn(
+      label: SizedBox(width: 120, child: Center(child: label)),
+      numeric: numeric,
+      onSort: onSort,
     );
   }
 
@@ -255,6 +269,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // HEADER
           Stack(
@@ -273,7 +288,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
               ),
               const Center(
                 child: Text(
-                  "Tipovi prostora",
+                  "Uloge",
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -291,7 +306,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: const InputDecoration(
-                    labelText: "Pretraži tipove prostora...",
+                    labelText: "Pretraži uloge...",
                     prefixIcon: Icon(Icons.search),
                     labelStyle: TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(),
@@ -316,15 +331,15 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   widget.onChangeScreen(
-                    WorkspaceTypeFormScreen(
-                      workspaceType: null,
+                    RoleFormScreen(
+                      role: null,
                       onChangeScreen: widget.onChangeScreen,
                     ),
                   );
                 },
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text(
-                  "Dodaj tip prostora",
+                  "Dodaj ulogu",
                   style: TextStyle(color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -339,11 +354,11 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
 
           const SizedBox(height: 20),
 
-          // Tabela
+          // TABELA
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : types.isEmpty
+                : roles.isEmpty
                 ? const Center(
                     child: Text(
                       "Nema podataka za prikazivanje",
@@ -357,9 +372,10 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                 : LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SizedBox(
-                          width: constraints.maxWidth,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: constraints.maxWidth,
+                          ),
                           child: DataTable(
                             headingRowHeight: 50,
                             dataRowHeight: 48,
@@ -370,12 +386,18 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                             ),
                             columns: [
                               _centeredColumn(
-                                _sortableHeader("ID", "WorkspaceTypeId"),
+                                _sortableHeader("ID", "RolesId"),
                                 onSort: (i, _) => _onSort(i),
                               ),
                               _centeredColumn(
-                                _sortableHeader("Naziv", "TypeName"),
+                                _sortableHeader("Naziv uloge", "RoleName"),
                                 onSort: (i, _) => _onSort(i),
+                              ),
+                              DataColumn(
+                                label: SizedBox(
+                                  width: actionColumnWidth,
+                                  child: const Center(child: Text("Opis")),
+                                ),
                               ),
                               DataColumn(
                                 label: SizedBox(
@@ -384,11 +406,18 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                 ),
                               ),
                             ],
-                            rows: types.map((t) {
+                            rows: roles.map((role) {
                               return DataRow(
                                 cells: [
-                                  _centeredCell(t.workspaceTypeId.toString()),
-                                  _centeredCell(t.typeName),
+                                  _centeredCell(role.rolesId.toString(), 120),
+                                  _centeredCell(role.roleName, 120),
+                                  _centeredCell(
+                                    (role.description == null ||
+                                            role.description!.trim().isEmpty)
+                                        ? "-"
+                                        : role.description!,
+                                    120,
+                                  ),
                                   DataCell(
                                     SizedBox(
                                       width: actionColumnWidth,
@@ -404,15 +433,15 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                               ),
                                               onPressed: () {
                                                 widget.onChangeScreen(
-                                                  WorkspaceTypeFormScreen(
-                                                    workspaceType: t,
+                                                  RoleFormScreen(
+                                                    role: role,
                                                     onChangeScreen:
                                                         widget.onChangeScreen,
                                                   ),
                                                 );
                                               },
                                             ),
-                                            if (t.isDeleted == false)
+                                            if (role.isDeleted == false)
                                               IconButton(
                                                 icon: const Icon(
                                                   Icons.delete,
@@ -425,16 +454,15 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                                       title: const Text(
                                                         "Potvrda brisanja",
                                                       ),
-                                                      content: Text(
-                                                        "Da li želite obrisati tip prostora?",
+                                                      content: const Text(
+                                                        "Da li želite obrisati ovu ulogu?",
                                                       ),
                                                       actions: [
                                                         TextButton(
                                                           onPressed: () =>
-                                                              Navigator.pop(
+                                                              Navigator.of(
                                                                 context,
-                                                                true,
-                                                              ),
+                                                              ).pop(true),
                                                           style:
                                                               ElevatedButton.styleFrom(
                                                                 backgroundColor:
@@ -450,10 +478,9 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                                         ),
                                                         TextButton(
                                                           onPressed: () =>
-                                                              Navigator.pop(
+                                                              Navigator.of(
                                                                 context,
-                                                                false,
-                                                              ),
+                                                              ).pop(false),
                                                           child: const Text(
                                                             "Ne",
                                                           ),
@@ -464,14 +491,13 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
 
                                                   if (confirmed == true) {
                                                     try {
-                                                      await _provider.delete(
-                                                        t.workspaceTypeId,
-                                                      );
-                                                      _fetchTypes();
+                                                      await _roleProvider
+                                                          .delete(role.rolesId);
+                                                      _fetchRoles();
                                                       showTopFlushBar(
                                                         context: context,
                                                         message:
-                                                            "Tip prostora je obrisan",
+                                                            "Uloga uspješno obrisana",
                                                         backgroundColor:
                                                             Colors.green,
                                                       );
@@ -479,7 +505,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                                       showTopFlushBar(
                                                         context: context,
                                                         message:
-                                                            "Greška pri brisanju: $e",
+                                                            "Brisanje nije uspjelo",
                                                         backgroundColor:
                                                             Colors.red,
                                                       );
@@ -502,7 +528,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                   ),
           ),
 
-          // Footer
+          // FOOTER
           const Divider(height: 1),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -522,7 +548,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                     onChanged: (v) {
                       pageSize = v!;
                       page = 1;
-                      _fetchTypes();
+                      _fetchRoles();
                     },
                   ),
                 ],
@@ -532,7 +558,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                   Text(
                     totalCount == 0
                         ? "0 od 0"
-                        : "${((page - 1) * pageSize) + 1}–${((page - 1) * pageSize) + types.length} od $totalCount",
+                        : "${((page - 1) * pageSize) + 1}–${((page - 1) * pageSize) + roles.length} od $totalCount",
                   ),
                   const SizedBox(width: 16),
                   IconButton(
@@ -540,7 +566,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                     onPressed: page > 1
                         ? () {
                             setState(() => page--);
-                            _fetchTypes();
+                            _fetchRoles();
                           }
                         : null,
                   ),
@@ -550,7 +576,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                     onPressed: page < totalPages
                         ? () {
                             setState(() => page++);
-                            _fetchTypes();
+                            _fetchRoles();
                           }
                         : null,
                   ),

@@ -1,32 +1,35 @@
 import 'dart:async';
 
-import 'package:coworkhub_desktop/models/workspace_type.dart';
-import 'package:coworkhub_desktop/providers/workspace_type_provider.dart';
+import 'package:coworkhub_desktop/models/payment_method.dart';
+import 'package:coworkhub_desktop/providers/payment_method_provider.dart';
+import 'package:coworkhub_desktop/screens/payment_method_form_screen.dart';
 import 'package:coworkhub_desktop/screens/settings_screen.dart';
-import 'package:coworkhub_desktop/screens/workspace_type_form_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 
-class WorkspaceTypeScreen extends StatefulWidget {
+class PaymentMethodScreen extends StatefulWidget {
   final void Function(Widget) onChangeScreen;
 
-  const WorkspaceTypeScreen({super.key, required this.onChangeScreen});
+  const PaymentMethodScreen({super.key, required this.onChangeScreen});
 
   @override
-  State<WorkspaceTypeScreen> createState() => _WorkspaceTypeScreenState();
+  State<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
 }
 
-class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
-  final WorkspaceTypeProvider _provider = WorkspaceTypeProvider();
+class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
+  final PaymentMethodProvider _provider = PaymentMethodProvider();
   final TextEditingController _searchController = TextEditingController();
 
   static const double actionColumnWidth = 120;
 
-  List<WorkspaceType> types = [];
+  List<PaymentMethod> items = [];
   bool isLoading = true;
   bool? filterIsDeleted = false;
 
-  final Map<int, String> _sortMap = {0: "WorkspaceTypeId", 1: "TypeName"};
+  final Map<int, String> _sortMap = {
+    0: "PaymentMethodId",
+    1: "PaymentMethodName",
+  };
 
   Timer? _debounce;
 
@@ -35,24 +38,28 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
   int totalPages = 1;
   int totalCount = 0;
 
-  String? sortColumn = "WorkspaceTypeId";
-  String? sortDirection = "asc";
+  String? sortColumn;
+  String? sortDirection;
 
   @override
   void initState() {
     super.initState();
+
+    sortColumn = "PaymentMethodId";
+    sortDirection = "asc";
+
     _searchController.addListener(() {
       _onSearchChanged(_searchController.text);
     });
-    _fetchTypes();
+    _fetchItems();
   }
 
-  Future<void> _fetchTypes() async {
+  Future<void> _fetchItems() async {
     setState(() => isLoading = true);
 
     final Map<String, dynamic> filter = {};
     if (_searchController.text.isNotEmpty) {
-      filter["TypeNameGTE"] = _searchController.text;
+      filter["PaymentMethodNameGTE"] = _searchController.text;
     }
     if (filterIsDeleted != null) {
       filter["IsDeleted"] = filterIsDeleted;
@@ -68,12 +75,12 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
       );
 
       setState(() {
-        types = result.resultList;
+        items = result.resultList;
         totalPages = result.totalPages ?? 1;
         totalCount = result.count ?? 0;
       });
     } catch (e) {
-      debugPrint("Greška pri učitavanju tipova prostora: $e");
+      debugPrint("Greška pri učitavanju metoda plaćanja: $e");
     } finally {
       setState(() => isLoading = false);
     }
@@ -83,7 +90,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       page = 1;
-      _fetchTypes();
+      _fetchItems();
     });
   }
 
@@ -99,17 +106,19 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
     }
 
     page = 1;
-    _fetchTypes();
+    _fetchItems();
   }
 
   Widget _sortableHeader(String title, String columnKey) {
     Widget icon;
+
     if (sortColumn != columnKey) {
       icon = const Icon(Icons.unfold_more, size: 18, color: Colors.grey);
     } else {
       icon = Icon(
-        sortDirection == "asc" ? Icons.arrow_upward : Icons.arrow_downward,
+        sortDirection == "asc" ? Icons.arrow_downward : Icons.arrow_upward,
         size: 16,
+        color: Colors.black,
       );
     }
 
@@ -148,17 +157,17 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Obrisani"),
+                    const Text("Obrisane"),
                     DropdownButton<bool?>(
                       isExpanded: true,
                       value: tempDeleted,
                       items: const [
-                        DropdownMenuItem(value: null, child: Text("Svi")),
+                        DropdownMenuItem(value: null, child: Text("Sve")),
                         DropdownMenuItem(
                           value: false,
-                          child: Text("Neobrisani"),
+                          child: Text("Neobrisane"),
                         ),
-                        DropdownMenuItem(value: true, child: Text("Obrisani")),
+                        DropdownMenuItem(value: true, child: Text("Obrisane")),
                       ],
                       onChanged: (val) {
                         setDialogState(() => tempDeleted = val);
@@ -178,7 +187,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                             page = 1;
                           });
                           Navigator.pop(context);
-                          _fetchTypes();
+                          _fetchItems();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
@@ -188,7 +197,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                         ),
                         child: const Text(
                           "Primijeni",
-                          style: TextStyle(fontSize: 16, color: Colors.white),
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
@@ -201,7 +210,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                             page = 1;
                           });
                           Navigator.pop(context);
-                          _fetchTypes();
+                          _fetchItems();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey[300],
@@ -211,7 +220,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                         ),
                         child: const Text(
                           "Resetiraj",
-                          style: TextStyle(fontSize: 16, color: Colors.black),
+                          style: TextStyle(color: Colors.black),
                         ),
                       ),
                     ),
@@ -225,21 +234,56 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
     );
   }
 
-  DataColumn _centeredColumn(Widget label, {void Function(int, bool)? onSort}) {
+  DataCell _centeredCell(String text, double width) {
+    return DataCell(
+      SizedBox(
+        width: width,
+        child: Center(child: Text(text, textAlign: TextAlign.center)),
+      ),
+    );
+  }
+
+  DataCell _alignedCell(
+    String text,
+    double width, {
+    Alignment alignment = Alignment.centerLeft,
+    TextAlign textAlign = TextAlign.left,
+  }) {
+    return DataCell(
+      SizedBox(
+        width: width,
+        child: Align(
+          alignment: alignment,
+          child: Text(text, textAlign: textAlign),
+        ),
+      ),
+    );
+  }
+
+  DataColumn _centeredColumn(
+    Widget label, {
+    bool numeric = false,
+    void Function(int, bool)? onSort,
+  }) {
     return DataColumn(
-      label: SizedBox(width: 160, child: Center(child: label)),
+      label: SizedBox(width: 120, child: Center(child: label)),
+      numeric: numeric,
       onSort: onSort,
     );
   }
 
-  DataCell _centeredCell(String text) {
-    return DataCell(
-      SizedBox(
-        width: 160,
-        child: Center(
-          child: Text(text, textAlign: TextAlign.center, softWrap: true),
-        ),
+  DataColumn _alignedColumn(
+    Widget label, {
+    double width = 120,
+    Alignment alignment = Alignment.centerLeft,
+    void Function(int, bool)? onSort,
+  }) {
+    return DataColumn(
+      label: SizedBox(
+        width: width,
+        child: Align(alignment: alignment, child: label),
       ),
+      onSort: onSort,
     );
   }
 
@@ -255,6 +299,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // HEADER
           Stack(
@@ -273,15 +318,13 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
               ),
               const Center(
                 child: Text(
-                  "Tipovi prostora",
+                  "Metode plaćanja",
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 25),
-
           // SEARCH + ADD
           Row(
             children: [
@@ -291,7 +334,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: const InputDecoration(
-                    labelText: "Pretraži tipove prostora...",
+                    labelText: "Pretraži metode plaćanja...",
                     prefixIcon: Icon(Icons.search),
                     labelStyle: TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(),
@@ -316,15 +359,15 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   widget.onChangeScreen(
-                    WorkspaceTypeFormScreen(
-                      workspaceType: null,
+                    PaymentMethodFormScreen(
+                      paymentMethod: null,
                       onChangeScreen: widget.onChangeScreen,
                     ),
                   );
                 },
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text(
-                  "Dodaj tip prostora",
+                  "Dodaj metodu plaćanja",
                   style: TextStyle(color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -336,14 +379,12 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          // Tabela
+          // TABELA
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : types.isEmpty
+                : items.isEmpty
                 ? const Center(
                     child: Text(
                       "Nema podataka za prikazivanje",
@@ -357,9 +398,10 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                 : LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SizedBox(
-                          width: constraints.maxWidth,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: constraints.maxWidth,
+                          ),
                           child: DataTable(
                             headingRowHeight: 50,
                             dataRowHeight: 48,
@@ -370,11 +412,11 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                             ),
                             columns: [
                               _centeredColumn(
-                                _sortableHeader("ID", "WorkspaceTypeId"),
+                                _sortableHeader("ID", "PaymentMethodId"),
                                 onSort: (i, _) => _onSort(i),
                               ),
                               _centeredColumn(
-                                _sortableHeader("Naziv", "TypeName"),
+                                _sortableHeader("Naziv", "PaymentMethodName"),
                                 onSort: (i, _) => _onSort(i),
                               ),
                               DataColumn(
@@ -384,11 +426,14 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                 ),
                               ),
                             ],
-                            rows: types.map((t) {
+                            rows: items.map((item) {
                               return DataRow(
                                 cells: [
-                                  _centeredCell(t.workspaceTypeId.toString()),
-                                  _centeredCell(t.typeName),
+                                  _centeredCell(
+                                    item.paymentMethodId.toString(),
+                                    120,
+                                  ),
+                                  _centeredCell(item.paymentMethodName, 120),
                                   DataCell(
                                     SizedBox(
                                       width: actionColumnWidth,
@@ -404,15 +449,15 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                               ),
                                               onPressed: () {
                                                 widget.onChangeScreen(
-                                                  WorkspaceTypeFormScreen(
-                                                    workspaceType: t,
+                                                  PaymentMethodFormScreen(
+                                                    paymentMethod: item,
                                                     onChangeScreen:
                                                         widget.onChangeScreen,
                                                   ),
                                                 );
                                               },
                                             ),
-                                            if (t.isDeleted == false)
+                                            if (!item.isDeleted)
                                               IconButton(
                                                 icon: const Icon(
                                                   Icons.delete,
@@ -425,16 +470,15 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                                       title: const Text(
                                                         "Potvrda brisanja",
                                                       ),
-                                                      content: Text(
-                                                        "Da li želite obrisati tip prostora?",
+                                                      content: const Text(
+                                                        "Da li želite obrisati ovu metodu plaćanja?",
                                                       ),
                                                       actions: [
                                                         TextButton(
                                                           onPressed: () =>
-                                                              Navigator.pop(
+                                                              Navigator.of(
                                                                 context,
-                                                                true,
-                                                              ),
+                                                              ).pop(true),
                                                           style:
                                                               ElevatedButton.styleFrom(
                                                                 backgroundColor:
@@ -450,10 +494,9 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                                         ),
                                                         TextButton(
                                                           onPressed: () =>
-                                                              Navigator.pop(
+                                                              Navigator.of(
                                                                 context,
-                                                                false,
-                                                              ),
+                                                              ).pop(false),
                                                           child: const Text(
                                                             "Ne",
                                                           ),
@@ -461,17 +504,16 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                                       ],
                                                     ),
                                                   );
-
                                                   if (confirmed == true) {
                                                     try {
                                                       await _provider.delete(
-                                                        t.workspaceTypeId,
+                                                        item.paymentMethodId,
                                                       );
-                                                      _fetchTypes();
+                                                      _fetchItems();
                                                       showTopFlushBar(
                                                         context: context,
                                                         message:
-                                                            "Tip prostora je obrisan",
+                                                            "Metoda plaćanja uspješno obrisana",
                                                         backgroundColor:
                                                             Colors.green,
                                                       );
@@ -479,7 +521,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                                                       showTopFlushBar(
                                                         context: context,
                                                         message:
-                                                            "Greška pri brisanju: $e",
+                                                            "Brisanje nije uspjelo",
                                                         backgroundColor:
                                                             Colors.red,
                                                       );
@@ -501,8 +543,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                     },
                   ),
           ),
-
-          // Footer
+          // FOOTER
           const Divider(height: 1),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -522,7 +563,7 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                     onChanged: (v) {
                       pageSize = v!;
                       page = 1;
-                      _fetchTypes();
+                      _fetchItems();
                     },
                   ),
                 ],
@@ -532,15 +573,15 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                   Text(
                     totalCount == 0
                         ? "0 od 0"
-                        : "${((page - 1) * pageSize) + 1}–${((page - 1) * pageSize) + types.length} od $totalCount",
+                        : "${((page - 1) * pageSize) + 1}–${((page - 1) * pageSize) + items.length} od $totalCount",
                   ),
                   const SizedBox(width: 16),
                   IconButton(
                     icon: const Icon(Icons.arrow_back),
                     onPressed: page > 1
                         ? () {
-                            setState(() => page--);
-                            _fetchTypes();
+                            page--;
+                            _fetchItems();
                           }
                         : null,
                   ),
@@ -549,8 +590,8 @@ class _WorkspaceTypeScreenState extends State<WorkspaceTypeScreen> {
                     icon: const Icon(Icons.arrow_forward),
                     onPressed: page < totalPages
                         ? () {
-                            setState(() => page++);
-                            _fetchTypes();
+                            page++;
+                            _fetchItems();
                           }
                         : null,
                   ),

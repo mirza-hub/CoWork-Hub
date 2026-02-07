@@ -51,4 +51,19 @@ class UserProvider extends BaseProvider<User> {
       throw Exception("Greška prilikom ažuriranja korisnika.");
     }
   }
+
+  Future<User> restore(int id) async {
+    var url = "${BaseProvider.baseUrl}User/$id/restore";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var response = await http.put(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Greška prilikom vraćanja korisnika.");
+    }
+  }
 }

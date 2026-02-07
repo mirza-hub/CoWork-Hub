@@ -11,6 +11,7 @@ class City {
   final double? longitude;
   final int countryId;
   final Country country;
+  final bool? isDeleted;
 
   City({
     required this.cityId,
@@ -20,6 +21,7 @@ class City {
     this.longitude,
     required this.countryId,
     required this.country,
+    this.isDeleted,
   });
 
   factory City.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,7 @@ class City {
       country: json['country'] != null
           ? Country.fromJson(json['country'])
           : Country(countryId: json['countryId'] ?? 0, countryName: ""),
+      isDeleted: json['isDeleted'],
     );
   }
 
@@ -45,6 +48,7 @@ class City {
       'longitude': longitude,
       'countryId': countryId,
       'country': country.toJson(),
+      'isDeleted': isDeleted,
     };
   }
 }

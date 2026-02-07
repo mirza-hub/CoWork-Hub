@@ -27,8 +27,10 @@ class _ResourceFormScreenState extends State<ResourceFormScreen> {
   final ResourceProvider _resourceProvider = ResourceProvider();
 
   late TextEditingController _nameController;
+  String _initialName = "";
 
   bool get isEdit => widget.resource != null;
+  bool get isDeleted => widget.resource?.isDeleted == true;
 
   @override
   void initState() {
@@ -36,16 +38,29 @@ class _ResourceFormScreenState extends State<ResourceFormScreen> {
     _nameController = TextEditingController(
       text: widget.resource?.resourceName ?? "",
     );
+    _initialName = widget.resource?.resourceName ?? "";
   }
 
   Future<void> _save() async {
+    if (isDeleted) return;
     if (!_formKey.currentState!.validate()) return;
 
     final request = {"resourceName": _nameController.text};
 
     try {
       if (isEdit) {
+        if (_nameController.text.trim() == _initialName.trim()) {
+          showTopFlushBar(
+            context: context,
+            message: "Niste ništa promijenili",
+            backgroundColor: Colors.orange,
+          );
+          return;
+        }
         await _resourceProvider.update(widget.resource!.resourcesId, request);
+        setState(() {
+          _initialName = _nameController.text;
+        });
         showTopFlushBar(
           context: context,
           message: "Resurs uspješno ažuriran",
@@ -68,9 +83,7 @@ class _ResourceFormScreenState extends State<ResourceFormScreen> {
           final errorData = jsonDecode(e.body);
           if (errorData['errors'] != null &&
               errorData['errors']['userError'] != null) {
-            String message = (errorData['errors']['userError'] as List).join(
-              "\n",
-            );
+            String message = errorData['errors']['userError'].join("\n");
             showTopFlushBar(
               context: context,
               message: message,
@@ -97,6 +110,26 @@ class _ResourceFormScreenState extends State<ResourceFormScreen> {
           backgroundColor: Colors.red,
         );
       }
+    }
+  }
+
+  Future<void> _restore() async {
+    try {
+      await _resourceProvider.restore(widget.resource!.resourcesId);
+      showTopFlushBar(
+        context: context,
+        message: "Resurs je uspješno vraćen",
+        backgroundColor: Colors.green,
+      );
+      widget.onChangeScreen(
+        ResourceScreen(onChangeScreen: widget.onChangeScreen),
+      );
+    } catch (e) {
+      showTopFlushBar(
+        context: context,
+        message: "Greška prilikom vraćanja resursa: $e",
+        backgroundColor: Colors.red,
+      );
     }
   }
 
@@ -145,6 +178,7 @@ class _ResourceFormScreenState extends State<ResourceFormScreen> {
                       // Ime resursa
                       TextFormField(
                         controller: _nameController,
+                        enabled: !isDeleted,
                         decoration: const InputDecoration(
                           labelText: "Naziv resursa",
                           border: OutlineInputBorder(),
@@ -152,11 +186,36 @@ class _ResourceFormScreenState extends State<ResourceFormScreen> {
                         inputFormatters: [
                           LengthLimitingTextInputFormatter(20),
                           FilteringTextInputFormatter.allow(
-                            RegExp(r'[a-zA-Z0-9_-\s]'),
+                            RegExp(r'[a-zA-Z_-\s]'),
                           ),
                         ],
-                        validator: (v) =>
-                            v == null || v.isEmpty ? "Naziv je obavezan" : null,
+                        validator: (v) {
+                          if (v == null) {
+                            return "Naziv je obavezan";
+                          }
+
+                          final value = v.trim();
+
+                          if (value.isEmpty) {
+                            return "Naziv je obavezan";
+                          }
+
+                          if (value.length < 2) {
+                            return "Naziv mora imati najmanje 2 znaka";
+                          }
+
+                          if (value.length > 20) {
+                            return "Naziv može imati najviše 20 znakova";
+                          }
+
+                          if (!RegExp(
+                            r'^[a-zA-Z0-9][a-zA-Z0-9_\-\s]*[a-zA-Z0-9]$',
+                          ).hasMatch(value)) {
+                            return "Naziv ne može počinjati ili završavati razmakom, - ili _";
+                          }
+
+                          return null;
+                        },
                       ),
 
                       const SizedBox(height: 30),
@@ -167,15 +226,24 @@ class _ResourceFormScreenState extends State<ResourceFormScreen> {
                           width: 150,
                           height: 40,
                           child: ElevatedButton(
-                            onPressed: _save,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                            onPressed: isDeleted ? _restore : _save,
+                            style: isDeleted
+                                ? ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  )
+                                : ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
                             child: Text(
-                              isEdit ? "Sačuvaj" : "Spasi",
+                              isDeleted
+                                  ? "Vrati resurs"
+                                  : (isEdit ? "Sačuvaj" : "Spasi"),
                               style: const TextStyle(
                                 fontSize: 15,
                                 color: Colors.white,

@@ -70,8 +70,8 @@ namespace CoWorkHub.Services.Services
                                     r.SpaceUnitId == su.SpaceUnitId &&
                                     !r.IsDeleted &&
                                     (r.StateMachine == "pending" || r.StateMachine == "confirmed") &&
-                                    r.StartDate < to &&
-                                    r.EndDate > from
+                                    r.StartDate <= to &&
+                                    r.EndDate >= from
                                 )
                                 .Sum(r => (int?)r.PeopleCount) ?? 0
                             ) + requestedPeopleCount <= su.Capacity
@@ -80,8 +80,8 @@ namespace CoWorkHub.Services.Services
                             r.SpaceUnitId == su.SpaceUnitId &&
                             !r.IsDeleted &&
                             (r.StateMachine == "pending" || r.StateMachine == "confirmed") &&
-                            r.StartDate < to &&
-                            r.EndDate > from
+                            r.StartDate <= to &&
+                            r.EndDate >= from
                         ) &&
                         su.Capacity >= requestedPeopleCount
                 );
@@ -201,7 +201,7 @@ namespace CoWorkHub.Services.Services
             for (var day = from.Date; day <= to.Date; day = day.AddDays(1))
             {
                 var dayReservations = reservations
-                    .Where(r => r.StartDate.Date <= day && r.EndDate.Date > day)
+                    .Where(r => r.StartDate.Date <= day && r.EndDate.Date >= day)
                     .ToList();
 
                 bool isAvailable;

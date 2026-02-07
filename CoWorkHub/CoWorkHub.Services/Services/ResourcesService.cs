@@ -31,6 +31,9 @@ namespace CoWorkHub.Services.Services
         {
             base.BeforeInsert(request, entity);
 
+            if (string.IsNullOrWhiteSpace(request.ResourceName))
+                throw new UserException("Naziv resursa ne smije biti prazan.");
+
             var existingResource = Context.Resources
                 .FirstOrDefault(x => x.ResourceName.ToLower() == request.ResourceName.ToLower());
 
@@ -47,8 +50,11 @@ namespace CoWorkHub.Services.Services
         {
             base.BeforeUpdate(request, entity);
 
+            if (string.IsNullOrWhiteSpace(request.ResourceName))
+                throw new UserException("Naziv resursa ne smije biti prazan.");
+
             var existingResource = Context.Resources
-                .FirstOrDefault(x => x.ResourceName.ToLower() == request.ResourceName.ToLower());
+                .FirstOrDefault(x => x.ResourceName.ToLower() == request.ResourceName.ToLower() && x.ResourcesId!=entity.ResourcesId);
 
             if (existingResource != null)
             {
@@ -56,6 +62,26 @@ namespace CoWorkHub.Services.Services
             }
 
             entity.ModifiedAt = DateTime.UtcNow;
+        }
+
+        public Model.Resource RestoreResource(int id)
+        {
+            var set = Context.Set<Database.Resource>();
+
+            var entity = set.Find(id);
+
+            if (entity == null)
+                throw new UserException("Resurs nije pronađen.");
+
+            if (entity.IsDeleted == false)
+                throw new UserException("Resurs nije moguće vratiti jer nije obrisan.");
+
+            entity.IsDeleted = false;
+            entity.DeletedAt = null;
+
+            Context.SaveChanges();
+
+            return Mapper.Map<Model.Resource>(entity);
         }
     }
 }
