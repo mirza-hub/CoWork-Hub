@@ -3,9 +3,12 @@ import 'package:coworkhub_desktop/providers/auth_provider.dart';
 import 'package:coworkhub_desktop/providers/user_provider.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'layouts/master_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
 

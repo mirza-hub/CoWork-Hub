@@ -1,6 +1,7 @@
 import 'package:coworkhub_mobile/providers/payment_provider.dart';
 import 'package:coworkhub_mobile/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_paypal_payment/flutter_paypal_payment.dart';
 import 'package:provider/provider.dart';
 
@@ -158,10 +159,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       MaterialPageRoute(
         builder: (context) => PaypalCheckoutView(
           sandboxMode: true,
-          clientId:
-              "AfjqL68ogjZLAV71KaLjYbjlh3mz6ZhfMlqhGL8YasfTgq2pbJd1cT4lvsbhC6gsvQpFZ7g_8xywxCZU",
-          secretKey:
-              "EDDUcWT8SiN6va5-_jpVNnYiaQjDrMXVtcjeKxD2Z3S79hUQUIlJd6GLUAWaWjswNA1sB14ucC1Z9w_i",
+          clientId: dotenv.env['PAYPAL_CLIENT_ID'] ?? "",
+          secretKey: dotenv.env['PAYPAL_SECRET'] ?? "",
           transactions: [
             {
               "amount": {

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CoWorkHub.Services.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -44,23 +44,6 @@ namespace CoWorkHub.Services.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ReservationStatus",
-                columns: table => new
-                {
-                    ReservationStatusId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    StatusName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "(getdate())"),
-                    ModifiedAt = table.Column<DateTime>(type: "datetime", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "datetime", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Reservat__DFC0EEAA3753D8C2", x => x.ReservationStatusId);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Resources",
                 columns: table => new
                 {
@@ -91,23 +74,6 @@ namespace CoWorkHub.Services.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Roles__C4B27840A7A06CDF", x => x.RolesId);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "WorkingSpaceStatus",
-                columns: table => new
-                {
-                    WorkingSpaceStatusId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    WorkingSpaceStatusName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "(getdate())"),
-                    ModifiedAt = table.Column<DateTime>(type: "datetime", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "datetime", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__WorkingS__187BFA3269F9A5A1", x => x.WorkingSpaceStatusId);
                 });
 
             migrationBuilder.CreateTable(
@@ -190,6 +156,7 @@ namespace CoWorkHub.Services.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<int>(type: "int", nullable: true),
                     Action = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Entity = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "(getdate())")
                 },
@@ -204,39 +171,18 @@ namespace CoWorkHub.Services.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    NotificationId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    Message = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
-                    IsRead = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "(getdate())"),
-                    DeletedAt = table.Column<DateTime>(type: "datetime", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Notifica__20CF2E12724CECFA", x => x.NotificationId);
-                    table.ForeignKey(
-                        name: "FK_Notifications_Users",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "UsersId");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "PasswordResetRequests",
                 columns: table => new
                 {
                     PasswordResetRequestId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    CodeHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsUsed = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -573,11 +519,6 @@ namespace CoWorkHub.Services.Migrations
                 column: "CountryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Notifications_UserId",
-                table: "Notifications",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PasswordResetRequests_UserId",
                 table: "PasswordResetRequests",
                 column: "UserId");
@@ -723,16 +664,10 @@ namespace CoWorkHub.Services.Migrations
                 name: "ActivityLog");
 
             migrationBuilder.DropTable(
-                name: "Notifications");
-
-            migrationBuilder.DropTable(
                 name: "PasswordResetRequests");
 
             migrationBuilder.DropTable(
                 name: "Payment");
-
-            migrationBuilder.DropTable(
-                name: "ReservationStatus");
 
             migrationBuilder.DropTable(
                 name: "Reviews");
@@ -748,9 +683,6 @@ namespace CoWorkHub.Services.Migrations
 
             migrationBuilder.DropTable(
                 name: "WorkingSpaceImages");
-
-            migrationBuilder.DropTable(
-                name: "WorkingSpaceStatus");
 
             migrationBuilder.DropTable(
                 name: "PaymentMethod");

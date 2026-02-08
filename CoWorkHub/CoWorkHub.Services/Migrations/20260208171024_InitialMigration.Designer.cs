@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CoWorkHub.Services.Migrations
 {
     [DbContext(typeof(_210095Context))]
-    [Migration("20260208101736_AddedNewColumn")]
-    partial class AddedNewColumn
+    [Migration("20260208171024_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
