@@ -50,7 +50,7 @@ dependencies:
   image_picker: ^1.0.7
   file_picker: ^10.3.8
   table_calendar: ^3.0.9
-  flutter_dotenv: ^6.1.0
+  flutter_dotenv: ^5.2.1
   
 dev_dependencies:
   flutter_test:
