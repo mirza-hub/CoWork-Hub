@@ -132,7 +132,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<_210095Context>();
-    context.Database.Migrate();
+    //context.Database.Migrate();
 }
 
 // Starting the seeding process on application startup

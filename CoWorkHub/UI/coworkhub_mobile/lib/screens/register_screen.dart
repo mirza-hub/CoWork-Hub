@@ -236,6 +236,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final trimmed = value.trim();
 
+    final regex2 = RegExp(r'^\+?[0-9]{6,15}$');
+    if (!regex2.hasMatch(trimmed)) {
+      return 'Neispravan format telefona';
+    }
+
     // Ukloni sve osim brojeva i +
     final digitsOnly = trimmed.replaceAll(RegExp(r'[^\d+]'), '');
 
@@ -249,8 +254,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     // Provjeri format
-    final regex = RegExp(r'^\+?[0-9]{6,15}$');
-    if (!regex.hasMatch(digitsOnly)) {
+    final regex3 = RegExp(r'^\+?[0-9]{6,15}$');
+    if (!regex3.hasMatch(digitsOnly)) {
       return 'Neispravan format telefona';
     }
 
