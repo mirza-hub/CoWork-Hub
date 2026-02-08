@@ -3,6 +3,7 @@ using CoWorkHub.Api.Filters;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 using CoWorkHub.Services.RabbitMqService;
 using CoWorkHub.Services.ReservationStateMachine;
 using CoWorkHub.Services.Seed;
@@ -60,6 +61,7 @@ builder.Services.AddScoped<IRabbitMqService, RabbitMqService>();
 builder.Services.AddScoped<IWorkingSpaceImageService, WorkingSpaceImagesService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IRecommenderService, RecommenderService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
 builder.Services.AddControllers(x =>
 {

@@ -27,6 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _oldPasswordController = TextEditingController();
+  bool _obscureOldPassword = true;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   final _formKey = GlobalKey<FormState>();
@@ -98,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!_hasChanges()) {
       showTopFlushBar(
         context: context,
-        message: 'Nema promjena za čuvanje',
+        message: 'Niste ništa promijenili',
         backgroundColor: Colors.orange,
       );
       return;
@@ -122,9 +124,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       if (_passwordController.text.isNotEmpty) {
+        updateData["oldPassword"] = _oldPasswordController.text;
         updateData["password"] = _passwordController.text;
-      }
-      if (_confirmPasswordController.text.isNotEmpty) {
         updateData["passwordConfirm"] = _confirmPasswordController.text;
       }
 
@@ -146,6 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _controllers['username']!.text = updatedUser.username;
         _passwordController.clear();
         _confirmPasswordController.clear();
+        _oldPasswordController.clear();
 
         _selectedImage = null;
         _imageDeleted = false;
@@ -310,6 +312,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         (_selectedImage == null &&
             (_imageBase64 == null || _imageBase64!.isEmpty) &&
             (user.getImageBytes() == null || user.getImageBytes()!.isEmpty));
+  }
+
+  String? oldPasswordValidator(String? value) {
+    if (_passwordController.text.isEmpty) {
+      return null;
+    }
+
+    if (value == null || value.isEmpty) {
+      return 'Morate unijeti staru lozinku';
+    }
+
+    return null;
   }
 
   @override
@@ -477,6 +491,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      // Stara lozinka
+                      TextFormField(
+                        controller: _oldPasswordController,
+                        obscureText: _obscureOldPassword,
+                        validator: oldPasswordValidator,
+                        decoration: InputDecoration(
+                          labelText: 'Stara lozinka',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureOldPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureOldPassword = !_obscureOldPassword,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
@@ -539,7 +576,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderSide: BorderSide(color: Colors.grey),
           ),
         ),
-        style: const TextStyle(color: Colors.black),
+        style: const TextStyle(color: Colors.grey),
       ),
     );
   }

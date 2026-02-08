@@ -142,9 +142,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return 'Ne smije biti duže od 30 karaktera';
     }
 
-    final regex = RegExp(r'^[a-zA-ZšđčćžŠĐČĆŽ]+([ -][a-zA-ZšđčćžŠĐČĆŽ]+)*$');
-    if (!regex.hasMatch(v)) {
-      return 'Dozvoljena su samo slova';
+    if (!RegExp(r'^[a-zA-ZšđčćžŠĐČĆŽ]').hasMatch(v)) {
+      return 'Polje mora početi slovom';
+    }
+
+    if (!RegExp(r'[a-zA-ZšđčćžŠĐČĆŽ]$').hasMatch(v)) {
+      return 'Polje mora završiti slovom';
+    }
+
+    if (v.contains('--')) {
+      return 'Polje ne može sadržavati dvije uzastopne crtice';
+    }
+
+    // PRAVILO 4: Ne može sadržavati dva razmaka zaredom
+    if (v.contains('  ')) {
+      return 'Polje ne može sadržavati dva uzastopna razmaka';
+    }
+
+    // PRAVILO 5: Ne može imati crticu i razmak zajedno
+    if (v.contains('- ') || v.contains(' -')) {
+      return 'Crtica i razmak ne mogu biti jedan pored drugog';
+    }
+
+    // PRAVILO 6: Samo slova, razmaci i crtice
+    final fullPattern = RegExp(
+      r'^[a-zA-ZšđčćžŠĐČĆŽ][a-zA-ZšđčćžŠĐČĆŽ \-]*[a-zA-ZšđčćžŠĐČĆŽ]$',
+    );
+
+    if (v.length == 1) {
+      // Ako je samo 1 karakter, mora biti slovo
+      if (!RegExp(r'^[a-zA-ZšđčćžŠĐČĆŽ]$').hasMatch(v)) {
+        return 'Polje mora biti slovo';
+      }
+    } else if (!fullPattern.hasMatch(v)) {
+      return 'Polje može sadržavati samo slova, razmake i crtice';
     }
 
     return null;
@@ -172,8 +203,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (v.length < 3) return 'Mora imati najmanje 3 karaktera';
     if (v.length > 15) return 'Ne smije biti duže od 15 karaktera';
 
-    final regex = RegExp(r'^[a-zA-Z0-9_-]+$');
-    if (!regex.hasMatch(v)) return 'Dozvoljena su samo slova, brojevi, _ i -';
+    // PRAVILO 1: Mora početi slovom ili brojem (ne _ ili -)
+    if (!RegExp(r'^[a-zA-Z0-9]').hasMatch(v)) {
+      return 'Korisničko ime mora početi slovom ili brojem';
+    }
+
+    // PRAVILO 2: Mora završiti slovom ili brojem (ne _ ili -)
+    if (!RegExp(r'[a-zA-Z0-9]$').hasMatch(v)) {
+      return 'Korisničko ime mora završiti slovom ili brojem';
+    }
+
+    // PRAVILO 3: Ne može sadržavati -- ili __ ili -_ ili _-
+    if (v.contains('--') ||
+        v.contains('__') ||
+        v.contains('-_') ||
+        v.contains('_-')) {
+      return 'Ne može sadržavati uzastopne specijalne znakove';
+    }
+
+    // PRAVILO 4: Samo slova, brojevi, _ i -
+    final regex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$');
+    if (!regex.hasMatch(v)) {
+      return 'Korisničko ime može sadržavati samo slova, brojeve, _ i -';
+    }
 
     return null;
   }
@@ -182,8 +234,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (value == null || value.trim().isEmpty)
       return 'Broj telefona je obavezan';
 
+    final trimmed = value.trim();
+
+    // Ukloni sve osim brojeva i +
+    final digitsOnly = trimmed.replaceAll(RegExp(r'[^\d+]'), '');
+
+    if (digitsOnly.length < 6 || digitsOnly.length > 15) {
+      return 'Broj telefona mora imati 6-15 cifara';
+    }
+
+    // Ako počinje sa +, mora imati najmanje 8 cifara
+    if (digitsOnly.startsWith('+') && digitsOnly.length < 8) {
+      return 'Međunarodni broj mora imati najmanje 8 cifara';
+    }
+
+    // Provjeri format
     final regex = RegExp(r'^\+?[0-9]{6,15}$');
-    if (!regex.hasMatch(value)) return 'Neispravan format telefona';
+    if (!regex.hasMatch(digitsOnly)) {
+      return 'Neispravan format telefona';
+    }
 
     return null;
   }
@@ -192,6 +261,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (value == null || value.isEmpty) return 'Lozinka je obavezna';
     if (value.length < 8) return 'Lozinka mora imati najmanje 8 karaktera';
     if (value.length > 64) return 'Lozinka je preduga';
+    final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(value);
+    final hasDigit = RegExp(r'[0-9]').hasMatch(value);
+
+    if (!hasLetter || !hasDigit) {
+      return 'Lozinka mora sadržavati slova i brojeve';
+    }
     return null;
   }
 

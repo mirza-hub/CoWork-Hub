@@ -35,7 +35,6 @@ class _LayoutScreenState extends State<LayoutScreen>
     super.initState();
     currentUser = widget.user;
     WidgetsBinding.instance.addObserver(this);
-    // Setuj static referencu na state (samo za root LayoutScreen)
     _layoutScreenState = this;
   }
 
@@ -102,6 +101,52 @@ class _LayoutScreenState extends State<LayoutScreen>
         debugPrint("Greška pri osvježavanju: $e");
       }
     }
+  }
+
+  Future<void> _confirmLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Odjava'),
+          content: const Text('Da li ste sigurni da se želite odjaviti?'),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              child: const Text(
+                "Da",
+                style: TextStyle(fontSize: 16, color: Colors.white),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Ne'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout == true) {
+      _logout();
+    }
+  }
+
+  void _logout() {
+    setState(() {
+      currentUser = null;
+      AuthProvider.isSignedIn = false;
+      AuthProvider.userId = null;
+      AuthProvider.userRoles = [];
+      AuthProvider.username = null;
+      AuthProvider.password = null;
+
+      _currentScreen = HomePage(key: UniqueKey());
+      _activeItem = "Početna";
+      isSidebarOpen = false;
+    });
   }
 
   @override
@@ -222,16 +267,7 @@ class _LayoutScreenState extends State<LayoutScreen>
                         icon: Icons.logout,
                         iconColor: Colors.red,
                         textColor: Colors.red,
-                        onTap: () {
-                          setState(() {
-                            currentUser = null;
-                            AuthProvider.isSignedIn = false;
-                            AuthProvider.userId = null;
-                            _currentScreen = HomePage(key: UniqueKey());
-                            _activeItem = "Početna";
-                            isSidebarOpen = false;
-                          });
-                        },
+                        onTap: _confirmLogout,
                       ),
                     ] else ...[
                       const Spacer(),

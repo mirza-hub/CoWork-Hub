@@ -1,6 +1,7 @@
 ﻿using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
@@ -8,6 +9,7 @@ using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace CoWorkHub.Services.Services
 {
@@ -15,15 +17,21 @@ namespace CoWorkHub.Services.Services
     {
         private readonly ILogger<CityService> _logger;
         private readonly IGeoLocationService _geoLocationService;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
 
         public CityService(_210095Context context, 
             IMapper mapper, 
             IGeoLocationService geoLocationService,
-            ILogger<CityService> logger)
+            ILogger<CityService> logger,
+            IActivityLogService activityLogService,
+            ICurrentUserService currentUserService)
             : base(context, mapper) 
         {
             _geoLocationService = geoLocationService;
             _logger = logger;
+            _activityLogService = activityLogService;
+            _currentUserService= currentUserService;
         }
 
         public override IQueryable<City> AddFilter(CitySearchObject search, IQueryable<City> query)
@@ -142,6 +150,40 @@ namespace CoWorkHub.Services.Services
 
             if (request.CountryId <= 0)
                 throw new UserException("Država mora biti izabrana.");
+        }
+
+        public override void AfterInsert(CityInsertRequest request, City entity)
+        {
+            base.AfterInsert(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "City",
+            $"Kreiran novi grad {entity.CityId}");  
+            
+        }
+
+        public override void AfterUpdate(CityUpdateRequest request, City entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "City",
+            $"Ažuriran grad {entity.CityId}");
+        }
+
+        public override void AfterDelete(City entity)
+        {
+            base.AfterDelete(entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "DELETE",
+            "City",
+            $"Obrisan grad {entity.CityId}");
         }
     }
 }

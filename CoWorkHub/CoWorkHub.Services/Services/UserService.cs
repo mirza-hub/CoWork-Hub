@@ -21,17 +21,24 @@ namespace CoWorkHub.Services.Services
         private readonly ILogger<UserService> _logger;
         private readonly IPasswordService _passwordService;
         private readonly IRabbitMqService _rabbitMqService;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
 
         public UserService(_210095Context context, 
             IMapper mapper, 
             IPasswordService passwordService,
             IRabbitMqService rabbitMqService,
-            ILogger<UserService> logger)
+            ILogger<UserService> logger,
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService
+            )
             : base(context, mapper) 
         {
             _passwordService = passwordService;
             _rabbitMqService = rabbitMqService;
             _logger = logger;
+            _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
         }
 
         public override IQueryable<Database.User> AddFilter(UserSearchObject search, IQueryable<Database.User> query)
@@ -125,6 +132,13 @@ namespace CoWorkHub.Services.Services
                 RoleId = roles.RolesId
             });
 
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "User",
+            $"Kreiran novi user {entity.UsersId}");
+
             Context.SaveChanges();
 
         }
@@ -156,17 +170,33 @@ namespace CoWorkHub.Services.Services
         public override void BeforeUpdate(UserUpdateRequest request, Database.User entity)
         {
             base.BeforeUpdate(request, entity);
-
-            if (!string.IsNullOrWhiteSpace(request.Password) || !string.IsNullOrWhiteSpace(request.PasswordConfirm))
+            if (!string.IsNullOrWhiteSpace(request.Password) ||
+                !string.IsNullOrWhiteSpace(request.PasswordConfirm))
             {
+                if (string.IsNullOrWhiteSpace(request.OldPassword))
+                    throw new UserException("Morate unijeti staru lozinku");
+
+                var oldHash = _passwordService.GenerateHash(
+                    entity.PasswordSalt,
+                    request.OldPassword
+                );
+
+                if (oldHash != entity.PasswordHash)
+                    throw new UserException("Stara lozinka nije tačna");
+
                 if (request.Password != request.PasswordConfirm)
-                {
-                    throw new UserException("Lozinka i lozinka potvrda se moraju podudarati");
-                }
+                    throw new UserException("Lozinka i potvrda se moraju podudarati");
+
+                if (request.Password.Length < 8 || request.Password.Length > 64)
+                    throw new UserException("Lozinka mora imati 8–64 karaktera");
 
                 entity.PasswordSalt = _passwordService.GenerateSalt();
-                entity.PasswordHash = _passwordService.GenerateHash(entity.PasswordSalt, request.Password);
+                entity.PasswordHash = _passwordService.GenerateHash(
+                    entity.PasswordSalt,
+                    request.Password
+                );
             }
+
 
             if (!string.IsNullOrWhiteSpace(entity.Email))
             {
@@ -346,6 +376,28 @@ namespace CoWorkHub.Services.Services
             Context.SaveChanges();
 
             return Mapper.Map<Model.User>(entity);
+        }
+
+        public override void AfterUpdate(UserUpdateRequest request, Database.User entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "User",
+            $"Korisnik ažuriran {entity.UsersId}");
+        }
+
+        public override void AfterDelete(Database.User entity)
+        {
+            base.AfterDelete(entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "DELETE",
+            "User",
+            $"Korisnik obrisan {entity.UsersId}");
         }
 
         private void ValidateUserInsert(UserInsertRequest request)

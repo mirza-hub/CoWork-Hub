@@ -19,18 +19,24 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
     {
         ISpaceUnitImageService _spaceUnitImageService;
         ISpaceUnitResourceService _spaceUnitResourceService;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
 
         public InitialSpaceUnitState(
             _210095Context context, 
             IMapper mapper, 
             IServiceProvider serviceProvider,
             ISpaceUnitImageService spaceUnitImageService,
-            ISpaceUnitResourceService spaceUnitResourceService
+            ISpaceUnitResourceService spaceUnitResourceService,
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService
             ) 
             : base(context, mapper, serviceProvider)
         {
             _spaceUnitImageService = spaceUnitImageService;
             _spaceUnitResourceService = spaceUnitResourceService;
+            _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
         }
 
         public override async Task<Model.SpaceUnit> Insert(SpaceUnitInsertRequest request, CancellationToken cancellationToken)
@@ -80,6 +86,13 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
                     _spaceUnitResourceService.Insert(resourceRequest);
                 }
             }
+
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "SpaceUnit",
+            $"Kreiran nova Prostorna jedinica {entity.SpaceUnitId}");
 
             return Mapper.Map<Model.SpaceUnit>(entity);
         }

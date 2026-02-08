@@ -13,14 +13,18 @@ namespace CoWorkHub.Services.Services
     public class SpaceUnitResourceService : BaseCRUDService<Model.SpaceUnitResources, SpaceUnitResourcesSearchObject, SpaceUnitResource, SpaceUnitResourcesInsertRequest, SpaceUnitResourcesUpdateRequest>, ISpaceUnitResourceService
     {
         private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
 
         public SpaceUnitResourceService(
             _210095Context context, 
             IMapper mapper,
-            ICurrentUserService currentUserService) 
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService
+            ) 
             : base(context, mapper)
         {
             _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
         }
 
         public override IQueryable<SpaceUnitResource> AddFilter(SpaceUnitResourcesSearchObject search, IQueryable<SpaceUnitResource> query)
@@ -86,7 +90,39 @@ namespace CoWorkHub.Services.Services
 
             entity.ModifiedAt = DateTime.UtcNow;
             entity.ModifiedBy = (int)_currentUserService.GetUserId();
+        }
 
+        public override void AfterInsert(SpaceUnitResourcesInsertRequest request, SpaceUnitResource entity)
+        {
+            base.AfterInsert(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "SpaceUnitResource",
+            $"Dodan novi resurs {entity.ResourcesId} za prostor {entity.SpaceUnitId}");
+        }
+
+        public override void AfterUpdate(SpaceUnitResourcesUpdateRequest request, SpaceUnitResource entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "SpaceUnitResource",
+            $"Ažuriran novi resurs {entity.ResourcesId} za prostor {entity.SpaceUnitId}");
+        }
+
+        public override void AfterDelete(SpaceUnitResource entity)
+        {
+            base.AfterDelete(entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "DELETE",
+            "SpaceUnitResource",
+            $"Obrisan resurs {entity.ResourcesId} za prostor {entity.SpaceUnitId}");
         }
     }
 }

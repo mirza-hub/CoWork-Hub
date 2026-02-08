@@ -1,6 +1,7 @@
 ﻿using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
@@ -10,9 +11,19 @@ namespace CoWorkHub.Services.Services
 {
     public class WorkspaceTypeService : BaseCRUDService<Model.WorkspaceType, WorkspaceTypeSearchObject, WorkspaceType, WorkspaceTypeInsertRequest, WorkspaceTypeUpdateRequest>, IWorkspaceTypeService
     {
-        public WorkspaceTypeService(_210095Context context, IMapper mapper) 
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
+
+        public WorkspaceTypeService(_210095Context context, 
+            IMapper mapper,
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService
+            ) 
             : base(context, mapper)
-        { }
+        {
+            _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
+        }
 
         public override IQueryable<WorkspaceType> AddFilter(WorkspaceTypeSearchObject search, IQueryable<WorkspaceType> query)
         {
@@ -77,6 +88,39 @@ namespace CoWorkHub.Services.Services
             Context.SaveChanges();
 
             return Mapper.Map<Model.WorkspaceType>(entity);
+        }
+
+        public override void AfterInsert(WorkspaceTypeInsertRequest request, WorkspaceType entity)
+        {
+            base.AfterInsert(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "WorkspaceType",
+            $"Tip prostora kreiran {entity.WorkspaceTypeId}");
+        }
+
+        public override void AfterUpdate(WorkspaceTypeUpdateRequest request, WorkspaceType entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "WorkspaceType",
+            $"Tip prostora ažuriran {entity.WorkspaceTypeId}");
+        }
+
+        public override void AfterDelete(WorkspaceType entity)
+        {
+            base.AfterDelete(entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "WorkspaceType",
+            $"Tip prostora obrisan {entity.WorkspaceTypeId}");
         }
     }
 }

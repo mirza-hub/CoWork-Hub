@@ -1,6 +1,8 @@
 ﻿using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
+using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Services;
 using MapsterMapper;
 using System;
 using System.Collections.Generic;
@@ -12,12 +14,20 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
 {
     public class HiddenSpaceUnitState : BaseSpaceUnitState
     {
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
+
         public HiddenSpaceUnitState(
             _210095Context context, 
             IMapper mapper, 
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService)
             : base(context, mapper, serviceProvider)
-        { }
+        {
+            _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
+        }
 
         public override async Task<Model.SpaceUnit> Edit(int id, CancellationToken cancellationToken)
         {
@@ -34,6 +44,13 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             entity.StateMachine = "draft";
 
             await Context.SaveChangesAsync(cancellationToken);
+
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "EDIT",
+            "SpaceUnit",
+            $"Prostorna jedinica prebačena u draft {entity.SpaceUnitId}");
 
             return Mapper.Map<Model.SpaceUnit>(entity);
         }
@@ -54,6 +71,13 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
 
             await Context.SaveChangesAsync(cancellationToken);
 
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "ACTIVATE",
+            "SpaceUnit",
+            $"Prostorna jedinica aktvirana {entity.SpaceUnitId}");
+
             return Mapper.Map<Model.SpaceUnit>(entity);
         }
 
@@ -73,6 +97,13 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
 
             await Context.SaveChangesAsync(cancellationToken);
 
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "MAINTENANCE",
+            "SpaceUnit",
+            $"Prostorna jedinica prebačena u stanje održavanja {entity.SpaceUnitId}");
+
             return Mapper.Map<Model.SpaceUnit>(entity);
         }
 
@@ -90,6 +121,13 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             entity.DeletedAt = DateTime.UtcNow;
             entity.IsDeleted = true;
             entity.StateMachine = "deleted";
+
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "EDIT",
+            "SpaceUnit",
+            $"Prostorna jedinica obrisan {entity.SpaceUnitId}");
 
             await Context.SaveChangesAsync(cancellationToken);
         }

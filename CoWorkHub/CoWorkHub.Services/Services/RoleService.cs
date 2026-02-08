@@ -1,6 +1,7 @@
 ﻿using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
@@ -17,13 +18,19 @@ namespace CoWorkHub.Services.Services
     public class RoleService : BaseCRUDService<Model.Role, RoleSearchObject, Database.Role, RoleInsertRequest, RoleUpdateRequest>, IRoleService
     {
         private readonly ILogger<RoleService> _logger;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
 
         public RoleService(_210095Context context, 
             IMapper mapper,
-            ILogger<RoleService> logger) 
+            ILogger<RoleService> logger,
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService) 
             : base(context, mapper)
         { 
             _logger = logger;
+            _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
         }
 
         public override IQueryable<Role> AddFilter(RoleSearchObject search, IQueryable<Role> query)
@@ -86,6 +93,39 @@ namespace CoWorkHub.Services.Services
             Context.SaveChanges();
 
             return Mapper.Map<Model.Role>(entity);
+        }
+
+        public override void AfterInsert(RoleInsertRequest request, Role entity)
+        {
+            base.AfterInsert(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "Role",
+            $"Kreirana nova rola {entity.RolesId}");
+        }
+
+        public override void AfterUpdate(RoleUpdateRequest request, Role entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "Role",
+            $"Ažurirana Rola {entity.RolesId}");
+        }
+
+        public override void AfterDelete(Role entity)
+        {
+            base.AfterDelete(entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "DELETE",
+            "Role",
+            $"Obrisana Rola {entity.RolesId}");
         }
     }
 }

@@ -705,7 +705,9 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
               "Naziv",
               inputFormatters: [
                 LengthLimitingTextInputFormatter(40),
-                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s\-]')),
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'[a-zA-ZčćđšžČĆĐŠŽ0-9\- ]'),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -916,7 +918,6 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
                   );
                 }).toList(),
               ),
-
             const SizedBox(height: 30),
             Center(
               child: SizedBox(
@@ -1163,18 +1164,78 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
         border: const OutlineInputBorder(),
       ),
       validator: (v) {
-        if (v == null || v.isEmpty) return "$label je obavezan";
-
-        if (label == "Naziv" && !RegExp(r'^[a-zA-Z0-9\s\-]+$').hasMatch(v)) {
-          return "Naziv može sadržavati samo slova, brojeve i crticu (-)";
+        if (v == null || v.isEmpty) {
+          return "$label je obavezan";
         }
 
-        if (label == "Kapacitet" && int.tryParse(v) == null) {
-          return "Kapacitet mora biti broj";
+        // VALIDACIJA ZA NAZIV
+        if (label == "Naziv") {
+          final trimmed = v.trim();
+
+          if (trimmed.isEmpty) {
+            return "Naziv ne može biti samo razmaci";
+          }
+
+          // PRAVILO 1: Mora početi slovom (ne broj, crtica ili razmak)
+          if (!RegExp(r'^[a-zA-ZčćđšžČĆĐŠŽ]').hasMatch(trimmed)) {
+            return "Naziv mora početi slovom";
+          }
+
+          // PRAVILO 2: Mora završiti slovom ili brojem (ne crtica ili razmak)
+          if (!RegExp(r'[a-zA-ZčćđšžČĆĐŠŽ0-9]$').hasMatch(trimmed)) {
+            return "Naziv mora završiti slovom ili brojem";
+          }
+
+          // PRAVILO 3: Ne može sadržavati -- (dvije crtice zaredom)
+          if (trimmed.contains('--')) {
+            return "Naziv ne može sadržavati dvije uzastopne crtice";
+          }
+
+          // PRAVILO 4: Ne može sadržavati dva razmaka zaredom
+          if (trimmed.contains('  ')) {
+            return "Naziv ne može sadržavati dva uzastopna razmaka";
+          }
+
+          // PRAVILO 6: Cjelokupna validacija
+          final fullPattern = RegExp(
+            r'^[a-zA-ZčćđšžČĆĐŠŽ][a-zA-ZčćđšžČĆĐŠŽ0-9\- ]*[a-zA-ZčćđšžČĆĐŠŽ0-9]$',
+          );
+
+          if (trimmed.length == 1) {
+            // Ako je samo 1 karakter, mora biti slovo
+            if (!RegExp(r'^[a-zA-ZčćđšžČĆĐŠŽ]$').hasMatch(trimmed)) {
+              return "Naziv mora biti slovo";
+            }
+          } else if (!fullPattern.hasMatch(trimmed)) {
+            return "Naziv sadrži nedozvoljene karaktere";
+          }
+
+          // Minimalna dužina
+          if (trimmed.length < 2) {
+            return "Naziv mora imati najmanje 2 karaktera";
+          }
         }
 
-        if (label == "Cijena po danu (KM)" && double.tryParse(v) == null) {
-          return "Cijena mora biti broj";
+        // VALIDACIJA ZA KAPACITET
+        if (label == "Kapacitet") {
+          if (int.tryParse(v) == null) {
+            return "Kapacitet mora biti broj";
+          }
+          final capacity = int.parse(v);
+          if (capacity < 1) {
+            return "Kapacitet mora biti veći od 0";
+          }
+        }
+
+        // VALIDACIJA ZA CIJENU
+        if (label == "Cijena po danu (KM)") {
+          if (double.tryParse(v) == null) {
+            return "Cijena mora biti broj";
+          }
+          final price = double.parse(v);
+          if (price <= 0) {
+            return "Cijena mora biti veća od 0";
+          }
         }
 
         return null;

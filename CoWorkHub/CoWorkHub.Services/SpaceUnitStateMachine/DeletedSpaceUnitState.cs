@@ -1,6 +1,8 @@
 ﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Services;
 using MapsterMapper;
 using System;
 using System.Collections.Generic;
@@ -13,9 +15,19 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
 {
     public class DeletedSpaceUnitState : BaseSpaceUnitState
     {
-        public DeletedSpaceUnitState(_210095Context context, IMapper mapper, IServiceProvider serviceProvider) 
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
+
+        public DeletedSpaceUnitState(_210095Context context, 
+            IMapper mapper, 
+            IServiceProvider serviceProvider,
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService) 
             : base(context, mapper, serviceProvider)
-        { }
+        { 
+            _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
+        }
 
         public override async Task<Model.SpaceUnit> Restore(int id, CancellationToken cancellationToken)
         {
@@ -34,6 +46,13 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             }
 
             entity.StateMachine = "hidden";
+
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "HIDE",
+            "SpaceUnit",
+            $"Prostorna jedinica sakrivena {entity.SpaceUnitId}");
 
             await Context.SaveChangesAsync(cancellationToken);
 

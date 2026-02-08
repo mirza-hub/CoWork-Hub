@@ -38,8 +38,6 @@ public partial class User : ISoftDeletable
 
     public virtual City City { get; set; } = null!;
 
-    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
-
     public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
 
     public virtual ICollection<Review> ReviewDeletedByNavigations { get; set; } = new List<Review>();
