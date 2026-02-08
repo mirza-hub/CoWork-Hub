@@ -21,15 +21,11 @@ public partial class _210095Context : DbContext
 
     public virtual DbSet<Country> Countries { get; set; }
 
-    public virtual DbSet<Notification> Notifications { get; set; }
-
     public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<PaymentMethod> PaymentMethods { get; set; }
 
     public virtual DbSet<Reservation> Reservations { get; set; }
-
-    public virtual DbSet<ReservationStatus> ReservationStatuses { get; set; }         
 
     public virtual DbSet<Resource> Resources { get; set; }
 
@@ -50,8 +46,6 @@ public partial class _210095Context : DbContext
     public virtual DbSet<WorkingSpace> WorkingSpaces { get; set; }
 
     public virtual DbSet<WorkingSpaceImage> WorkingSpaceImages { get; set; }
-
-    public virtual DbSet<WorkingSpaceStatus> WorkingSpaceStatuses { get; set; }
 
     public virtual DbSet<WorkspaceType> WorkspaceTypes { get; set; }
 
@@ -103,22 +97,6 @@ public partial class _210095Context : DbContext
             entity.ToTable("Country");
 
             entity.Property(e => e.CountryName).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<Notification>(entity =>
-        {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12724CECFA");
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.DeletedAt).HasColumnType("datetime");
-            entity.Property(e => e.Message).HasMaxLength(250);
-
-            entity.HasOne(d => d.User).WithMany(p => p.Notifications)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Notifications_Users");
         });
 
         modelBuilder.Entity<Payment>(entity =>
@@ -211,21 +189,6 @@ public partial class _210095Context : DbContext
                 .HasForeignKey(p => p.ReservationId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Reservation_Payments");
-        });
-
-
-        modelBuilder.Entity<ReservationStatus>(entity =>
-        {
-            entity.HasKey(e => e.ReservationStatusId).HasName("PK__Reservat__DFC0EEAA3753D8C2");
-
-            entity.ToTable("ReservationStatus");
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.DeletedAt).HasColumnType("datetime");
-            entity.Property(e => e.ModifiedAt).HasColumnType("datetime");
-            entity.Property(e => e.StatusName).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Resource>(entity =>
@@ -497,20 +460,6 @@ public partial class _210095Context : DbContext
                 .HasForeignKey(d => d.WorkingSpacesId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_WorkingSpaceImages_WorkingSpaces");
-        });
-
-        modelBuilder.Entity<WorkingSpaceStatus>(entity =>
-        {
-            entity.HasKey(e => e.WorkingSpaceStatusId).HasName("PK__WorkingS__187BFA3269F9A5A1");
-
-            entity.ToTable("WorkingSpaceStatus");
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.DeletedAt).HasColumnType("datetime");
-            entity.Property(e => e.ModifiedAt).HasColumnType("datetime");
-            entity.Property(e => e.WorkingSpaceStatusName).HasMaxLength(50);
         });
 
         modelBuilder.Entity<WorkspaceType>(entity =>

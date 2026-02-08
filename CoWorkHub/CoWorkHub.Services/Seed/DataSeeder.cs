@@ -62,16 +62,6 @@ namespace CoWorkHub.Services.Seed
                 context.SaveChanges();
             }
 
-            // 5. Working Space Statuses
-            if (!context.WorkingSpaceStatuses.Any())
-            {
-                context.WorkingSpaceStatuses.AddRange(
-                    new WorkingSpaceStatus { WorkingSpaceStatusName = "Active" },
-                    new WorkingSpaceStatus { WorkingSpaceStatusName = "Unavailable" }
-                );
-                context.SaveChanges();
-            }
-
             // 6. Users
             if (!context.Users.Any())
             {
@@ -286,18 +276,6 @@ namespace CoWorkHub.Services.Seed
                     new Resource { ResourceName = "Flipchart" },
                     new Resource { ResourceName = "Air Conditioning" }
                     );
-                context.SaveChanges();
-            }
-
-            // 10. Reservation statuses
-            if (!context.ReservationStatuses.Any())
-            {
-                context.ReservationStatuses.AddRange(
-                    new ReservationStatus { StatusName = "Pending" },
-                    new ReservationStatus { StatusName = "Confirmed" },
-                    new ReservationStatus { StatusName = "Paid" },
-                    new ReservationStatus { StatusName = "Canceled" }
-                );
                 context.SaveChanges();
             }
 

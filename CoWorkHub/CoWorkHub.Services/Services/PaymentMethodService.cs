@@ -1,6 +1,7 @@
 ﻿using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
@@ -15,9 +16,19 @@ namespace CoWorkHub.Services.Services
 {
     public class PaymentMethodService : BaseCRUDService<Model.PaymentMethod, PaymentMethodSearchObject, Database.PaymentMethod, PaymentMethodInsertRequest, PaymentMethodUpdateRequest>, IPaymentMethodService
     {
-        public PaymentMethodService(_210095Context context, IMapper mapper) 
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
+
+        public PaymentMethodService(_210095Context context, 
+            IMapper mapper,
+            IActivityLogService activityLogService,
+            ICurrentUserService currentUserService
+            ) 
             : base(context, mapper)
-        { }
+        {
+            _activityLogService = activityLogService;
+            _currentUserService = currentUserService;
+        }
 
         public override IQueryable<PaymentMethod> AddFilter(PaymentMethodSearchObject search, IQueryable<PaymentMethod> query)
         {
@@ -76,6 +87,38 @@ namespace CoWorkHub.Services.Services
             Context.SaveChanges();
 
             return Mapper.Map<Model.PaymentMethod>(entity);
+        }
+
+        public override void AfterInsert(PaymentMethodInsertRequest request, PaymentMethod entity)
+        {
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "PaymentMethod",
+            $"Kreiran novi način plaćanja {entity.PaymentMethodId}");
+        }
+
+        public override void AfterUpdate(PaymentMethodUpdateRequest request, PaymentMethod entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "PaymentMethod",
+            $"Ažuriran način plaćanja {entity.PaymentMethodId}");
+        }
+
+        public override void AfterDelete(PaymentMethod entity)
+        {
+            base.AfterDelete(entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "DELETE",
+            "PaymentMethod",
+            $"Obrisan način plaćanja {entity.PaymentMethodId}");
         }
     }
 }

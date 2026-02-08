@@ -2,6 +2,8 @@
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
+using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Services;
 using MapsterMapper;
 using System;
 using System.Collections.Generic;
@@ -14,15 +16,18 @@ namespace CoWorkHub.Services.ReservationStateMachine
     public class InitialReservationState : BaseReservationState
     {
         private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
 
         public InitialReservationState(
             _210095Context context, 
             IMapper mapper, 
             IServiceProvider serviceProvider,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService)
             : base(context, mapper, serviceProvider)
         {
             _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
         }
 
         public override Model.Reservation Insert(ReservationInsertRequest request)
@@ -88,6 +93,13 @@ namespace CoWorkHub.Services.ReservationStateMachine
 
             set.Add(entity);
             Context.SaveChanges();
+
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "Reservation",
+            $"Kreirana rezervacija {entity.ReservationId}");
 
             return Mapper.Map<Model.Reservation>(entity);
         }

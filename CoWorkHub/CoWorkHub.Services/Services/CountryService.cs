@@ -1,6 +1,7 @@
 ﻿using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
@@ -13,12 +14,19 @@ namespace CoWorkHub.Services.Services
     public class CountryService : BaseCRUDService<Model.Country, CountrySearchObject, Database.Country, CountryInsertRequest, CountryUpdateRequest>, ICountryService
     {
         private readonly ILogger<CountryService> _logger;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
         public CountryService(_210095Context context, 
             IMapper mapper,
-            ILogger<CountryService> logger) 
+            ILogger<CountryService> logger,
+            IActivityLogService activityLogService,
+            ICurrentUserService currentUserService
+            ) 
             : base(context, mapper) 
         { 
             _logger=logger;
+            _activityLogService = activityLogService;
+            _currentUserService = currentUserService;
         }
 
         public override IQueryable<Database.Country> AddFilter(CountrySearchObject search, IQueryable<Database.Country> query)
@@ -102,5 +110,37 @@ namespace CoWorkHub.Services.Services
                 throw new UserException("Naziv države smije sadržavati samo slova.");
         }
 
+        public override void AfterInsert(CountryInsertRequest request, Country entity)
+        {
+            base.AfterInsert(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "Country",
+            $"Kreirana nova država {entity.CountryId}");
+        }
+
+        public override void AfterUpdate(CountryUpdateRequest request, Country entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "Country",
+            $"Ažurirana država {entity.CountryId}");
+        }
+
+        public override void AfterDelete(Country entity)
+        {
+            base.AfterDelete(entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "DELETE",
+            "City",
+            $"Obrisana država {entity.CountryId}");
+        }
     }
 }

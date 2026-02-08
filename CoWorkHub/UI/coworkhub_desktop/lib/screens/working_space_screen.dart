@@ -5,6 +5,7 @@ import 'package:coworkhub_desktop/providers/city_provider.dart';
 import 'package:coworkhub_desktop/providers/working_space_provider.dart';
 import 'package:coworkhub_desktop/screens/working_space_details_screen.dart';
 import 'package:coworkhub_desktop/screens/working_space_form_screen.dart';
+import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:another_flushbar/flushbar.dart';
 
@@ -540,8 +541,12 @@ class _WorkingSpacesScreenState extends State<WorkingSpacesScreen> {
                                                       ws.workingSpacesId,
                                                     );
                                                     _loadSpaces();
-                                                    showSuccessFlushbar(
-                                                      "Uspješno brisanje",
+                                                    showTopFlushBar(
+                                                      context: context,
+                                                      message:
+                                                          "Prostor uspješno obrisan",
+                                                      backgroundColor:
+                                                          Colors.green,
                                                     );
                                                   }
                                                 },

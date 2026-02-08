@@ -20,13 +20,16 @@ namespace CoWorkHub.Services.Services
     public class ReviewService : BaseCRUDService<Model.Review, ReviewSearchObject, Database.Review, ReviewInsertRequest, ReviewUpdateRequest>, IReviewService
     {
         private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
 
         public ReviewService(_210095Context context, 
             IMapper mapper,
-            ICurrentUserService currentUserService) 
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService) 
             : base(context, mapper)
         {
             _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
         }
 
         public override IQueryable<Database.Review> AddFilter(ReviewSearchObject search, IQueryable<Database.Review> query)
@@ -133,6 +136,39 @@ namespace CoWorkHub.Services.Services
             base.BeforeDelete(entity);
 
             entity.DeletedBy = _currentUserService.GetUserId();
+        }
+
+        public override void AfterInsert(ReviewInsertRequest request, Database.Review entity)
+        {
+            base.AfterInsert(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "Review",
+            $"Kreirana recenzija {entity.ReviewsId} za rezervaciju {entity.ReservationId}");
+        }
+
+        public override void AfterUpdate(ReviewUpdateRequest request, Database.Review entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "Review",
+            $"Kreirana recenzija {entity.ReviewsId} za rezervaciju {entity.ReservationId}");
+        }
+
+        public override void AfterDelete(Database.Review entity)
+        {
+            base.AfterDelete(entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "DELETE",
+            "Review",
+            $"Kreirana recenzija  {entity.ReviewsId}  za rezervaciju {entity.ReservationId}");
         }
     }
 }

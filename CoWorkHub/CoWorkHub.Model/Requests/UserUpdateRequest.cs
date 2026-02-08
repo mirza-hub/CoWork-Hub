@@ -13,5 +13,6 @@ namespace CoWorkHub.Model.Requests
         public string? ProfileImageBase64 { get; set; }
         public string? Password { get; set; }
         public string? PasswordConfirm { get; set; }
+        public string? OldPassword { get; set; }
     }
 }

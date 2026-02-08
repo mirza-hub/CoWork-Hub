@@ -13,12 +13,19 @@ namespace CoWorkHub.Services.Services
     public class ResourcesService : BaseCRUDService<Model.Resource, ResourcesSearchObject, Database.Resource, ResourcesInsertRequest, ResourcesUpdateRequest>, IResourcesService
     {
         private readonly ILogger<ResourcesService> _logger;
-        public ResourcesService(_210095Context context, 
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
+
+        public ResourcesService(_210095Context context,
             IMapper mapper,
-            ILogger<ResourcesService> logger)
-            : base(context, mapper) 
+            ILogger<ResourcesService> logger,
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService)
+            : base(context, mapper)
         {
             _logger = logger;
+            _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
         }
 
         public override IQueryable<Resource> AddFilter(ResourcesSearchObject search, IQueryable<Resource> query)
@@ -62,7 +69,7 @@ namespace CoWorkHub.Services.Services
                 throw new UserException("Naziv resursa ne smije biti prazan.");
 
             var existingResource = Context.Resources
-                .FirstOrDefault(x => x.ResourceName.ToLower() == request.ResourceName.ToLower() && x.ResourcesId!=entity.ResourcesId);
+                .FirstOrDefault(x => x.ResourceName.ToLower() == request.ResourceName.ToLower() && x.ResourcesId != entity.ResourcesId);
 
             if (existingResource != null)
             {
@@ -90,6 +97,39 @@ namespace CoWorkHub.Services.Services
             Context.SaveChanges();
 
             return Mapper.Map<Model.Resource>(entity);
+        }
+
+        public override void AfterInsert(ResourcesInsertRequest request, Resource entity)
+        {
+            base.AfterInsert(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "Resource",
+            $"Kreiran novi resurs {entity.ResourcesId}");
+        }
+
+        public override void AfterUpdate(ResourcesUpdateRequest request, Resource entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "Resource",
+            $"Ažuriran resurs {entity.ResourcesId}");
+        }
+
+        public override void AfterDelete(Resource entity)
+        {
+            base.AfterDelete(entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "DELETE",
+            "Resource",
+            $"Obrisan resurs {entity.ResourcesId}");
         }
     }
 }

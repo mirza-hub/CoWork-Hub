@@ -1,6 +1,9 @@
 ﻿using CoWorkHub.Model.Exceptions;
 using CoWorkHub.Model.Requests;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
+using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Services;
 using MapsterMapper;
 using System;
 using System.Collections.Generic;
@@ -12,9 +15,19 @@ namespace CoWorkHub.Services.ReservationStateMachine
 {
     public class PendingReservationState : BaseReservationState
     {
-        public PendingReservationState(_210095Context context, IMapper mapper, IServiceProvider serviceProvider)
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
+
+        public PendingReservationState(_210095Context context, 
+            IMapper mapper, 
+            IServiceProvider serviceProvider,
+            IActivityLogService activityLogService,
+            ICurrentUserService currentUserService)
             : base(context, mapper, serviceProvider)
-        { }
+        { 
+            _activityLogService = activityLogService;
+            _currentUserService = currentUserService;
+        }
 
         public override Model.Reservation Update(int id, ReservationUpdateRequest request)
         {
@@ -56,6 +69,13 @@ namespace CoWorkHub.Services.ReservationStateMachine
 
             Context.SaveChanges();
 
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "Reservation",
+            $"Ažurirana rezervacija {entity.ReservationId}");
+
             return Mapper.Map<Model.Reservation>(entity);
         }
 
@@ -68,6 +88,13 @@ namespace CoWorkHub.Services.ReservationStateMachine
             entity.StateMachine = "confirmed";
 
             Context.SaveChanges();
+
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CONFIRM",
+            "Reservation",
+            $"Potvrđena rezervacija {entity.ReservationId}");
 
             return Mapper.Map<Model.Reservation>(entity);
         }
@@ -101,6 +128,13 @@ namespace CoWorkHub.Services.ReservationStateMachine
             }
 
             Context.SaveChanges();
+
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CANCEL",
+            "Reservation",
+            $"Otkazana rezervacija {id}");
 
             return Mapper.Map<Model.Reservation>(reservation);
         }

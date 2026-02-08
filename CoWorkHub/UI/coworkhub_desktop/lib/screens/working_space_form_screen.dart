@@ -47,6 +47,7 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
   final CityProvider _cityProvider = CityProvider();
 
   bool get isEdit => widget.workspace != null;
+  bool get isDeleted => widget.workspace?.isDeleted == true;
 
   @override
   void initState() {
@@ -194,6 +195,28 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
     setState(() {});
   }
 
+  Future<void> _restoreWorkingSpace() async {
+    try {
+      await provider.restore(widget.workspace!.workingSpacesId);
+
+      showTopFlushBar(
+        context: context,
+        message: "Prostor je uspješno vraćen",
+        backgroundColor: Colors.green,
+      );
+
+      widget.onChangeScreen(
+        WorkingSpacesScreen(onChangeScreen: widget.onChangeScreen),
+      );
+    } catch (e) {
+      showTopFlushBar(
+        context: context,
+        message: e.toString(),
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -242,6 +265,7 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
 
                       TextFormField(
                         controller: _nameController,
+                        enabled: !isDeleted,
                         decoration: const InputDecoration(
                           labelText: "Naziv",
                           border: OutlineInputBorder(),
@@ -249,7 +273,7 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                         inputFormatters: [
                           LengthLimitingTextInputFormatter(40),
                           FilteringTextInputFormatter.allow(
-                            RegExp(r'[a-zA-Z0-9\- ]'),
+                            RegExp(r'[a-zA-ZčćđšžČĆĐŠŽ0-9\- ]'),
                           ),
                         ],
                         validator: (v) {
@@ -257,20 +281,53 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                             return "Naziv je obavezan";
                           }
 
-                          final pattern = RegExp(
-                            r'^[a-zA-Z0-9](?:[a-zA-Z0-9\- ]*[a-zA-Z0-9])?$',
+                          if (v.length < 6) {
+                            return "Naziv mora imati najmanje 6 karaktera";
+                          }
+
+                          final trimmed = v.trim();
+
+                          if (trimmed.isEmpty) {
+                            return "Naziv ne može biti samo razmaci";
+                          }
+
+                          if (!RegExp(
+                            r'^[a-zA-ZčćđšžČĆĐŠŽ]',
+                          ).hasMatch(trimmed)) {
+                            return "Naziv mora početi slovom";
+                          }
+
+                          if (!RegExp(
+                            r'[a-zA-ZčćđšžČĆĐŠŽ0-9]$',
+                          ).hasMatch(trimmed)) {
+                            return "Naziv mora završiti slovom ili brojem";
+                          }
+
+                          if (trimmed.contains('--')) {
+                            return "Naziv ne može sadržavati dvije ili više uzastopne crtice";
+                          }
+
+                          if (trimmed.contains('  ')) {
+                            return "Naziv ne može sadržavati dva ili više uzastopnih razmaka";
+                          }
+
+                          if (trimmed.contains('- ') ||
+                              trimmed.contains(' -')) {
+                            return "Crtica i razmak ne mogu biti jedan pored drugog";
+                          }
+
+                          final fullPattern = RegExp(
+                            r'^[a-zA-ZčćđšžČĆĐŠŽ][a-zA-ZčćđšžČĆĐŠŽ0-9\- ]*[a-zA-ZčćđšžČĆĐŠŽ0-9]$',
                           );
 
-                          if (!pattern.hasMatch(v)) {
-                            return "Naziv mora početi i završiti slovom ili brojem, a unutar može imati razmake ili crtice";
-                          }
-
-                          if (v.contains('--')) {
-                            return "Naziv ne smije sadržavati dvije uzastopne crtice";
-                          }
-
-                          if (v.contains('  ')) {
-                            return "Naziv ne smije sadržavati dva uzastopna razmaka";
+                          if (trimmed.length == 1) {
+                            if (!RegExp(
+                              r'^[a-zA-ZčćđšžČĆĐŠŽ]$',
+                            ).hasMatch(trimmed)) {
+                              return "Naziv mora biti slovo";
+                            }
+                          } else if (!fullPattern.hasMatch(trimmed)) {
+                            return "Naziv sadrži nedozvoljene karaktere";
                           }
 
                           return null;
@@ -279,6 +336,7 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _addressController,
+                        enabled: !isDeleted,
                         decoration: InputDecoration(
                           labelText: "Adresa",
                           border: const OutlineInputBorder(),
@@ -288,7 +346,9 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                               (_latitude != null && _longitude != null)
                                   ? Icons.map
                                   : Icons.map_outlined,
-                              color: (_latitude != null && _longitude != null)
+                              color: isDeleted
+                                  ? Colors.grey
+                                  : (_latitude != null && _longitude != null)
                                   ? Colors.green
                                   : Colors.grey,
                             ),
@@ -326,6 +386,7 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                       TextFormField(
                         controller: _descriptionController,
                         maxLines: 3,
+                        enabled: !isDeleted,
                         decoration: const InputDecoration(
                           labelText: "Opis",
                           border: OutlineInputBorder(),
@@ -355,7 +416,9 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
                                     ),
                                   )
                                   .toList(),
-                              onChanged: (v) => setState(() => _cityId = v),
+                              onChanged: isDeleted
+                                  ? null
+                                  : (v) => setState(() => _cityId = v),
                               validator: (v) =>
                                   v == null ? "Molimo izaberite grad" : null,
                             ),
@@ -364,24 +427,41 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
 
                       Center(
                         child: SizedBox(
-                          width: 150,
+                          width: 180,
                           height: 40,
-                          child: ElevatedButton(
-                            onPressed: _save,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              isEdit ? "Sačuvaj" : "Spasi",
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+                          child: widget.workspace?.isDeleted == true
+                              ? ElevatedButton(
+                                  onPressed: _restoreWorkingSpace,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "Vrati prostor",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : ElevatedButton(
+                                  onPressed: _save,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isEdit ? "Sačuvaj" : "Spasi",
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
                     ],

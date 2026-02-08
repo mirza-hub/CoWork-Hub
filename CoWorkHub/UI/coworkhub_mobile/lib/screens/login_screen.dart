@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     "Zaboravili ste šifru?",
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: Colors.blue,
                       decoration: TextDecoration.underline,
                     ),
                   ),

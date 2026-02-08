@@ -1,5 +1,8 @@
 ﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
+using CoWorkHub.Services.Interfaces;
+using CoWorkHub.Services.Services;
 using MapsterMapper;
 using System;
 using System.Collections.Generic;
@@ -11,10 +14,19 @@ namespace CoWorkHub.Services.ReservationStateMachine
 {
     public class ConfirmedReservationState : BaseReservationState
     {
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
 
-        public ConfirmedReservationState(_210095Context context, IMapper mapper, IServiceProvider serviceProvider)
+        public ConfirmedReservationState(_210095Context context, 
+            IMapper mapper, 
+            IServiceProvider serviceProvider,
+            ICurrentUserService currentUserService,
+            IActivityLogService activityLogService)
             : base(context, mapper, serviceProvider)
-        { }
+        {
+            _currentUserService = currentUserService;
+            _activityLogService = activityLogService;
+        }
 
         public override Model.Reservation Cancel(int id)
         {
@@ -45,6 +57,13 @@ namespace CoWorkHub.Services.ReservationStateMachine
             }
 
             Context.SaveChanges();
+
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CANCEL",
+            "Reservation",
+            $"Otkazana rezervacija {id}");
 
             return Mapper.Map<Model.Reservation>(reservation);
         }

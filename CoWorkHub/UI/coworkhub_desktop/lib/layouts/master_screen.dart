@@ -1,6 +1,7 @@
 import 'package:coworkhub_desktop/main.dart';
 import 'package:coworkhub_desktop/models/extensions/user_image_extension.dart';
 import 'package:coworkhub_desktop/models/user.dart';
+import 'package:coworkhub_desktop/screens/activitylog_screen.dart';
 import 'package:coworkhub_desktop/screens/dashboard_screen.dart';
 import 'package:coworkhub_desktop/screens/reservation_screen.dart';
 import 'package:coworkhub_desktop/screens/settings_screen.dart';
@@ -40,6 +41,7 @@ class _MasterScreenState extends State<MasterScreen> {
         },
       ),
       ReservationScreen(onChangeScreen: (newScreen) => changeScreen(newScreen)),
+      ActivityLogScreen(onChangeScreen: (newScreen) => changeScreen(newScreen)),
       SettingsScreen(onChangeScreen: (newScreen) => changeScreen(newScreen)),
     ];
 
@@ -97,6 +99,11 @@ class _MasterScreenState extends State<MasterScreen> {
                 ),
                 _buildMenuItem(
                   index: 4,
+                  icon: Icons.history,
+                  label: "Aktivnosti",
+                ),
+                _buildMenuItem(
+                  index: 5,
                   icon: Icons.settings,
                   label: "Podešavanja",
                 ),
@@ -336,6 +343,8 @@ class _MasterScreenState extends State<MasterScreen> {
       case 3:
         return "Rezervacije";
       case 4:
+        return "Aktivnosti";
+      case 5:
         return "Podešavanja";
       default:
         return "";

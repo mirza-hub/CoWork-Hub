@@ -18,15 +18,19 @@ namespace CoWorkHub.Services.Services
     {
         private readonly ILogger<WorkingSpaceService> _logger;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IActivityLogService _activityLogService;
 
         public WorkingSpaceService(_210095Context context, 
             IMapper mapper, 
             ICurrentUserService currentUserService,
-            ILogger<WorkingSpaceService> logger) 
+            ILogger<WorkingSpaceService> logger,
+            IActivityLogService activityLogService
+            ) 
             : base(context, mapper) 
         {
             _currentUserService = currentUserService;
             _logger = logger;
+            _activityLogService = activityLogService;
         }
 
         public override IQueryable<Database.WorkingSpace> AddFilter(WorkingSpaceSearchObject search, IQueryable<Database.WorkingSpace> query)
@@ -129,9 +133,70 @@ namespace CoWorkHub.Services.Services
             entity.DeletedAt = null;
             entity.DeletedBy = null;
 
+            var spaceUnits = Context.SpaceUnits
+                .Where(su => su.WorkingSpaceId == entity.WorkingSpacesId && !su.IsDeleted)
+                .ToList();
+
+            foreach (var spaceUnit in entity.SpaceUnits)
+            {
+                if (spaceUnit.IsDeleted)
+                {
+                    spaceUnit.IsDeleted = false;
+                    spaceUnit.DeletedAt = null;
+                }
+            }
+
             Context.SaveChanges();
 
             return Mapper.Map<Model.WorkingSpace>(entity);
+        }
+
+        public override void AfterInsert(WorkingSpaceInsertRequest request, Database.WorkingSpace entity)
+        {
+            base.AfterInsert(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "CREATE",
+            "WorkingSpace",
+            $"Prostor kreiran {entity.WorkingSpacesId}");
+        }
+
+        public override void AfterUpdate(WorkingSpaceUpdateRequest request, Database.WorkingSpace entity)
+        {
+            base.AfterUpdate(request, entity);
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "WorkingSpace",
+            $"Prostor ažuriran {entity.WorkingSpacesId}");
+        }
+
+        public override void AfterDelete(Database.WorkingSpace entity)
+        {
+            base.AfterDelete(entity);
+
+            var spaceUnits = Context.SpaceUnits
+                .Where(su => su.WorkingSpaceId == entity.WorkingSpacesId && !su.IsDeleted)
+                .ToList();
+
+            foreach (var spaceUnit in entity.SpaceUnits)
+            {
+                if (!spaceUnit.IsDeleted)
+                {
+                    spaceUnit.IsDeleted = true;
+                    spaceUnit.DeletedAt = DateTime.UtcNow;
+                    spaceUnit.StateMachine = "draft";
+                }
+            }
+
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "DELETE",
+            "WorkingSpace",
+            $"Prostor obrisan {entity.WorkingSpacesId}");
         }
     }
 }

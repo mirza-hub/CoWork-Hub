@@ -1,9 +1,17 @@
+import 'dart:convert';
+
 import 'package:coworkhub_desktop/models/paged_result.dart';
 import 'package:coworkhub_desktop/models/working_space.dart';
 import 'package:coworkhub_desktop/providers/base_provider.dart';
+import 'package:http/http.dart' as http;
 
 class WorkingSpaceProvider extends BaseProvider<WorkingSpace> {
   WorkingSpaceProvider() : super("WorkingSpace");
+
+  @override
+  WorkingSpace fromJson(data) {
+    return WorkingSpace.fromJson(data);
+  }
 
   Future<PagedResult<WorkingSpace>> getFiltered({
     String? nameFts,
@@ -30,8 +38,18 @@ class WorkingSpaceProvider extends BaseProvider<WorkingSpace> {
     return result;
   }
 
-  @override
-  WorkingSpace fromJson(data) {
-    return WorkingSpace.fromJson(data);
+  Future<WorkingSpace> restore(int id) async {
+    var url = "${BaseProvider.baseUrl}WorkingSpace/$id/restore";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var response = await http.put(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Greška prilikom vraćanja radnog prostora.");
+    }
   }
 }

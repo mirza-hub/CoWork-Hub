@@ -11,9 +11,11 @@ public partial class ActivityLog
 
     public string Action { get; set; } = null!;
 
+    public string Entity { get; set; } = null!;
+
     public string? Description { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public virtual User? User { get; set; } = null!;
 }
