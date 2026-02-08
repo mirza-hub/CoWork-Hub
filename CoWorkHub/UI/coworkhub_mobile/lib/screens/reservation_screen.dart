@@ -637,19 +637,25 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
   }
 
   String buildReservationInfoMessage(Reservation r) {
+    final state = r.stateMachine.toLowerCase();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final start = DateTime(
       r.startDate.year,
       r.startDate.month,
       r.startDate.day,
     );
 
+    if (state == "pending" &&
+        (start == today || start == today.add(const Duration(days: 1)))) {
+      return "Sistem će automatski otkazati rezervaciju kroz 5 minuta ako ne izvršite plaćanje.";
+    }
+
     final cancelDeadline = start.subtract(const Duration(days: 2));
     final autoCancelDate = start.subtract(const Duration(days: 1));
 
     final formattedCancelDeadline = formatDate(cancelDeadline);
     final formattedAutoCancelDate = formatDate(autoCancelDate);
-
-    final state = r.stateMachine.toLowerCase();
 
     if (state == "pending") {
       return "Moguće otkazati do $formattedCancelDeadline. U protivnom sistem će je automatski otkazati $formattedAutoCancelDate kako bi drugi mogli rezervisati";

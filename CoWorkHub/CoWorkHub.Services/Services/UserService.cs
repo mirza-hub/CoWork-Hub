@@ -11,23 +11,27 @@ using CoWorkHub.Services.RabbitMqService;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 
 namespace CoWorkHub.Services.Services
 {
     public class UserService : BaseCRUDService<Model.User, UserSearchObject, Database.User, UserInsertRequest, UserUpdateRequest>, IUserService
     {
+        private readonly ILogger<UserService> _logger;
         private readonly IPasswordService _passwordService;
         private readonly IRabbitMqService _rabbitMqService;
 
         public UserService(_210095Context context, 
             IMapper mapper, 
             IPasswordService passwordService,
-            IRabbitMqService rabbitMqService)
+            IRabbitMqService rabbitMqService,
+            ILogger<UserService> logger)
             : base(context, mapper) 
         {
             _passwordService = passwordService;
             _rabbitMqService = rabbitMqService;
+            _logger = logger;
         }
 
         public override IQueryable<Database.User> AddFilter(UserSearchObject search, IQueryable<Database.User> query)
@@ -82,6 +86,8 @@ namespace CoWorkHub.Services.Services
         public override void BeforeInsert(UserInsertRequest request, Database.User entity)
         {
             base.BeforeInsert(request, entity);
+
+            _logger.LogInformation($"Adding User: {entity.FirstName} {entity.LastName}");
 
             ValidateUserInsert(request);
 

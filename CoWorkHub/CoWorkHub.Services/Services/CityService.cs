@@ -6,18 +6,24 @@ using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 
 namespace CoWorkHub.Services.Services
 {
     public class CityService : BaseCRUDService<Model.City, CitySearchObject, Database.City, CityInsertRequest, CityUpdateRequest>, ICityService
     {
+        private readonly ILogger<CityService> _logger;
         private readonly IGeoLocationService _geoLocationService;
 
-        public CityService(_210095Context context, IMapper mapper, IGeoLocationService geoLocationService)
+        public CityService(_210095Context context, 
+            IMapper mapper, 
+            IGeoLocationService geoLocationService,
+            ILogger<CityService> logger)
             : base(context, mapper) 
         {
             _geoLocationService = geoLocationService;
+            _logger = logger;
         }
 
         public override IQueryable<City> AddFilter(CitySearchObject search, IQueryable<City> query)
@@ -38,6 +44,8 @@ namespace CoWorkHub.Services.Services
         public override void BeforeInsert(CityInsertRequest request, City entity)
         {
             base.BeforeInsert(request, entity);
+
+            _logger.LogInformation($"Adding City: {entity.CityName}");
 
             ValidateCity(request);
 
