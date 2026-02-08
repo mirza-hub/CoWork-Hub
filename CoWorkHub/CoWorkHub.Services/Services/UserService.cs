@@ -132,7 +132,7 @@ namespace CoWorkHub.Services.Services
                 RoleId = roles.RolesId
             });
 
-            int _currentUserId = (int)_currentUserService.GetUserId();
+            int _currentUserId = entity.UsersId;
             _activityLogService.LogAsync(
             _currentUserId,
             "CREATE",

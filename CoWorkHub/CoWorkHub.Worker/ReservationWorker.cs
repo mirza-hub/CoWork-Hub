@@ -28,13 +28,23 @@ namespace CoWorkHub.Worker
             {
                 _logger.LogInformation("ReservationWorker TICK");
 
-                using var scope = _scopeFactory.CreateScope();
-                var reservationService = scope.ServiceProvider.GetRequiredService<IReservationService>();
+                try
+                {
+                    using var scope = _scopeFactory.CreateScope();
+                    var reservationService = scope.ServiceProvider.GetRequiredService<IReservationService>();
 
-                await reservationService.HandleReservationStates();
+                    await reservationService.HandleReservationStates();
 
-                await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
+                    _logger.LogInformation("ReservationWorker SUCCESS");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "ReservationWorker ERROR – retry in 30s");
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }
+
         }
     }
 }

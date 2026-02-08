@@ -301,7 +301,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 2,
                         Capacity = 4,
                         PricePerDay = 60,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
                     new SpaceUnit
@@ -312,7 +312,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 2,
                         Capacity = 3,
                         PricePerDay = 50,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
                     new SpaceUnit
@@ -323,7 +323,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 3,
                         Capacity = 10,
                         PricePerDay = 70,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
                     new SpaceUnit
@@ -334,7 +334,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 1,
                         Capacity = 15,
                         PricePerDay = 12,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
 
@@ -347,7 +347,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 2,
                         Capacity = 4,
                         PricePerDay = 60,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
                     new SpaceUnit
@@ -358,7 +358,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 3,
                         Capacity = 8,
                         PricePerDay = 65,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
                     new SpaceUnit
@@ -369,7 +369,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 1,
                         Capacity = 20,
                         PricePerDay = 12,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
 
@@ -382,7 +382,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 2,
                         Capacity = 4,
                         PricePerDay = 55,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
                     new SpaceUnit
@@ -393,7 +393,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 3,
                         Capacity = 10,
                         PricePerDay = 70,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
                     new SpaceUnit
@@ -404,7 +404,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 1,
                         Capacity = 25,
                         PricePerDay = 15,
-                        StateMachine = "draft",
+                        StateMachine = "active",
                         CreatedAt = DateTime.UtcNow
                     },
 
@@ -417,7 +417,7 @@ namespace CoWorkHub.Services.Seed
                         WorkspaceTypeId = 2,
                         Capacity = 4,
                         PricePerDay = 65,
-                        StateMachine = "draft",
+                        StateMachine = "dractiveaft",
                         CreatedAt = DateTime.UtcNow
                     },
                     new SpaceUnit

@@ -146,6 +146,7 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
         filter: {
           'SpaceUnitId': widget.spaceUnit!.spaceUnitId,
           'RetrieveAll': true,
+          'IsDeleted': false,
         },
       );
 

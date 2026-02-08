@@ -46,7 +46,7 @@ namespace CoWorkHub.Services.Services.Recommender
                 {
                     SpaceUnitId = s.SpaceUnitId,
                     Name = s.Name,
-                    Description = s.Description,
+                    Description = s.Description ?? "",
                     WorkspaceType = s.WorkspaceType?.TypeName ?? "",
                     Capacity = s.Capacity,
                     PricePerDay = (float)s.PricePerDay,
@@ -61,11 +61,11 @@ namespace CoWorkHub.Services.Services.Recommender
                 }).ToList();
 
                 // Kreiranje ML pipeline
-                var pipeline = _mlContext.Transforms.Text.FeaturizeText(
-                        outputColumnName: "WorkspaceTypeFeaturized",
+                var pipeline = _mlContext.Transforms.Categorical.OneHotEncoding(
+                        outputColumnName: "WorkspaceTypeEncoded",
                         inputColumnName: nameof(SpaceUnitData.WorkspaceType))
-                    .Append(_mlContext.Transforms.Text.FeaturizeText(
-                        outputColumnName: "CityFeaturized",
+                    .Append(_mlContext.Transforms.Categorical.OneHotEncoding(
+                        outputColumnName: "CityEncoded",
                         inputColumnName: nameof(SpaceUnitData.City)))
                     .Append(_mlContext.Transforms.Text.FeaturizeText(
                         outputColumnName: "ResourcesFeaturized",
@@ -75,8 +75,8 @@ namespace CoWorkHub.Services.Services.Recommender
                         inputColumnName: nameof(SpaceUnitData.Description)))
                     .Append(_mlContext.Transforms.Concatenate(
                         outputColumnName: "Features",
-                        "WorkspaceTypeFeaturized",
-                        "CityFeaturized",
+                        "WorkspaceTypeEncoded",
+                        "CityEncoded",
                         "ResourcesFeaturized",
                         "DescriptionFeaturized"));
 
@@ -91,6 +91,7 @@ namespace CoWorkHub.Services.Services.Recommender
                 throw;
             }
         }
+
 
         public async Task<List<SpaceUnitPrediction>> GetRecommendedSpaces(int userId)
         {
