@@ -14,12 +14,20 @@ namespace CoWorkHub.Subscriber
             Env.Load();
 
             string fromAddress = Environment.GetEnvironmentVariable("_fromAddress") ?? "topstvari0@gmail.com";
-            string password = Environment.GetEnvironmentVariable("_password") ?? "gkfj rabr qtaq cvlr";
+            string password = Environment.GetEnvironmentVariable("_password") ?? string.Empty;
             string host = Environment.GetEnvironmentVariable("_host") ?? "smtp.gmail.com";
             int port = int.Parse(Environment.GetEnvironmentVariable("_port") ?? "465");
             bool enableSSL = bool.Parse(Environment.GetEnvironmentVariable("_enableSSL") ?? "true");
             string displayName = Environment.GetEnvironmentVariable("_displayName") ?? "no-reply";
             int timeout = int.Parse(Environment.GetEnvironmentVariable("_timeout") ?? "255");
+            Console.WriteLine($"From address: {fromAddress}");
+            Console.WriteLine($"Password: {password}");
+            Console.WriteLine($"Host: {host}");
+            Console.WriteLine($"Port: {port}");
+            Console.WriteLine($"SSL: {enableSSL}");
+            Console.WriteLine($"Dispay name: {displayName}");
+            Console.WriteLine($"Timeout: {timeout}");
+
             Console.WriteLine($"Ušli smo u metodu prije password: {password}");
             if (password == string.Empty)
             {

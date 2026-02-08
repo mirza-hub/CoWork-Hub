@@ -15,6 +15,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+enum DatePickMode { singleDay, range }
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -59,23 +61,59 @@ class _HomePageState extends State<HomePage> {
   }
 
   void pickDateRange() async {
-    DateTimeRange? picked = await showDateRangePicker(
+    final mode = await showModalBottomSheet<DatePickMode>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.today_outlined),
+                title: const Text('Jedan dan'),
+                onTap: () => Navigator.pop(context, DatePickMode.singleDay),
+              ),
+              ListTile(
+                leading: const Icon(Icons.date_range_outlined),
+                title: const Text('Raspon datuma'),
+                onTap: () => Navigator.pop(context, DatePickMode.range),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || mode == null) return;
+
+    if (mode == DatePickMode.singleDay) {
+      final picked = await showDatePicker(
+        context: context,
+        firstDate: DateTime.now(),
+        lastDate: DateTime(2100, 12, 31),
+        initialDate: selectedDateRange?.start ?? DateTime.now(),
+      );
+      if (picked != null && mounted) {
+        setState(() {
+          selectedDateRange = DateTimeRange(start: picked, end: picked);
+        });
+      }
+      return;
+    }
+
+    final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime.now(),
       lastDate: DateTime(2100, 12, 31),
       initialDateRange: selectedDateRange,
     );
 
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
-        if (picked.end.isAtSameMomentAs(picked.start)) {
-          selectedDateRange = DateTimeRange(
-            start: picked.start,
-            end: picked.start,
-          );
-        } else {
-          selectedDateRange = picked;
-        }
+        selectedDateRange = picked;
       });
     }
   }

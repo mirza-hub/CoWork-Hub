@@ -6,14 +6,20 @@ using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
+using Microsoft.Extensions.Logging;
 
 namespace CoWorkHub.Services.Services
 {
     public class ResourcesService : BaseCRUDService<Model.Resource, ResourcesSearchObject, Database.Resource, ResourcesInsertRequest, ResourcesUpdateRequest>, IResourcesService
     {
-        public ResourcesService(_210095Context context, IMapper mapper)
+        private readonly ILogger<ResourcesService> _logger;
+        public ResourcesService(_210095Context context, 
+            IMapper mapper,
+            ILogger<ResourcesService> logger)
             : base(context, mapper) 
-        { }
+        {
+            _logger = logger;
+        }
 
         public override IQueryable<Resource> AddFilter(ResourcesSearchObject search, IQueryable<Resource> query)
         {
@@ -30,6 +36,8 @@ namespace CoWorkHub.Services.Services
         public override void BeforeInsert(ResourcesInsertRequest request, Resource entity)
         {
             base.BeforeInsert(request, entity);
+
+            _logger.LogInformation($"Adding Resource: {entity.ResourceName}");
 
             if (string.IsNullOrWhiteSpace(request.ResourceName))
                 throw new UserException("Naziv resursa ne smije biti prazan.");

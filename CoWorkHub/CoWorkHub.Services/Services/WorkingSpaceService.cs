@@ -16,14 +16,17 @@ namespace CoWorkHub.Services.Services
 {
     public class WorkingSpaceService : BaseCRUDService<Model.WorkingSpace, WorkingSpaceSearchObject, Database.WorkingSpace, WorkingSpaceInsertRequest, WorkingSpaceUpdateRequest>, IWorkingSpaceService
     {
+        private readonly ILogger<WorkingSpaceService> _logger;
         private readonly ICurrentUserService _currentUserService;
 
         public WorkingSpaceService(_210095Context context, 
             IMapper mapper, 
-            ICurrentUserService currentUserService) 
+            ICurrentUserService currentUserService,
+            ILogger<WorkingSpaceService> logger) 
             : base(context, mapper) 
         {
             _currentUserService = currentUserService;
+            _logger = logger;
         }
 
         public override IQueryable<Database.WorkingSpace> AddFilter(WorkingSpaceSearchObject search, IQueryable<Database.WorkingSpace> query)
@@ -54,6 +57,8 @@ namespace CoWorkHub.Services.Services
         public override void BeforeInsert(WorkingSpaceInsertRequest request, Database.WorkingSpace entity)
         {
             base.BeforeInsert(request, entity);
+
+            _logger.LogInformation($"Adding WorkingSpace: {entity.Name}");
 
             var existingWorkingSpace = Context.WorkingSpaces
                .FirstOrDefault(x => x.Name.ToLower() == request.Name.ToLower());

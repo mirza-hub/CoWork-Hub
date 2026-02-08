@@ -5,14 +5,21 @@ using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 
 namespace CoWorkHub.Services.Services
 {
     public class CountryService : BaseCRUDService<Model.Country, CountrySearchObject, Database.Country, CountryInsertRequest, CountryUpdateRequest>, ICountryService
     {
-        public CountryService(_210095Context context, IMapper mapper) 
-            : base(context, mapper) { }
+        private readonly ILogger<CountryService> _logger;
+        public CountryService(_210095Context context, 
+            IMapper mapper,
+            ILogger<CountryService> logger) 
+            : base(context, mapper) 
+        { 
+            _logger=logger;
+        }
 
         public override IQueryable<Database.Country> AddFilter(CountrySearchObject search, IQueryable<Database.Country> query)
         {
@@ -29,6 +36,8 @@ namespace CoWorkHub.Services.Services
         public override void BeforeInsert(CountryInsertRequest request, Country entity)
         {
             base.BeforeInsert(request, entity);
+
+            _logger.LogInformation($"Adding Country: {entity.CountryName}");
 
             ValidateCountryName(request.CountryName);
 

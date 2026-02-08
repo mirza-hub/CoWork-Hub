@@ -5,6 +5,7 @@ using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services.BaseServicesImplementation;
 using MapsterMapper;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,9 +16,15 @@ namespace CoWorkHub.Services.Services
 {
     public class RoleService : BaseCRUDService<Model.Role, RoleSearchObject, Database.Role, RoleInsertRequest, RoleUpdateRequest>, IRoleService
     {
-        public RoleService(_210095Context context, IMapper mapper) 
+        private readonly ILogger<RoleService> _logger;
+
+        public RoleService(_210095Context context, 
+            IMapper mapper,
+            ILogger<RoleService> logger) 
             : base(context, mapper)
-        { }
+        { 
+            _logger = logger;
+        }
 
         public override IQueryable<Role> AddFilter(RoleSearchObject search, IQueryable<Role> query)
         {
@@ -34,6 +41,8 @@ namespace CoWorkHub.Services.Services
         public override void BeforeInsert(RoleInsertRequest request, Role entity)
         {
             base.BeforeInsert(request, entity);
+
+            _logger.LogInformation($"Adding Role: {entity.RoleName}");
 
             var existingRole = Context.Roles
                 .FirstOrDefault(x => x.RoleName.ToLower() == request.RoleName.ToLower());

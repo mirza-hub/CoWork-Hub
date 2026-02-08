@@ -61,7 +61,7 @@ namespace CoWorkHub.Services.Services
 
             if (search.OnlyActive == true)
             {
-                query = query.Where(r => r.EndDate >= DateTime.UtcNow && (r.StateMachine == "pending" || r.StateMachine=="confirmed"));
+                query = query.Where(r => r.EndDate >= DateTime.UtcNow.Date && (r.StateMachine == "pending" || r.StateMachine=="confirmed"));
             }
 
             if (search!.DateFrom.HasValue)
@@ -154,7 +154,8 @@ namespace CoWorkHub.Services.Services
 
         public async Task HandleReservationStates()
         {
-            var today = DateTime.UtcNow.Date;
+            var now = DateTime.UtcNow;
+            var today = now.Date;
 
             var confirmedReservations = await Context.Reservations
                 .Where(r => r.StateMachine == "confirmed" && r.EndDate < today)
@@ -175,6 +176,20 @@ namespace CoWorkHub.Services.Services
             foreach (var r in pendingReservations)
             {
                 r.StateMachine = "canceled";
+            }
+
+            // Instant 5-minutno otkazivanje za rezervacije istog dana ili sutrašnje
+            var recentPending = await Context.Reservations
+                .Where(r => r.StateMachine == "pending" &&
+                            (r.StartDate == today || r.StartDate == today.AddDays(1)))
+                .ToListAsync();
+
+            foreach (var r in recentPending)
+            {
+                if ((now - r.CreatedAt).TotalMinutes >= 5)
+                {
+                    r.StateMachine = "canceled";
+                }
             }
 
             await Context.SaveChangesAsync();

@@ -87,7 +87,7 @@ builder.Services.AddSwaggerGen(c =>
 
 });
 
-//DotNetEnv.Env.Load();
+DotNetEnv.Env.Load();
 
 var connectionString = builder.Configuration.GetConnectionString("CoWorkHubConnection");
 builder.Services.AddDbContext<_210095Context>(options =>

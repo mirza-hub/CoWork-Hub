@@ -15,6 +15,8 @@ var builder = Host.CreateApplicationBuilder(args);
 // eksplicitno učitavanje environment varijabli iz Docker-a
 builder.Configuration.AddEnvironmentVariables();
 
+Env.Load();
+
 // DbContext
 builder.Services.AddDbContext<_210095Context>(options =>
 {
