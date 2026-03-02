@@ -1,13 +1,12 @@
 import 'package:coworkhub_mobile/providers/payment_provider.dart';
 import 'package:coworkhub_mobile/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_paypal_payment/flutter_paypal_payment.dart';
 import 'package:provider/provider.dart';
 
 import '../models/space_unit.dart';
 import '../models/payment_method.dart';
 import '../providers/payment_method_provider.dart';
+import 'paypal_webview_screen.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
   final SpaceUnit spaceUnit;
@@ -155,73 +154,73 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       return;
     }
 
-    final bool? isSuccess = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (context) => PaypalCheckoutView(
-          sandboxMode: true,
-          clientId: dotenv.env['PAYPAL_CLIENT_ID'] ?? "",
-          secretKey: dotenv.env['PAYPAL_SECRET'] ?? "",
-          transactions: [
-            {
-              "amount": {
-                "total": totalPrice.toStringAsFixed(2),
-                "currency": "USD",
-                "details": {
-                  "subtotal": totalPrice.toStringAsFixed(2),
-                  "shipping": '0',
-                },
-              },
-              "description": "Payment",
-              "item_list": {
-                "items": [
-                  {
-                    "name": widget.spaceUnit.name,
-                    "quantity": 1,
-                    "price": totalPrice.toStringAsFixed(2),
-                    "currency": "USD",
-                  },
-                ],
-              },
-            },
-          ],
-          note: "Hvala na bukiranju!",
+    final paymentProvider = context.read<PaymentProvider>();
 
-          onSuccess: (Map params) async {
-            try {
-              final paymentProvider = context.read<PaymentProvider>();
+    try {
+      // Kreiraj PayPal order na backendu
+      final formattedPrice = totalPrice.toStringAsFixed(2).replaceAll(',', '.');
+      final paypalOrder = await paymentProvider.createPaypalOrder(
+        double.parse(formattedPrice),
+      );
 
-              await paymentProvider.insert({
-                "reservationId": widget.reservationId,
-                "paymentMethodId": 2,
-                "totalPaymentAmount": totalPrice,
-                "discount": 0,
-              });
+      if (paypalOrder.approvalUrl == null) {
+        showTopFlushBar(
+          context: context,
+          message: "Greška pri dobijanju PayPal linka",
+          backgroundColor: Colors.red,
+        );
+        return;
+      }
 
-              if (!context.mounted) return;
-
-              Navigator.of(context).pop(true);
-            } catch (e) {
-              if (!context.mounted) return;
-              Navigator.of(context).pop(false);
-            }
-          },
-
-          onError: (error) {
-            if (!context.mounted) return;
-            Navigator.of(context).pop(false);
-          },
-
-          onCancel: () {
-            if (!context.mounted) return;
-            Navigator.of(context).pop(false);
-          },
+      // Otvori webview za PayPal approval
+      final bool? isApproved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => PaypalWebviewScreen(
+            approvalUrl: paypalOrder.approvalUrl!,
+            orderId: paypalOrder.id,
+          ),
         ),
-      ),
-    );
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    Navigator.of(context).pop(isSuccess);
+      // Ako je korisnik odobrio plaćanje
+      if (isApproved == true) {
+        try {
+          // Potvrdi PayPal order na backendu
+          await paymentProvider.capturePaypalOrder(paypalOrder.id);
+
+          // Sačuvaj placanje u bazi
+          await paymentProvider.insert({
+            "reservationId": widget.reservationId,
+            "paymentMethodId": method.paymentMethodId,
+            "totalPaymentAmount": totalPrice,
+            "discount": 0,
+          });
+
+          if (!mounted) return;
+          Navigator.of(context).pop(true);
+        } catch (e) {
+          showTopFlushBar(
+            context: context,
+            message: "Greška pri potvrdi plaćanja: ${e.toString()}",
+            backgroundColor: Colors.red,
+          );
+        }
+      } else {
+        showTopFlushBar(
+          context: context,
+          message: "Plaćanje je otkazano",
+          backgroundColor: Colors.orange,
+        );
+      }
+    } catch (e) {
+      showTopFlushBar(
+        context: context,
+        message: "Greška pri kreiranju PayPal narudžbe: ${e.toString()}",
+        backgroundColor: Colors.red,
+      );
+    }
   }
 
   Widget _paymentIcon(String name) {

@@ -23,6 +23,7 @@ namespace CoWorkHub.Services.Services
         private readonly IRabbitMqService _rabbitMqService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public UserService(_210095Context context, 
             IMapper mapper, 
@@ -30,7 +31,8 @@ namespace CoWorkHub.Services.Services
             IRabbitMqService rabbitMqService,
             ILogger<UserService> logger,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService
+            IActivityLogService activityLogService,
+            INotificationService notificationService
             )
             : base(context, mapper) 
         {
@@ -39,6 +41,7 @@ namespace CoWorkHub.Services.Services
             _logger = logger;
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<Database.User> AddFilter(UserSearchObject search, IQueryable<Database.User> query)
@@ -387,6 +390,11 @@ namespace CoWorkHub.Services.Services
             "UPDATE",
             "User",
             $"Korisnik ažuriran {entity.UsersId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste ažurirali profil {entity.FirstName} {entity.LastName}."
+            });
         }
 
         public override void AfterDelete(Database.User entity)
@@ -398,6 +406,11 @@ namespace CoWorkHub.Services.Services
             "DELETE",
             "User",
             $"Korisnik obrisan {entity.UsersId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali profil {entity.FirstName} {entity.LastName}."
+            });
         }
 
         private void ValidateUserInsert(UserInsertRequest request)

@@ -15,14 +15,18 @@ var builder = Host.CreateApplicationBuilder(args);
 // eksplicitno učitavanje environment varijabli iz Docker-a
 builder.Configuration.AddEnvironmentVariables();
 
-Env.Load();
+var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".env");
+
+if (File.Exists(envPath))
+{
+    Env.Load(envPath);
+}
 
 // DbContext
 builder.Services.AddDbContext<_210095Context>(options =>
 {
     // U Dockeru koristi env varijablu, fallback na appsettings
     var connStr = builder.Configuration.GetConnectionString("CoWorkHubConnection");
-    Console.WriteLine($"Using connection string: {connStr}");
     options.UseSqlServer(connStr);
 });
 
@@ -34,6 +38,8 @@ builder.Services.AddSingleton<IMapper, ServiceMapper>();
 builder.Services.AddSingleton<ICurrentUserService, WorkerCurrentUserService>();
 
 // Servisi
+builder.Services.AddTransient<INotificationService, NotificationService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 
 // State machines – Reservation
@@ -43,6 +49,7 @@ builder.Services.AddTransient<PendingReservationState>();
 builder.Services.AddTransient<ConfirmedReservationState>();
 builder.Services.AddTransient<CanceledReservationiState>();
 builder.Services.AddTransient<CompletedReservationiState>();
+
 
 // Worker
 builder.Services.AddHostedService<ReservationWorker>();

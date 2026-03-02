@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:coworkhub_mobile/layout/layout_screen.dart';
 import 'package:coworkhub_mobile/providers/city_provider.dart';
+import 'package:coworkhub_mobile/providers/notification_provider.dart';
 import 'package:coworkhub_mobile/providers/payment_method_provider.dart';
 import 'package:coworkhub_mobile/providers/payment_provider.dart';
 import 'package:coworkhub_mobile/providers/reservation_provider.dart';
@@ -48,6 +49,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => ReviewProvider()),
         ChangeNotifierProvider(create: (_) => WorkingSpaceImageProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: const MyApp(),
     ),

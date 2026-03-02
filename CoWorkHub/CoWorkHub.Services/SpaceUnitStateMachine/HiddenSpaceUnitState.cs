@@ -1,4 +1,5 @@
 ﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
@@ -16,17 +17,21 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public HiddenSpaceUnitState(
             _210095Context context, 
             IMapper mapper, 
             IServiceProvider serviceProvider,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService)
+            IActivityLogService activityLogService,
+            INotificationService notificationService
+            )
             : base(context, mapper, serviceProvider)
         {
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override async Task<Model.SpaceUnit> Edit(int id, CancellationToken cancellationToken)
@@ -51,6 +56,11 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             "EDIT",
             "SpaceUnit",
             $"Prostorna jedinica prebačena u draft {entity.SpaceUnitId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste prostornu jedinicu prebacili u draft {entity.Name}."
+            });
 
             return Mapper.Map<Model.SpaceUnit>(entity);
         }
@@ -77,6 +87,11 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             "ACTIVATE",
             "SpaceUnit",
             $"Prostorna jedinica aktvirana {entity.SpaceUnitId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste aktivirali prostornu jedinicu {entity.Name}."
+            });
 
             return Mapper.Map<Model.SpaceUnit>(entity);
         }
@@ -103,6 +118,11 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             "MAINTENANCE",
             "SpaceUnit",
             $"Prostorna jedinica prebačena u stanje održavanja {entity.SpaceUnitId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste prostornu jedinicu prebacili u stanje održavanja {entity.Name}."
+            });
 
             return Mapper.Map<Model.SpaceUnit>(entity);
         }
@@ -128,6 +148,11 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             "EDIT",
             "SpaceUnit",
             $"Prostorna jedinica obrisan {entity.SpaceUnitId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali prostornu jedinicu {entity.Name}."
+            });
 
             await Context.SaveChangesAsync(cancellationToken);
         }

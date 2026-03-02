@@ -154,9 +154,10 @@ namespace CoWorkHub.Services.Services
 
         public async Task HandleReservationStates()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var today = now.Date;
 
+            // Potvrđene rezervacije koje su završile → completed
             var confirmedReservations = await Context.Reservations
                 .Where(r => r.StateMachine == "confirmed" && r.EndDate < today)
                 .ToListAsync();
@@ -166,19 +167,21 @@ namespace CoWorkHub.Services.Services
                 r.StateMachine = "completed";
             }
 
-            // Neplaćene i dan prije starta → Canceled
-            var pendingReservations = await Context.Reservations
+            // Pending rezervacije koje su dan prije starta ili su završene → canceled
+            var pendingReservationsToCancel = await Context.Reservations
                 .Where(r => r.StateMachine == "pending" &&
-                      (r.EndDate < today || r.StartDate.AddDays(-1) <= today))
+                            (r.EndDate < today || r.StartDate.AddDays(-1) <= today))
                 .ToListAsync();
 
-
-            foreach (var r in pendingReservations)
+            foreach (var r in pendingReservationsToCancel)
             {
-                r.StateMachine = "canceled";
+                if ((now - r.CreatedAt).TotalMinutes >= 5)
+                {
+                    r.StateMachine = "canceled";
+                }
             }
 
-            // Instant 5-minutno otkazivanje za rezervacije istog dana ili sutrašnje
+            // Pending rezervacije za danas ili sutra → instant 5-minutno otkazivanje
             var recentPending = await Context.Reservations
                 .Where(r => r.StateMachine == "pending" &&
                             (r.StartDate == today || r.StartDate == today.AddDays(1)))
@@ -186,6 +189,7 @@ namespace CoWorkHub.Services.Services
 
             foreach (var r in recentPending)
             {
+                // Provjeri da nije već u prvom bloku (ne smije biti ranije otkazana)
                 if ((now - r.CreatedAt).TotalMinutes >= 5)
                 {
                     r.StateMachine = "canceled";

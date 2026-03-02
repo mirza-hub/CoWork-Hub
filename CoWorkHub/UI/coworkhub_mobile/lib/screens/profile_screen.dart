@@ -330,7 +330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(40),
+        preferredSize: const Size.fromHeight(70),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 43, 16, 5),
@@ -347,7 +347,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: const Center(
             child: Text(
               'Moj profil',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           ),
         ),

@@ -535,6 +535,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey[300],
+                            side: BorderSide(color: Colors.grey[300]!),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -1006,7 +1007,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                                                     showTopFlushBar(
                                                       context: context,
                                                       message:
-                                                          "Plaćanje uspješno!",
+                                                          "Rezervacija je uspješno plaćena",
                                                       backgroundColor:
                                                           Colors.green,
                                                     );
@@ -1018,7 +1019,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                                                     showTopFlushBar(
                                                       context: context,
                                                       message:
-                                                          "Plaćanje nije uspješno ili je otkazano",
+                                                          "Plaćanje rezervacije nije uspješno ili je otkazano",
                                                       backgroundColor:
                                                           Colors.red,
                                                     );

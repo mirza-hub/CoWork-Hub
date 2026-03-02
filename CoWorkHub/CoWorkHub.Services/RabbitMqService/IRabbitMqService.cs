@@ -9,5 +9,6 @@ namespace CoWorkHub.Services.RabbitMqService
     public interface IRabbitMqService
     {
         Task SendAnEmail(Model.Messages.EmailDTO mail);
+        public void SendReservationStateEvent();
     }
 }

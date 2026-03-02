@@ -21,15 +21,19 @@ namespace CoWorkHub.Services.Services
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public ReviewService(_210095Context context, 
             IMapper mapper,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService) 
+            IActivityLogService activityLogService,
+            INotificationService notificationService
+            ) 
             : base(context, mapper)
         {
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<Database.Review> AddFilter(ReviewSearchObject search, IQueryable<Database.Review> query)
@@ -147,6 +151,32 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "Review",
             $"Kreirana recenzija {entity.ReviewsId} za rezervaciju {entity.ReservationId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste recenzirali prostor {entity.Reservation.SpaceUnit.Name}."
+            });
+
+            var adminIds = Context.UserRoles
+                .Where(ur => ur.Role.RoleName == "Admin")
+                .Select(ur => ur.UserId)
+                .ToList();
+
+            string _currentUserId2 = "Test";
+            Database.User? _currentUser = _currentUserService.GetCurrentUser();
+            if (_currentUser != null)
+            {
+                _currentUserId2 = _currentUser.FirstName + " " + _currentUser.LastName;
+            }
+
+            foreach (var adminId in adminIds)
+            {
+                _notificationService.Insert(new NotificationInsertRequest
+                {
+                    UserId = adminId,
+                    Message = $"{_currentUserId2} je recenzirao prostor za {entity.Reservation.SpaceUnit.Name} kroz rezervaciju {entity.ReservationId}."
+                });
+            }
         }
 
         public override void AfterUpdate(ReviewUpdateRequest request, Database.Review entity)
@@ -157,7 +187,33 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "UPDATE",
             "Review",
-            $"Kreirana recenzija {entity.ReviewsId} za rezervaciju {entity.ReservationId}");
+            $"Ažurirana recenzija {entity.ReviewsId} za rezervaciju {entity.ReservationId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste promijenili recenziju za prostor {entity.Reservation.SpaceUnit.Name}."
+            });
+
+            var adminIds = Context.UserRoles
+                .Where(ur => ur.Role.RoleName == "Admin")
+                .Select(ur => ur.UserId)
+                .ToList();
+
+            string _currentUserId2 = "Test";
+            Database.User? _currentUser = _currentUserService.GetCurrentUser();
+            if (_currentUser != null)
+            {
+                _currentUserId2 = _currentUser.FirstName + " " + _currentUser.LastName;
+            }
+
+            foreach (var adminId in adminIds)
+            {
+                _notificationService.Insert(new NotificationInsertRequest
+                {
+                    UserId = adminId,
+                    Message = $"{_currentUserId2} je promijenio recenziju za prostor {entity.Reservation.SpaceUnit.Name} kroz rezervaciju {entity.ReservationId}."
+                });
+            }
         }
 
         public override void AfterDelete(Database.Review entity)
@@ -169,6 +225,32 @@ namespace CoWorkHub.Services.Services
             "DELETE",
             "Review",
             $"Kreirana recenzija  {entity.ReviewsId}  za rezervaciju {entity.ReservationId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali recenziju za prostor {entity.Reservation.SpaceUnit.Name}."
+            });
+
+            var adminIds = Context.UserRoles
+                .Where(ur => ur.Role.RoleName == "Admin")
+                .Select(ur => ur.UserId)
+                .ToList();
+
+            string _currentUserId2 = "Test";
+            Database.User? _currentUser = _currentUserService.GetCurrentUser();
+            if (_currentUser != null)
+            {
+                _currentUserId2 = _currentUser.FirstName + " " + _currentUser.LastName;
+            }
+
+            foreach (var adminId in adminIds)
+            {
+                _notificationService.Insert(new NotificationInsertRequest
+                {
+                    UserId = adminId,
+                    Message = $"{_currentUserId2} je obrisao recenziju za prostor {entity.Reservation.SpaceUnit.Name} kroz rezervaciju {entity.ReservationId}."
+                });
+            }
         }
     }
 }

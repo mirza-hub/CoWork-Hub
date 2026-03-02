@@ -11,7 +11,7 @@ namespace CoWorkHub.Subscriber
         {
             if (mailObj == null) return;
             //DotNetEnv.Env.Load();
-            Env.Load();
+            //Env.Load();
 
             string fromAddress = Environment.GetEnvironmentVariable("_fromAddress") ?? "topstvari0@gmail.com";
             string password = Environment.GetEnvironmentVariable("_password") ?? string.Empty;
@@ -62,7 +62,7 @@ namespace CoWorkHub.Subscriber
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Greska SA SLANJEM PORUKA!");
+                Console.WriteLine("Greška SA SLANJEM PORUKA!");
 
                 Console.WriteLine($"Error {ex.Message}");
                 return;

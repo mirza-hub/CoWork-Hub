@@ -19,18 +19,21 @@ namespace CoWorkHub.Services.Services
         private readonly ILogger<WorkingSpaceService> _logger;
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public WorkingSpaceService(_210095Context context, 
             IMapper mapper, 
             ICurrentUserService currentUserService,
             ILogger<WorkingSpaceService> logger,
-            IActivityLogService activityLogService
+            IActivityLogService activityLogService,
+            INotificationService notificationService
             ) 
             : base(context, mapper) 
         {
             _currentUserService = currentUserService;
             _logger = logger;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<Database.WorkingSpace> AddFilter(WorkingSpaceSearchObject search, IQueryable<Database.WorkingSpace> query)
@@ -160,6 +163,11 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "WorkingSpace",
             $"Prostor kreiran {entity.WorkingSpacesId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste dodali prostor {entity.Name}."
+            });
         }
 
         public override void AfterUpdate(WorkingSpaceUpdateRequest request, Database.WorkingSpace entity)
@@ -171,6 +179,11 @@ namespace CoWorkHub.Services.Services
             "UPDATE",
             "WorkingSpace",
             $"Prostor ažuriran {entity.WorkingSpacesId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste ažurirali prostor {entity.Name}."
+            });
         }
 
         public override void AfterDelete(Database.WorkingSpace entity)
@@ -197,6 +210,11 @@ namespace CoWorkHub.Services.Services
             "DELETE",
             "WorkingSpace",
             $"Prostor obrisan {entity.WorkingSpacesId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali prostor {entity.Name}."
+            });
         }
     }
 }

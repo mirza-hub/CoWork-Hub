@@ -8,6 +8,7 @@ import 'package:coworkhub_mobile/screens/home_page.dart';
 import 'package:coworkhub_mobile/screens/reservation_screen.dart';
 import 'package:coworkhub_mobile/screens/history_reservation_screen.dart';
 import 'package:coworkhub_mobile/screens/profile_screen.dart';
+import 'package:coworkhub_mobile/screens/notification_screen.dart';
 import 'package:provider/provider.dart';
 
 _LayoutScreenState? _layoutScreenState;
@@ -249,6 +250,11 @@ class _LayoutScreenState extends State<LayoutScreen>
                         title: "Historija rezervacija",
                         icon: Icons.history,
                         page: const HistoryScreen(),
+                      ),
+                      _menuItem(
+                        title: "Notifikacije",
+                        icon: Icons.notifications_outlined,
+                        page: const NotificationsScreen(),
                       ),
                       _menuItem(
                         title: "Moj profil",
