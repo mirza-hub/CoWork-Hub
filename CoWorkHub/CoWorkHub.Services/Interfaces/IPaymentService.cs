@@ -1,4 +1,5 @@
-﻿using CoWorkHub.Model.Requests;
+﻿using CoWorkHub.Model;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
 using System;
@@ -10,5 +11,8 @@ using System.Threading.Tasks;
 namespace CoWorkHub.Services.Interfaces
 {
     public interface IPaymentService : ICRUDService<Model.Payment, PaymentSearchObject, PaymentInsertRequest, PaymentUpdateRequest>
-    { }
+    {
+        public Task<string> CreatePaypalOrder(decimal amount);
+        public Task<string> CapturePaypalOrder(string orderId);
+    }
 }

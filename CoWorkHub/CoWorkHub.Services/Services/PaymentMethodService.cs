@@ -18,16 +18,19 @@ namespace CoWorkHub.Services.Services
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public PaymentMethodService(_210095Context context, 
             IMapper mapper,
             IActivityLogService activityLogService,
-            ICurrentUserService currentUserService
+            ICurrentUserService currentUserService,
+            INotificationService notificationService
             ) 
             : base(context, mapper)
         {
             _activityLogService = activityLogService;
             _currentUserService = currentUserService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<PaymentMethod> AddFilter(PaymentMethodSearchObject search, IQueryable<PaymentMethod> query)
@@ -97,6 +100,11 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "PaymentMethod",
             $"Kreiran novi način plaćanja {entity.PaymentMethodId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste dodali novi način plaćanja {entity.PaymentMethodName}."
+            });
         }
 
         public override void AfterUpdate(PaymentMethodUpdateRequest request, PaymentMethod entity)
@@ -108,6 +116,11 @@ namespace CoWorkHub.Services.Services
             "UPDATE",
             "PaymentMethod",
             $"Ažuriran način plaćanja {entity.PaymentMethodId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste ažurirali način plaćanja {entity.PaymentMethodName}."
+            });
         }
 
         public override void AfterDelete(PaymentMethod entity)
@@ -119,6 +132,11 @@ namespace CoWorkHub.Services.Services
             "DELETE",
             "PaymentMethod",
             $"Obrisan način plaćanja {entity.PaymentMethodId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali način plaćanja {entity.PaymentMethodName}."
+            });
         }
     }
 }

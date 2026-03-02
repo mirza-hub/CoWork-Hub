@@ -285,7 +285,21 @@ class _WorkingSpaceDetailsScreenState extends State<WorkingSpaceDetailsScreen>
         bool? selectedDeleted = filterIsDeleted ?? false;
 
         return AlertDialog(
-          title: const Text("Filteri"),
+          titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          title: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  "Filteri",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

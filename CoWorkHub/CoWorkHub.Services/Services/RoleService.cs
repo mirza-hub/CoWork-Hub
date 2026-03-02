@@ -20,17 +20,20 @@ namespace CoWorkHub.Services.Services
         private readonly ILogger<RoleService> _logger;
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public RoleService(_210095Context context, 
             IMapper mapper,
             ILogger<RoleService> logger,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService) 
+            IActivityLogService activityLogService,
+            INotificationService notificationService) 
             : base(context, mapper)
         { 
             _logger = logger;
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<Role> AddFilter(RoleSearchObject search, IQueryable<Role> query)
@@ -104,6 +107,11 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "Role",
             $"Kreirana nova rola {entity.RolesId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste dodali novu ulogu {entity.RoleName}."
+            });
         }
 
         public override void AfterUpdate(RoleUpdateRequest request, Role entity)
@@ -115,6 +123,11 @@ namespace CoWorkHub.Services.Services
             "UPDATE",
             "Role",
             $"Ažurirana Rola {entity.RolesId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste ažurirali ulogu {entity.RoleName}."
+            });
         }
 
         public override void AfterDelete(Role entity)
@@ -126,6 +139,11 @@ namespace CoWorkHub.Services.Services
             "DELETE",
             "Role",
             $"Obrisana Rola {entity.RolesId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali ulogu {entity.RoleName}."
+            });
         }
     }
 }

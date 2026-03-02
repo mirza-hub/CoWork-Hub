@@ -21,6 +21,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
         ISpaceUnitResourceService _spaceUnitResourceService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public InitialSpaceUnitState(
             _210095Context context, 
@@ -29,7 +30,8 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             ISpaceUnitImageService spaceUnitImageService,
             ISpaceUnitResourceService spaceUnitResourceService,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService
+            IActivityLogService activityLogService,
+            INotificationService notificationService
             ) 
             : base(context, mapper, serviceProvider)
         {
@@ -37,6 +39,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _spaceUnitResourceService = spaceUnitResourceService;
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override async Task<Model.SpaceUnit> Insert(SpaceUnitInsertRequest request, CancellationToken cancellationToken)
@@ -92,7 +95,12 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "CREATE",
             "SpaceUnit",
-            $"Kreiran nova Prostorna jedinica {entity.SpaceUnitId}");
+            $"Kreirana nova Prostorna jedinica {entity.SpaceUnitId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste dodali novu prostornu jedinicu {entity.Name}."
+            });
 
             return Mapper.Map<Model.SpaceUnit>(entity);
         }

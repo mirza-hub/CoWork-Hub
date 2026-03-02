@@ -1,4 +1,10 @@
+using CoWorkHub.Model.Messages;
 using CoWorkHub.Services.Interfaces;
+using DotNetEnv;
+using Newtonsoft.Json;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System.Text;
 
 namespace CoWorkHub.Worker
 {
@@ -13,38 +19,44 @@ namespace CoWorkHub.Worker
             _scopeFactory = scopeFactory;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("ReservationWorker STARTED");
+            var hostname = Environment.GetEnvironmentVariable("_rabbitMqHost") ?? "localhost";
+            var username = Environment.GetEnvironmentVariable("_rabbitMqUser") ?? "guest";
+            var password = Environment.GetEnvironmentVariable("_rabbitMqPassword") ?? "guest";
+            var port = int.Parse(Environment.GetEnvironmentVariable("_rabbitMqPort") ?? "5672");
 
-            using var scope2 = _scopeFactory.CreateScope();
-            var configuration = scope2.ServiceProvider.GetRequiredService<IConfiguration>();
-            var connStr = configuration.GetConnectionString("CoWorkHubConnection");
-            _logger.LogInformation("Using connection string: {ConnStr}", connStr);
-            Console.WriteLine($"Connection string: {Environment.GetEnvironmentVariable("ConnectionStrings__CoWorkHubConnection")}");
+            var factory = new ConnectionFactory { HostName = hostname, UserName = username, Password = password, Port = port };
+            var connection = factory.CreateConnection();
+            var channel = connection.CreateModel();
 
+            channel.QueueDeclare(
+                queue: "reservation_state_check",
+                durable: false,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null
+            );
 
-            while (!stoppingToken.IsCancellationRequested)
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.Received += async (model, ea) =>
             {
-                _logger.LogInformation("ReservationWorker TICK");
+                var body = ea.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+                var eventObj = JsonConvert.DeserializeObject<ReservationStateEventDTO>(message);
 
-                try
+                if (eventObj != null)
                 {
                     using var scope = _scopeFactory.CreateScope();
                     var reservationService = scope.ServiceProvider.GetRequiredService<IReservationService>();
-
                     await reservationService.HandleReservationStates();
-
-                    _logger.LogInformation("ReservationWorker SUCCESS");
+                    _logger.LogInformation("Processed ReservationStateEvent at {time}", DateTime.Now);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "ReservationWorker ERROR – retry in 30s");
-                }
+            };
 
-                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
-            }
+            channel.BasicConsume(queue: "reservation_state_check", autoAck: true, consumer: consumer);
 
+            return Task.CompletedTask;
         }
     }
 }

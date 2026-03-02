@@ -1,4 +1,5 @@
 ﻿using CoWorkHub.Model.Exceptions;
+using CoWorkHub.Model.Requests;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
@@ -17,16 +18,20 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public DeletedSpaceUnitState(_210095Context context, 
             IMapper mapper, 
             IServiceProvider serviceProvider,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService) 
+            IActivityLogService activityLogService,
+            INotificationService notificationService
+            ) 
             : base(context, mapper, serviceProvider)
         { 
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override async Task<Model.SpaceUnit> Restore(int id, CancellationToken cancellationToken)
@@ -53,6 +58,11 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             "HIDE",
             "SpaceUnit",
             $"Prostorna jedinica sakrivena {entity.SpaceUnitId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste sakrili prostornu jedinicu {entity.Name}."
+            });
 
             await Context.SaveChangesAsync(cancellationToken);
 

@@ -5,6 +5,7 @@ using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Services;
 using MapsterMapper;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,17 +18,21 @@ namespace CoWorkHub.Services.ReservationStateMachine
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public InitialReservationState(
             _210095Context context, 
             IMapper mapper, 
             IServiceProvider serviceProvider,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService)
+            IActivityLogService activityLogService,
+            INotificationService notificationService
+            )
             : base(context, mapper, serviceProvider)
         {
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override Model.Reservation Insert(ReservationInsertRequest request)
@@ -77,7 +82,7 @@ namespace CoWorkHub.Services.ReservationStateMachine
 
             entity.UsersId = (int)_currentUserService.GetUserId();
             entity.StateMachine = "pending";
-            entity.CreatedAt = DateTime.UtcNow;
+            entity.CreatedAt = DateTime.Now;
             decimal totalPrice;
 
             if (spaceUnit.WorkspaceTypeId == 1) // Open space
@@ -100,6 +105,32 @@ namespace CoWorkHub.Services.ReservationStateMachine
             "CREATE",
             "Reservation",
             $"Kreirana rezervacija {entity.ReservationId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste kreirali rezervaciju za {entity.SpaceUnit.Name} u periodu {entity.StartDate.ToString("dd.MM.yyyy")}-{entity.EndDate.ToString("dd.MM.yyyy")} za {entity.PeopleCount} osoba."
+            });
+
+            var adminIds = Context.UserRoles
+                .Where(ur => ur.Role.RoleName == "Admin")
+                .Select(ur => ur.UserId)
+                .ToList();
+
+            string _currentUserId2 = "Test";
+            User? _currentUser = _currentUserService.GetCurrentUser();
+            if (_currentUser != null)
+            {
+                _currentUserId2 = _currentUser.FirstName + " " + _currentUser.LastName;
+            }
+
+            foreach (var adminId in adminIds)
+            {
+                _notificationService.Insert(new NotificationInsertRequest
+                {
+                    UserId = adminId,
+                    Message = $"{_currentUserId2} je kreirao rezervaciju za {entity.SpaceUnit.Name} u periodu {entity.StartDate.ToString("dd.MM.yyyy")}-{entity.EndDate.ToString("dd.MM.yyyy")} za {entity.PeopleCount} osoba."
+                });
+            }
 
             return Mapper.Map<Model.Reservation>(entity);
         }

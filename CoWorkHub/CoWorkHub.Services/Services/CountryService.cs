@@ -16,17 +16,21 @@ namespace CoWorkHub.Services.Services
         private readonly ILogger<CountryService> _logger;
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
+
         public CountryService(_210095Context context, 
             IMapper mapper,
             ILogger<CountryService> logger,
             IActivityLogService activityLogService,
-            ICurrentUserService currentUserService
+            ICurrentUserService currentUserService,
+            INotificationService notificationService
             ) 
             : base(context, mapper) 
         { 
             _logger=logger;
             _activityLogService = activityLogService;
             _currentUserService = currentUserService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<Database.Country> AddFilter(CountrySearchObject search, IQueryable<Database.Country> query)
@@ -119,6 +123,11 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "Country",
             $"Kreirana nova država {entity.CountryId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste dodali državu {entity.CountryName}."
+            });
         }
 
         public override void AfterUpdate(CountryUpdateRequest request, Country entity)
@@ -130,6 +139,11 @@ namespace CoWorkHub.Services.Services
             "UPDATE",
             "Country",
             $"Ažurirana država {entity.CountryId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste ažurirali državu {entity.CountryName}."
+            });
         }
 
         public override void AfterDelete(Country entity)
@@ -141,6 +155,11 @@ namespace CoWorkHub.Services.Services
             "DELETE",
             "City",
             $"Obrisana država {entity.CountryId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali državu {entity.CountryName}."
+            });
         }
     }
 }

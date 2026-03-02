@@ -14,17 +14,20 @@ namespace CoWorkHub.Services.Services
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public SpaceUnitResourceService(
             _210095Context context, 
             IMapper mapper,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService
+            IActivityLogService activityLogService,
+            INotificationService notificationService
             ) 
             : base(context, mapper)
         {
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<SpaceUnitResource> AddFilter(SpaceUnitResourcesSearchObject search, IQueryable<SpaceUnitResource> query)
@@ -101,6 +104,11 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "SpaceUnitResource",
             $"Dodan novi resurs {entity.ResourcesId} za prostor {entity.SpaceUnitId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste dodali resurs {entity.Resources.ResourceName} za prostor {entity.SpaceUnit.Name}."
+            });
         }
 
         public override void AfterUpdate(SpaceUnitResourcesUpdateRequest request, SpaceUnitResource entity)
@@ -123,6 +131,11 @@ namespace CoWorkHub.Services.Services
             "DELETE",
             "SpaceUnitResource",
             $"Obrisan resurs {entity.ResourcesId} za prostor {entity.SpaceUnitId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali resurs {entity.Resources.ResourceName} za prostor {entity.SpaceUnit.Name}."
+            });
         }
     }
 }

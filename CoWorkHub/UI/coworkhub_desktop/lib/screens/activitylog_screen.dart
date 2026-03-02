@@ -353,7 +353,7 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: const InputDecoration(
-                    labelText: "Pretrazi korisnike...",
+                    labelText: "Pretraži korisnike...",
                     prefixIcon: Icon(Icons.search),
                     labelStyle: TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(),

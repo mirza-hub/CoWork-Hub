@@ -4,6 +4,7 @@ using CoWorkHub.Model.Requests;
 using CoWorkHub.Model.SearchObjects;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
+using CoWorkHub.Services.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -45,6 +46,20 @@ namespace CoWorkHub.Api.Controllers
         public override Payment GetById(int id)
         {
             return base.GetById(id);
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpPost("create-paypal-order")]
+        public async Task<string> CreatePaypalOrder([FromBody] PaypalOrderRequest request)
+        {
+            return await (_service as IPaymentService).CreatePaypalOrder(request.Amount);
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpPost("capture-paypal-order")]
+        public async Task<string> CapturePaypalOrder([FromBody] string orderId)
+        {
+            return await (_service as IPaymentService).CapturePaypalOrder(orderId);
         }
     }
 }

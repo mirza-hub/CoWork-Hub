@@ -5,7 +5,13 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 
-//Env.Load();
+var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".env");
+
+if (File.Exists(envPath))
+{
+    Env.Load(envPath);
+}
+
 Console.WriteLine("Sleeping to wait for Rabbit");
 Task.Delay(10000).Wait();
 

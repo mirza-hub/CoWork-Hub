@@ -19,19 +19,23 @@ namespace CoWorkHub.Services.Services
         private readonly IGeoLocationService _geoLocationService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public CityService(_210095Context context, 
             IMapper mapper, 
             IGeoLocationService geoLocationService,
             ILogger<CityService> logger,
             IActivityLogService activityLogService,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            INotificationService notificationService
+            )
             : base(context, mapper) 
         {
             _geoLocationService = geoLocationService;
             _logger = logger;
             _activityLogService = activityLogService;
             _currentUserService= currentUserService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<City> AddFilter(CitySearchObject search, IQueryable<City> query)
@@ -160,8 +164,12 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "City",
-            $"Kreiran novi grad {entity.CityId}");  
-            
+            $"Kreiran novi grad {entity.CityId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste dodali grad {entity.CityName}."
+            });
         }
 
         public override void AfterUpdate(CityUpdateRequest request, City entity)
@@ -173,6 +181,11 @@ namespace CoWorkHub.Services.Services
             "UPDATE",
             "City",
             $"Ažuriran grad {entity.CityId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste ažurirali grad {entity.CityName}."
+            });
         }
 
         public override void AfterDelete(City entity)
@@ -184,6 +197,11 @@ namespace CoWorkHub.Services.Services
             "DELETE",
             "City",
             $"Obrisan grad {entity.CityId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali grad {entity.CityName}."
+            });
         }
     }
 }

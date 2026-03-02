@@ -1,6 +1,7 @@
 using CoWorkHub.Api.Auth;
 using CoWorkHub.Api.Filters;
 using CoWorkHub.Services.Auth;
+using CoWorkHub.Services.BackgroundServices;
 using CoWorkHub.Services.Database;
 using CoWorkHub.Services.Interfaces;
 using CoWorkHub.Services.Interfaces.BaseServicesInterfaces;
@@ -10,6 +11,7 @@ using CoWorkHub.Services.Seed;
 using CoWorkHub.Services.Services;
 using CoWorkHub.Services.Services.Recommender;
 using CoWorkHub.Services.WorkingSpaceStateMachine;
+using DotNetEnv;
 using FluentValidation;
 using Mapster;
 using MapsterMapper;
@@ -17,7 +19,15 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
+var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".env");
+if (File.Exists(envPath))
+{
+    Env.Load(envPath);
+}
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddEnvironmentVariables();
 
 // Add services to the container.
 builder.Services.AddTransient<ICountryService, CountryService>();
@@ -34,6 +44,7 @@ builder.Services.AddTransient<ISpaceUnitService, SpaceUnitService>();
 builder.Services.AddTransient<ISpaceUnitResourceService, SpaceUnitResourceService>();
 builder.Services.AddTransient<ISpaceUnitImageService, SpaceUnitImageService>();
 builder.Services.AddTransient<IPaymentService, PaymentService>();
+builder.Services.AddTransient<INotificationService, NotificationService>();
 
 builder.Services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
@@ -63,6 +74,9 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IRecommenderService, RecommenderService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
+//Background servis
+builder.Services.AddHostedService<ReservationStatePublisher>();
+
 builder.Services.AddControllers(x =>
 {
     x.Filters.Add<ExceptionFilter>();
@@ -88,8 +102,6 @@ builder.Services.AddSwaggerGen(c =>
     } });
 
 });
-
-DotNetEnv.Env.Load();
 
 var connectionString = builder.Configuration.GetConnectionString("CoWorkHubConnection");
 builder.Services.AddDbContext<_210095Context>(options =>

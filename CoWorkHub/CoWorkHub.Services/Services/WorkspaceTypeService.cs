@@ -13,16 +13,19 @@ namespace CoWorkHub.Services.Services
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public WorkspaceTypeService(_210095Context context, 
             IMapper mapper,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService
+            IActivityLogService activityLogService,
+            INotificationService notificationService
             ) 
             : base(context, mapper)
         {
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<WorkspaceType> AddFilter(WorkspaceTypeSearchObject search, IQueryable<WorkspaceType> query)
@@ -99,6 +102,11 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "WorkspaceType",
             $"Tip prostora kreiran {entity.WorkspaceTypeId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste dodali tip prostora {entity.TypeName}."
+            });
         }
 
         public override void AfterUpdate(WorkspaceTypeUpdateRequest request, WorkspaceType entity)
@@ -110,6 +118,11 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "WorkspaceType",
             $"Tip prostora ažuriran {entity.WorkspaceTypeId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste ažurirali tip prostora {entity.TypeName}."
+            });
         }
 
         public override void AfterDelete(WorkspaceType entity)
@@ -121,6 +134,11 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "WorkspaceType",
             $"Tip prostora obrisan {entity.WorkspaceTypeId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali tip prostora {entity.TypeName}."
+            });
         }
     }
 }

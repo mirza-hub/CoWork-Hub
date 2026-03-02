@@ -125,6 +125,40 @@ namespace CoWorkHub.Services.Migrations
                     b.ToTable("Country", (string)null);
                 });
 
+            modelBuilder.Entity("CoWorkHub.Services.Database.Notification", b =>
+                {
+                    b.Property<int>("NotificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("CoWorkHub.Services.Database.PasswordResetRequest", b =>
                 {
                     b.Property<int>("PasswordResetRequestId")
@@ -850,6 +884,17 @@ namespace CoWorkHub.Services.Migrations
                     b.Navigation("Country");
                 });
 
+            modelBuilder.Entity("CoWorkHub.Services.Database.Notification", b =>
+                {
+                    b.HasOne("CoWorkHub.Services.Database.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CoWorkHub.Services.Database.PasswordResetRequest", b =>
                 {
                     b.HasOne("CoWorkHub.Services.Database.User", "User")
@@ -1127,6 +1172,8 @@ namespace CoWorkHub.Services.Migrations
             modelBuilder.Entity("CoWorkHub.Services.Database.User", b =>
                 {
                     b.Navigation("ActivityLogs");
+
+                    b.Navigation("Notifications");
 
                     b.Navigation("Reservations");
 

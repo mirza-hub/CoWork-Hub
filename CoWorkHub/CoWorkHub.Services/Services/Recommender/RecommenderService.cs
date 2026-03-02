@@ -79,7 +79,7 @@ namespace CoWorkHub.Services.Services.Recommender
                         "CityEncoded",
                         "ResourcesFeaturized",
                         "DescriptionFeaturized"));
-
+                //puca
                 var model = pipeline.Fit(_mlContext.Data.LoadFromEnumerable(allSpaceData));
                 _predictionEngine = _mlContext.Model.CreatePredictionEngine<SpaceUnitData, SpaceUnitPrediction>(model);
 

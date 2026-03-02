@@ -15,17 +15,20 @@ namespace CoWorkHub.Services.Services
         private readonly ILogger<ResourcesService> _logger;
         private readonly ICurrentUserService _currentUserService;
         private readonly IActivityLogService _activityLogService;
+        private readonly INotificationService _notificationService;
 
         public ResourcesService(_210095Context context,
             IMapper mapper,
             ILogger<ResourcesService> logger,
             ICurrentUserService currentUserService,
-            IActivityLogService activityLogService)
+            IActivityLogService activityLogService,
+            INotificationService notificationService)
             : base(context, mapper)
         {
             _logger = logger;
             _currentUserService = currentUserService;
             _activityLogService = activityLogService;
+            _notificationService = notificationService;
         }
 
         public override IQueryable<Resource> AddFilter(ResourcesSearchObject search, IQueryable<Resource> query)
@@ -108,6 +111,11 @@ namespace CoWorkHub.Services.Services
             "CREATE",
             "Resource",
             $"Kreiran novi resurs {entity.ResourcesId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste dodali novi resurs {entity.ResourceName}."
+            });
         }
 
         public override void AfterUpdate(ResourcesUpdateRequest request, Resource entity)
@@ -119,6 +127,11 @@ namespace CoWorkHub.Services.Services
             "UPDATE",
             "Resource",
             $"Ažuriran resurs {entity.ResourcesId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste ažurirali resurs {entity.ResourceName}."
+            });
         }
 
         public override void AfterDelete(Resource entity)
@@ -130,6 +143,11 @@ namespace CoWorkHub.Services.Services
             "DELETE",
             "Resource",
             $"Obrisan resurs {entity.ResourcesId}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste obrisali resurs {entity.ResourceName}."
+            });
         }
     }
 }
