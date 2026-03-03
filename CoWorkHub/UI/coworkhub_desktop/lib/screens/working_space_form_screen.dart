@@ -1,15 +1,13 @@
-import 'dart:convert';
-
+import 'package:coworkhub_desktop/exceptions/user_exception.dart';
 import 'package:coworkhub_desktop/models/city.dart';
+import 'package:coworkhub_desktop/models/working_space.dart';
 import 'package:coworkhub_desktop/providers/city_provider.dart';
+import 'package:coworkhub_desktop/providers/working_space_provider.dart';
 import 'package:coworkhub_desktop/screens/map_picker_screen.dart';
 import 'package:coworkhub_desktop/screens/working_space_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:coworkhub_desktop/models/working_space.dart';
-import 'package:coworkhub_desktop/providers/working_space_provider.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 
 class WorkingSpaceFormScreen extends StatefulWidget {
   final WorkingSpace? workspace;
@@ -145,36 +143,16 @@ class _WorkingSpaceFormScreenState extends State<WorkingSpaceFormScreen> {
         _resetForm();
       }
     } catch (e) {
-      if (e is http.Response) {
-        try {
-          final errorData = jsonDecode(e.body);
-          if (errorData['errors'] != null &&
-              errorData['errors']['userError'] != null) {
-            String message = (errorData['errors']['userError'] as List).join(
-              "\n",
-            );
-            showTopFlushBar(
-              context: context,
-              message: message,
-              backgroundColor: Colors.red,
-            );
-          } else {
-            showTopFlushBar(
-              context: context,
-              message: "Greška: ${e.statusCode}",
-              backgroundColor: Colors.red,
-            );
-          }
-        } catch (_) {
-          showTopFlushBar(
-            context: context,
-            message: "Greška: ${e.statusCode} - ${e.body}",
-            backgroundColor: Colors.red,
-          );
-        }
+      if (e is UserException) {
         showTopFlushBar(
           context: context,
-          message: "Došlo je do greške: $e",
+          message: e.message,
+          backgroundColor: Colors.red,
+        );
+      } else {
+        showTopFlushBar(
+          context: context,
+          message: "Neočekivana greška",
           backgroundColor: Colors.red,
         );
       }

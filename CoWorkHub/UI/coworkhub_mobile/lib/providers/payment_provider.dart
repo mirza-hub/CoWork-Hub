@@ -4,6 +4,7 @@ import 'package:coworkhub_mobile/models/payment.dart';
 import 'package:coworkhub_mobile/models/paypal_order.dart';
 import 'package:coworkhub_mobile/models/paypal_order_request.dart';
 import 'package:coworkhub_mobile/providers/base_provider.dart';
+import 'package:coworkhub_mobile/exceptions/user_exception.dart';
 import 'package:http/http.dart' as http;
 
 class PaymentProvider extends BaseProvider<Payment> {
@@ -29,7 +30,7 @@ class PaymentProvider extends BaseProvider<Payment> {
       final json = jsonDecode(response.body);
       return PaypalOrder.fromJson(json);
     } else {
-      throw Exception("Error: ${response.statusCode} - ${response.body}");
+      throw _handleError(response);
     }
   }
 
@@ -43,7 +44,47 @@ class PaymentProvider extends BaseProvider<Payment> {
     );
 
     if (response.statusCode >= 300) {
-      throw Exception("Neuspjesna potvrda PayPal ordera");
+      throw _handleError(response);
+    }
+  }
+
+  UserException _handleError(http.Response response) {
+    try {
+      final data = jsonDecode(response.body);
+
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errorsMap = data['errors'] as Map<String, dynamic>;
+
+        if (errorsMap.isNotEmpty) {
+          final firstKey = errorsMap.keys.first;
+          final errorValue = errorsMap[firstKey];
+
+          if (errorValue is List && errorValue.isNotEmpty) {
+            return UserException(
+              errorValue.first.toString(),
+              statusCode: response.statusCode,
+            );
+          }
+        }
+      }
+
+      if (data['message'] != null) {
+        return UserException(
+          data['message'].toString(),
+          statusCode: response.statusCode,
+        );
+      }
+
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      if (e is UserException) rethrow;
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
     }
   }
 }

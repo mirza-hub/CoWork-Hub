@@ -106,7 +106,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "Role",
-            $"Kreirana nova rola {entity.RolesId}");
+            $"Kreirana nova rola {entity.RoleName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -122,7 +122,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "UPDATE",
             "Role",
-            $"Ažurirana Rola {entity.RolesId}");
+            $"Ažurirana Rola {entity.RoleName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -138,7 +138,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "DELETE",
             "Role",
-            $"Obrisana Rola {entity.RolesId}");
+            $"Obrisana Rola {entity.RoleName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

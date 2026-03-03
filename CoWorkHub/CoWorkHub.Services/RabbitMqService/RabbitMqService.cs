@@ -1,13 +1,21 @@
 ﻿using CoWorkHub.Model.Messages;
+using CoWorkHub.Services.Services;
+using DotNetEnv;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using System.Text;
-using DotNetEnv;
 
 namespace CoWorkHub.Services.RabbitMqService
 {
     public class RabbitMqService : IRabbitMqService
     {
+        private readonly ILogger<RabbitMqService> _logger;
+        public RabbitMqService(ILogger<RabbitMqService> logger)
+        {
+            _logger = logger;
+        }
+
         public async Task SendAnEmail(EmailDTO mail)
         {
             var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".env");
@@ -21,7 +29,6 @@ namespace CoWorkHub.Services.RabbitMqService
             var password = Environment.GetEnvironmentVariable("_rabbitMqPassword") ?? "guest";
             var port = int.Parse(Environment.GetEnvironmentVariable("_rabbitMqPort") ?? "5672");
 
-            Console.WriteLine($"{hostname}:{username}:{password}");
             var factory = new ConnectionFactory { HostName = hostname, UserName = username, Password = password, Port = port };
             using var connection = factory.CreateConnection();
             using var channel = connection.CreateModel();
@@ -45,7 +52,7 @@ namespace CoWorkHub.Services.RabbitMqService
         {
             Env.Load();
 
-            var hostname = Environment.GetEnvironmentVariable("_rabbitMqHost") ?? "localhost";
+            var hostname = Environment.GetEnvironmentVariable("_rabbitMqHost") ?? "rabbitmq";
             var username = Environment.GetEnvironmentVariable("_rabbitMqUser") ?? "guest";
             var password = Environment.GetEnvironmentVariable("_rabbitMqPassword") ?? "guest";
             var port = int.Parse(Environment.GetEnvironmentVariable("_rabbitMqPort") ?? "5672");
@@ -71,7 +78,8 @@ namespace CoWorkHub.Services.RabbitMqService
                 body: body
             );
 
-            Console.WriteLine("ReservationStateEvent sent to queue");
+            //Console.WriteLine("ReservationStateEvent sent to queue");
+            _logger.LogInformation("ReservationStateEvent sent to queue");
         }
     }
 }

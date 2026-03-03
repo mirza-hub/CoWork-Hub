@@ -13,14 +13,20 @@ class SpaceUnitMapScreen extends StatefulWidget {
 }
 
 class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
-  final MapController _mapController = MapController();
+  late MapController _mapController;
   final List<Marker> _markers = [];
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    _mapController = MapController();
+    _initializeMarkers();
+  }
 
-    // Kreiranje markera za sve SpaceUnit u listi
+  void _initializeMarkers() {
+    _markers.clear();
+
     for (var su in widget.units) {
       if (su.workingSpace?.latitude != null &&
           su.workingSpace?.longitude != null) {
@@ -33,23 +39,7 @@ class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
               su.workingSpace!.longitude,
             ),
             child: GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: Text(su.name),
-                    content: Text(
-                      "${su.workingSpace!.city?.cityName ?? ''} • Kapacitet: ${su.capacity}\n${su.pricePerDay.toStringAsFixed(2)} KM / dan",
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("Zatvori"),
-                      ),
-                    ],
-                  ),
-                );
-              },
+              onTap: () => _showSpaceUnitDialog(su),
               child: const Icon(Icons.location_on, color: Colors.red, size: 40),
             ),
           ),
@@ -57,21 +47,39 @@ class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
       }
     }
 
-    // Ako postoje markeri, zumiranje na sve
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (mounted && _markers.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_isInitialized && mounted) {
+          _fitBoundsToMarkers();
+          setState(() => _isInitialized = true);
+        }
+      });
+    }
+  }
+
+  void _fitBoundsToMarkers() {
+    if (_markers.isEmpty) return;
+
+    try {
+      LatLngBounds bounds = _computeBounds(_markers);
+      _mapController.fitBounds(
+        bounds,
+        options: const FitBoundsOptions(
+          padding: EdgeInsets.all(100),
+          maxZoom: 15,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error fitting bounds: $e');
       if (_markers.isNotEmpty) {
-        LatLngBounds bounds = _computeBounds(_markers);
-        _mapController.fitBounds(
-          bounds,
-          options: const FitBoundsOptions(padding: EdgeInsets.all(50)),
-        );
+        _mapController.move(_markers.first.point, 13);
       }
-    });
+    }
   }
 
   LatLngBounds _computeBounds(List<Marker> markers) {
     if (markers.isEmpty) {
-      return LatLngBounds(LatLng(0, 0), LatLng(0, 0));
+      return LatLngBounds(const LatLng(0, 0), const LatLng(0, 0));
     }
 
     double minLat = markers.first.point.latitude;
@@ -89,8 +97,35 @@ class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
     return LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng));
   }
 
+  void _showSpaceUnitDialog(SpaceUnit su) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(su.name),
+        content: Text(
+          "${su.workingSpace?.city?.cityName ?? 'Nepoznato'}\n"
+          "Kapacitet: ${su.capacity}\n"
+          "${su.pricePerDay.toStringAsFixed(2)} KM / dan",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Zatvori"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Početna lokacija
     LatLng center =
         widget.units.isNotEmpty &&
             widget.units[0].workingSpace?.latitude != null
@@ -101,17 +136,40 @@ class _SpaceUnitMapScreenState extends State<SpaceUnitMapScreen> {
         : const LatLng(44.787197, 20.457273);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mapa prostorija')),
-      body: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(center: center, zoom: 12),
+      appBar: AppBar(title: const Text('Mapa prostorija'), elevation: 2),
+      body: Stack(
         children: [
-          TileLayer(
-            urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            userAgentPackageName: 'com.example.coworkhub',
-            additionalOptions: {'email': 'tvoj.email@domena.com'},
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              center: center,
+              zoom: 13,
+              maxZoom: 19,
+              minZoom: 5,
+              interactiveFlags: InteractiveFlag.all,
+              onMapReady: _initializeMarkers,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'com.example.coworkhub',
+                additionalOptions: const {'email': 'info@coworkhub.com'},
+                tileSize: 256,
+                maxNativeZoom: 19,
+              ),
+              MarkerLayer(markers: _markers),
+            ],
           ),
-          MarkerLayer(markers: _markers),
+          // Loading indicator na početku
+          if (!_isInitialized)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+            ),
         ],
       ),
     );

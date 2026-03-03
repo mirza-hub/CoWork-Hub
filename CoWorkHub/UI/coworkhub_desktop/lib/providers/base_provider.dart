@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import '../exceptions/user_exception.dart';
 import '../models/paged_result.dart';
 import 'auth_provider.dart';
 
@@ -53,7 +54,8 @@ abstract class BaseProvider<T> with ChangeNotifier {
         hasNextPage: data['hasNextPage'],
       );
     } else {
-      throw Exception("Unknown error");
+      _handleError(response);
+      throw UserException("Unexpected error");
     }
   }
 
@@ -78,7 +80,8 @@ abstract class BaseProvider<T> with ChangeNotifier {
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
     } else {
-      throw response;
+      _handleError(response);
+      throw UserException("Unexpected error");
     }
   }
 
@@ -95,7 +98,8 @@ abstract class BaseProvider<T> with ChangeNotifier {
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
     } else {
-      throw response;
+      _handleError(response);
+      throw UserException("Unexpected error");
     }
   }
 
@@ -104,7 +108,42 @@ abstract class BaseProvider<T> with ChangeNotifier {
       Uri.parse("$baseUrl$_endpoint/$id"),
       headers: createHeaders(),
     );
-    if (!isValidResponse(response)) throw Exception("Delete failed");
+    if (!isValidResponse(response)) {
+      _handleError(response);
+      throw UserException("Delete failed");
+    }
+  }
+
+  void _handleError(http.Response response) {
+    try {
+      final data = jsonDecode(response.body);
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errorsMap = data['errors'] as Map<String, dynamic>;
+
+        if (errorsMap.isNotEmpty) {
+          final firstKey = errorsMap.keys.first;
+          final errorValue = errorsMap[firstKey];
+
+          if (errorValue is List && errorValue.isNotEmpty) {
+            throw UserException(
+              errorValue.first.toString(),
+              statusCode: response.statusCode,
+            );
+          }
+        }
+      }
+      throw UserException(
+        "Greška (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    } on UserException {
+      rethrow;
+    } catch (e) {
+      throw UserException(
+        "Greška (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    }
   }
 
   Map<String, String> createHeaders() {

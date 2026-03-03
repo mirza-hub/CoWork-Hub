@@ -55,7 +55,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "EDIT",
             "SpaceUnit",
-            $"Prostorna jedinica prebačena u draft {entity.SpaceUnitId}");
+            $"Prostorna jedinica prebačena u draft {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -86,7 +86,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "ACTIVATE",
             "SpaceUnit",
-            $"Prostorna jedinica aktvirana {entity.SpaceUnitId}");
+            $"Prostorna jedinica aktvirana {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -117,7 +117,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "MAINTENANCE",
             "SpaceUnit",
-            $"Prostorna jedinica prebačena u stanje održavanja {entity.SpaceUnitId}");
+            $"Prostorna jedinica prebačena u stanje održavanja {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -147,7 +147,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "EDIT",
             "SpaceUnit",
-            $"Prostorna jedinica obrisan {entity.SpaceUnitId}");
+            $"Prostorna jedinica obrisan {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

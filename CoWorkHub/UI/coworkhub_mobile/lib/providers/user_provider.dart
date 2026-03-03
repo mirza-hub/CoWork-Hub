@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:coworkhub_mobile/models/password_reset_request.dart';
 import 'package:coworkhub_mobile/models/user.dart';
+import 'package:coworkhub_mobile/exceptions/user_exception.dart';
 import 'package:http/http.dart' as http;
 import 'base_provider.dart';
 
@@ -14,7 +15,7 @@ class UserProvider extends BaseProvider<User> {
 
   Future<User> login(String username, String password) async {
     if (username.isEmpty || password.isEmpty) {
-      throw Exception("Molimo unesite korisničko ime i lozinku.");
+      throw UserException("Molimo unesite korisničko ime i lozinku.");
     }
 
     var url =
@@ -27,14 +28,14 @@ class UserProvider extends BaseProvider<User> {
     );
 
     if (response.body.isEmpty || response.statusCode == 401) {
-      throw Exception("Pogrešno korisničko ime ili lozinka.");
+      throw UserException("Pogrešno korisničko ime ili lozinka.");
     }
 
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
       return fromJson(data);
     } else {
-      throw Exception("Greška prilikom login-a.");
+      throw _handleError(response);
     }
   }
 
@@ -49,7 +50,7 @@ class UserProvider extends BaseProvider<User> {
         body: jsonEncode({"Email": email}),
       );
     } catch (e) {
-      throw Exception("Greška pri slanju zahtjeva: $e");
+      throw UserException("Greška pri slanju zahtjeva: $e");
     }
 
     if (isValidResponse(response)) {
@@ -57,33 +58,10 @@ class UserProvider extends BaseProvider<User> {
         final data = jsonDecode(response.body);
         return PasswordResetRequest.fromJson(data);
       } catch (e) {
-        throw Exception("Nevažeći odgovor servera.");
+        throw UserException("Nevažeći odgovor servera.");
       }
     } else {
-      // try to extract error message from response body
-      String message = "Greška pri slanju koda za reset lozinke.";
-      try {
-        final errorJson = jsonDecode(response.body);
-        if (errorJson is Map) {
-          if (errorJson["message"] != null) {
-            message = errorJson["message"];
-          } else if (errorJson["errors"] != null) {
-            final errors = errorJson["errors"];
-            if (errors is Map) {
-              // Prefer explicit userError key when present
-              if (errors["userError"] is List &&
-                  errors["userError"].isNotEmpty) {
-                message = errors["userError"][0];
-              } else {
-                final first = errors.values.first;
-                if (first is List && first.isNotEmpty) message = first[0];
-              }
-            }
-          }
-        }
-      } catch (_) {}
-
-      throw Exception(message);
+      throw _handleError(response);
     }
   }
 
@@ -99,7 +77,7 @@ class UserProvider extends BaseProvider<User> {
     );
 
     if (!isValidResponse(response)) {
-      throw Exception("Greška pri provjeri koda.");
+      throw _handleError(response);
     }
 
     var data = jsonDecode(response.body);
@@ -126,7 +104,47 @@ class UserProvider extends BaseProvider<User> {
     );
 
     if (!isValidResponse(response)) {
-      throw Exception("Greška pri resetovanju lozinke.");
+      throw _handleError(response);
+    }
+  }
+
+  UserException _handleError(http.Response response) {
+    try {
+      final data = jsonDecode(response.body);
+
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errorsMap = data['errors'] as Map<String, dynamic>;
+
+        if (errorsMap.isNotEmpty) {
+          final firstKey = errorsMap.keys.first;
+          final errorValue = errorsMap[firstKey];
+
+          if (errorValue is List && errorValue.isNotEmpty) {
+            return UserException(
+              errorValue.first.toString(),
+              statusCode: response.statusCode,
+            );
+          }
+        }
+      }
+
+      if (data['message'] != null) {
+        return UserException(
+          data['message'].toString(),
+          statusCode: response.statusCode,
+        );
+      }
+
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      if (e is UserException) rethrow;
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
     }
   }
 }

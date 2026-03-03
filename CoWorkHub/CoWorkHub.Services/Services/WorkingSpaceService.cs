@@ -162,7 +162,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "WorkingSpace",
-            $"Prostor kreiran {entity.WorkingSpacesId}");
+            $"Prostor kreiran {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -178,7 +178,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "UPDATE",
             "WorkingSpace",
-            $"Prostor ažuriran {entity.WorkingSpacesId}");
+            $"Prostor ažuriran {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -209,7 +209,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "DELETE",
             "WorkingSpace",
-            $"Prostor obrisan {entity.WorkingSpacesId}");
+            $"Prostor obrisan {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

@@ -101,7 +101,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "WorkspaceType",
-            $"Tip prostora kreiran {entity.WorkspaceTypeId}");
+            $"Tip prostora kreiran {entity.TypeName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -117,7 +117,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "WorkspaceType",
-            $"Tip prostora ažuriran {entity.WorkspaceTypeId}");
+            $"Tip prostora ažuriran {entity.TypeName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -133,7 +133,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "WorkspaceType",
-            $"Tip prostora obrisan {entity.WorkspaceTypeId}");
+            $"Tip prostora obrisan {entity.TypeName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

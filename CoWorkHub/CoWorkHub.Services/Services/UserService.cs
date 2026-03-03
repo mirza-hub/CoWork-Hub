@@ -140,7 +140,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "User",
-            $"Kreiran novi user {entity.UsersId}");
+            $"Kreiran novi user {entity.FirstName.ToUpper()} {entity.LastName.ToUpper()}");
 
             Context.SaveChanges();
 
@@ -287,6 +287,18 @@ namespace CoWorkHub.Services.Services
                 .ThenInclude(ur => ur.Role)
                 .FirstOrDefault(u => u.UsersId == entity.UsersId);
 
+            int _currentUserId = (int)_currentUserService.GetUserId();
+            _activityLogService.LogAsync(
+            _currentUserId,
+            "UPDATE",
+            "User",
+            $"Korisnik ažuriran {entity.Username.ToUpper()}");
+            _notificationService.Insert(new NotificationInsertRequest
+            {
+                UserId = _currentUserId,
+                Message = $"Uspješno ste ažurirali profil {entity.Username}."
+            });
+
             return Mapper.Map<Model.User>(userWithRoles);
         }
 
@@ -389,11 +401,11 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "UPDATE",
             "User",
-            $"Korisnik ažuriran {entity.UsersId}");
+            $"Korisnik ažuriran {entity.Username.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
-                Message = $"Uspješno ste ažurirali profil {entity.FirstName} {entity.LastName}."
+                Message = $"Uspješno ste ažurirali profil {entity.Username}."
             });
         }
 
@@ -405,11 +417,11 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "DELETE",
             "User",
-            $"Korisnik obrisan {entity.UsersId}");
+            $"Korisnik obrisan {entity.Username.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
-                Message = $"Uspješno ste obrisali profil {entity.FirstName} {entity.LastName}."
+                Message = $"Uspješno ste obrisali profil {entity.Username}."
             });
         }
 

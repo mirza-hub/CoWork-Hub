@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import '../exceptions/user_exception.dart';
 import '../models/paged_result.dart';
 import 'auth_provider.dart';
 
@@ -53,7 +54,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
         hasNextPage: data['hasNextPage'],
       );
     } else {
-      throw Exception("Unknown error");
+      throw _handleError(response);
     }
   }
 
@@ -64,9 +65,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
+    } else {
+      throw _handleError(response);
     }
-
-    return null;
   }
 
   Future<T> insert(dynamic request) async {
@@ -79,7 +80,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
     } else {
-      throw response;
+      throw _handleError(response);
     }
   }
 
@@ -93,7 +94,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
     } else {
-      throw response;
+      throw _handleError(response);
     }
   }
 
@@ -102,7 +103,49 @@ abstract class BaseProvider<T> with ChangeNotifier {
       Uri.parse("$baseUrl$_endpoint/$id"),
       headers: createHeaders(),
     );
-    if (!isValidResponse(response)) throw Exception("Delete failed");
+    if (!isValidResponse(response)) {
+      throw _handleError(response);
+    }
+  }
+
+  UserException _handleError(http.Response response) {
+    try {
+      final data = jsonDecode(response.body);
+
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errorsMap = data['errors'] as Map<String, dynamic>;
+
+        if (errorsMap.isNotEmpty) {
+          final firstKey = errorsMap.keys.first;
+          final errorValue = errorsMap[firstKey];
+
+          if (errorValue is List && errorValue.isNotEmpty) {
+            return UserException(
+              errorValue.first.toString(),
+              statusCode: response.statusCode,
+            );
+          }
+        }
+      }
+
+      if (data['message'] != null) {
+        return UserException(
+          data['message'].toString(),
+          statusCode: response.statusCode,
+        );
+      }
+
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      if (e is UserException) rethrow;
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    }
   }
 
   Map<String, String> createHeaders() {

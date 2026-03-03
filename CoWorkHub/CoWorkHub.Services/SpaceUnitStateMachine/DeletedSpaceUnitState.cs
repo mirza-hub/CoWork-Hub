@@ -57,7 +57,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "HIDE",
             "SpaceUnit",
-            $"Prostorna jedinica sakrivena {entity.SpaceUnitId}");
+            $"Prostorna jedinica sakrivena {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

@@ -21,7 +21,7 @@ namespace CoWorkHub.Worker
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var hostname = Environment.GetEnvironmentVariable("_rabbitMqHost") ?? "localhost";
+            var hostname = Environment.GetEnvironmentVariable("_rabbitMqHost") ?? "rabbitmq";
             var username = Environment.GetEnvironmentVariable("_rabbitMqUser") ?? "guest";
             var password = Environment.GetEnvironmentVariable("_rabbitMqPassword") ?? "guest";
             var port = int.Parse(Environment.GetEnvironmentVariable("_rabbitMqPort") ?? "5672");

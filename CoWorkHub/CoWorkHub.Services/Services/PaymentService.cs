@@ -97,7 +97,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "Payment",
-            $"Kreirano plaćanje {entity.PaymentId}");
+            $"Kreirano plaćanje {reservation.ReservationId}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -137,7 +137,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "UPDATE",
             "Payment",
-            $"Ažurirano plaćanje {entity.PaymentId}");
+            $"Ažurirano plaćanje {entity.ReservationId}");
         }
 
         public override void AfterDelete(Database.Payment entity)
@@ -148,7 +148,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "DELETE",
             "Payment",
-            $"Obrisano plaćanje {entity.PaymentId}");
+            $"Obrisano plaćanje {entity.ReservationId}");
         }
 
         public async Task<string> CreatePaypalOrder(decimal amount)

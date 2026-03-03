@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/space_unit.dart';
 import '../models/payment_method.dart';
 import '../providers/payment_method_provider.dart';
+import '../exceptions/user_exception.dart';
 import 'paypal_webview_screen.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
@@ -201,9 +202,17 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           if (!mounted) return;
           Navigator.of(context).pop(true);
         } catch (e) {
+          String message = "Greška pri potvrdi plaćanja.";
+
+          if (e is UserException) {
+            message = "Greška pri potvrdi plaćanja: ${e.message}";
+          } else {
+            message = "Greška pri potvrdi plaćanja: ${e.toString()}";
+          }
+
           showTopFlushBar(
             context: context,
-            message: "Greška pri potvrdi plaćanja: ${e.toString()}",
+            message: message,
             backgroundColor: Colors.red,
           );
         }
@@ -215,9 +224,17 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         );
       }
     } catch (e) {
+      String message = "Greška pri kreiranju PayPal narudžbe.";
+
+      if (e is UserException) {
+        message = "Greška pri kreiranju PayPal narudžbe: ${e.message}";
+      } else {
+        message = "Greška pri kreiranju PayPal narudžbe: ${e.toString()}";
+      }
+
       showTopFlushBar(
         context: context,
-        message: "Greška pri kreiranju PayPal narudžbe: ${e.toString()}",
+        message: message,
         backgroundColor: Colors.red,
       );
     }

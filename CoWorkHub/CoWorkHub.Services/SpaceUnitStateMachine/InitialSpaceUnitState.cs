@@ -95,7 +95,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "CREATE",
             "SpaceUnit",
-            $"Kreirana nova Prostorna jedinica {entity.SpaceUnitId}");
+            $"Kreirana nova Prostorna jedinica {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

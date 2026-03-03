@@ -5,6 +5,7 @@ import 'package:coworkhub_mobile/providers/auth_provider.dart';
 import 'package:coworkhub_mobile/providers/user_provider.dart';
 import 'package:coworkhub_mobile/screens/forgot_password_screen.dart';
 import 'package:coworkhub_mobile/screens/register_screen.dart';
+import 'package:coworkhub_mobile/exceptions/user_exception.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -70,8 +71,16 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     } catch (e) {
+      String message = "Pogrešno korisničko ime ili lozinka";
+
+      if (e is UserException) {
+        message = e.message;
+      } else {
+        message = e.toString();
+      }
+
       Flushbar(
-        message: "Pogrešno korisničko ime ili lozinka",
+        message: message,
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 3),
         margin: const EdgeInsets.all(10),
@@ -83,6 +92,34 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  String? _validateUsername(String? value) {
+    if (value == null || value.trim().isEmpty)
+      return 'Korisničko ime je obavezno';
+
+    final v = value.trim();
+
+    if (v.length < 3 || v.length > 15)
+      return 'Korisničko ime mora imati 3–15 karaktera';
+
+    if (!RegExp(r'^[a-zA-Z0-9]').hasMatch(v))
+      return 'Mora početi slovom ili brojem';
+
+    if (!RegExp(r'[a-zA-Z0-9]$').hasMatch(v))
+      return 'Mora završiti slovom ili brojem';
+
+    if (v.contains('--') ||
+        v.contains('__') ||
+        v.contains('-_') ||
+        v.contains('_-'))
+      return 'Ne može sadržavati uzastopne specijalne znakove';
+
+    final regex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$');
+
+    if (!regex.hasMatch(v)) return 'Dozvoljena su slova, brojevi, _ i -';
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,6 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -116,22 +154,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(),
                   ),
                   inputFormatters: [LengthLimitingTextInputFormatter(15)],
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return "Korisničko ime je obavezno";
-                    }
-
-                    if (v.length > 15) {
-                      return "Korisničko ime ne smije imati više od 15 karaktera";
-                    }
-
-                    final regex = RegExp(r'^[a-zA-Z0-9_-]+$');
-                    if (!regex.hasMatch(v)) {
-                      return "Dozvoljena su samo slova, brojevi, _ i -";
-                    }
-
-                    return null;
-                  },
+                  validator: _validateUsername,
+                  onChanged: (_) => _formKey.currentState?.validate(),
                   textInputAction: TextInputAction.next,
                 ),
 

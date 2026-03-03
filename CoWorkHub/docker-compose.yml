@@ -107,7 +107,7 @@ services:
   coworkhub-worker:
     image: coworkhub-coworkhub-worker
     container_name: worker
-    restart: no
+    restart: on-failure
     build:
       context: .
       dockerfile: CoWorkHub.Worker/Dockerfile
@@ -116,7 +116,12 @@ services:
     environment:
       - ConnectionStrings__CoWorkHubConnection=Server=coworkhub-sql,1433;Database=210095;User=sa;Password=${_saPassword};Trusted_Connection=False;TrustServerCertificate=True;MultipleActiveResultSets=true;
       - ASPNETCORE_ENVIRONMENT=Development
+      - _rabbitMqHost=rabbitmq
+      - _rabbitMqUser=${_rabbitMqUser}
+      - _rabbitMqPassword=${_rabbitMqPassword}
+      - _rabbitMqPort=${_rabbitMqPort}
     depends_on:
+      - rabbitmq
       - coworkhub-sql
       - coworkhub-api
     networks:

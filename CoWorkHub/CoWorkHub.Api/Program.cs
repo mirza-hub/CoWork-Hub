@@ -1,4 +1,4 @@
-using CoWorkHub.Api.Auth;
+ using CoWorkHub.Api.Auth;
 using CoWorkHub.Api.Filters;
 using CoWorkHub.Services.Auth;
 using CoWorkHub.Services.BackgroundServices;
@@ -28,6 +28,10 @@ if (File.Exists(envPath))
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddEnvironmentVariables();
+
+var connectionString = builder.Configuration.GetConnectionString("CoWorkHubConnection");
+builder.Services.AddDbContext<_210095Context>(options =>
+    options.UseSqlServer(connectionString));
 
 // Add services to the container.
 builder.Services.AddTransient<ICountryService, CountryService>();
@@ -102,10 +106,6 @@ builder.Services.AddSwaggerGen(c =>
     } });
 
 });
-
-var connectionString = builder.Configuration.GetConnectionString("CoWorkHubConnection");
-builder.Services.AddDbContext<_210095Context>(options =>
-    options.UseSqlServer(connectionString));
 
 builder.Services.AddMapster();
 builder.Services.AddAuthentication("BasicAuthentication")

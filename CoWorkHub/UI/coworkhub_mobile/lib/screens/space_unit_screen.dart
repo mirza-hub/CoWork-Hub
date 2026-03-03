@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import '../../providers/space_unit_provider.dart';
 import '../../models/space_unit.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../exceptions/user_exception.dart';
 
 class SpaceUnitScreen extends StatefulWidget {
   final int workspaceTypeId;
@@ -338,9 +339,17 @@ class _SpaceUnitScreenState extends State<SpaceUnitScreen> {
         await fetchUnits(reset: true);
       }
     } catch (e) {
+      String message = "Greška pri rezervaciji.";
+
+      if (e is UserException) {
+        message = e.message;
+      } else {
+        message = e.toString();
+      }
+
       showTopFlushBar(
         context: context,
-        message: "Greška pri rezervaciji: $e",
+        message: message,
         backgroundColor: Colors.red,
       );
     }

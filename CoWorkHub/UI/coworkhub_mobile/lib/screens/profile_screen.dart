@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:coworkhub_mobile/models/extensions/user_image_extension.dart';
 import 'package:coworkhub_mobile/providers/auth_provider.dart';
 import 'package:coworkhub_mobile/utils/flushbar_helper.dart';
+import 'package:coworkhub_mobile/exceptions/user_exception.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../models/user.dart';
 import '../providers/user_provider.dart';
@@ -190,15 +190,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       String message = "Greška prilikom registracije.";
 
-      if (e is http.Response) {
-        try {
-          final errorJson = jsonDecode(e.body);
-          if (errorJson["errors"] != null &&
-              errorJson["errors"]["userError"] != null) {
-            message = errorJson["errors"]["userError"][0];
-          }
-        } catch (_) {}
+      if (e is UserException) {
+        message = e.message;
+      } else {
+        message = e.toString();
       }
+
       showTopFlushBar(
         context: context,
         message: message,
@@ -330,7 +327,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
+        preferredSize: const Size.fromHeight(40),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 43, 16, 5),
@@ -441,91 +438,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'Korisničko ime',
                         controller: _controllers['username']!,
                       ),
-
-                      // Lozinka
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        validator: passwordValidator,
-                        decoration: InputDecoration(
-                          labelText: 'Lozinka',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                          ),
-                        ),
+                      _readOnlyField('Email', user.email),
+                      _readOnlyField(
+                        'Uloga',
+                        user.userRoles
+                            .map((role) => role.role.roleName)
+                            .join(', '),
                       ),
-                      const SizedBox(height: 12),
+                      ExpansionTile(
+                        title: const Text(
+                          'Promjena lozinke',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                        ),
+                        leading: const Icon(Icons.lock_outline),
+                        childrenPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        children: [
+                          // Lozinka
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            validator: passwordValidator,
+                            decoration: InputDecoration(
+                              labelText: 'Lozinka',
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
 
-                      // Potvrda lozinke
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscureConfirmPassword,
-                        validator: (value) {
-                          if (_passwordController.text.isEmpty) {
-                            return null;
-                          }
-                          if (value != _passwordController.text) {
-                            return "Lozinke se ne podudaraju";
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          labelText: 'Potvrda lozinke',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscureConfirmPassword =
-                                  !_obscureConfirmPassword,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // Stara lozinka
-                      TextFormField(
-                        controller: _oldPasswordController,
-                        obscureText: _obscureOldPassword,
-                        validator: oldPasswordValidator,
-                        decoration: InputDecoration(
-                          labelText: 'Stara lozinka',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureOldPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscureOldPassword = !_obscureOldPassword,
+                          // Potvrda lozinke
+                          TextFormField(
+                            controller: _confirmPasswordController,
+                            obscureText: _obscureConfirmPassword,
+                            validator: (value) {
+                              if (_passwordController.text.isEmpty) {
+                                return null;
+                              }
+                              if (value != _passwordController.text) {
+                                return "Lozinke se ne podudaraju";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              labelText: 'Potvrda lozinke',
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureConfirmPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () => setState(
+                                  () => _obscureConfirmPassword =
+                                      !_obscureConfirmPassword,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          // Stara lozinka
+                          TextFormField(
+                            controller: _oldPasswordController,
+                            obscureText: _obscureOldPassword,
+                            validator: oldPasswordValidator,
+                            decoration: InputDecoration(
+                              labelText: 'Stara lozinka',
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureOldPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () => setState(
+                                  () => _obscureOldPassword =
+                                      !_obscureOldPassword,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                     ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                _readOnlyField('Email', user.email),
-                _readOnlyField(
-                  'Uloga',
-                  user.userRoles.map((role) => role.role.roleName).join(', '),
                 ),
                 const SizedBox(height: 15),
                 SizedBox(

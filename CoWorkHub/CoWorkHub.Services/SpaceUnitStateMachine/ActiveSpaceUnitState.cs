@@ -53,7 +53,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "MAINTENANCE",
             "SpaceUnit",
-            $"Prostorna jedinica prebačena u stanje održavanja {entity.SpaceUnitId}");
+            $"Prostorna jedinica prebačena u stanje održavanja {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -84,7 +84,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "HIDE",
             "SpaceUnit",
-            $"Prostorna jedinica sakrivena {entity.SpaceUnitId}");
+            $"Prostorna jedinica sakrivena {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

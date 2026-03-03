@@ -99,7 +99,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "PaymentMethod",
-            $"Kreiran novi način plaćanja {entity.PaymentMethodId}");
+            $"Kreiran novi način plaćanja {entity.PaymentMethodName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -115,7 +115,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "UPDATE",
             "PaymentMethod",
-            $"Ažuriran način plaćanja {entity.PaymentMethodId}");
+            $"Ažuriran način plaćanja {entity.PaymentMethodName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -131,7 +131,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "DELETE",
             "PaymentMethod",
-            $"Obrisan način plaćanja {entity.PaymentMethodId}");
+            $"Obrisan način plaćanja {entity.PaymentMethodName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

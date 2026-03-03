@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:coworkhub_mobile/models/day_availability.dart';
 import 'package:coworkhub_mobile/models/review.dart';
@@ -10,7 +9,6 @@ import 'package:coworkhub_mobile/providers/working_space_image_provider.dart';
 import 'package:coworkhub_mobile/screens/review_form_screen.dart';
 import 'package:coworkhub_mobile/screens/space_unit_map_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -24,6 +22,7 @@ import '../../providers/user_provider.dart';
 import '../../screens/login_screen.dart';
 import '../../screens/payment_method_screen.dart';
 import '../../utils/flushbar_helper.dart';
+import '../../exceptions/user_exception.dart';
 
 class SpaceUnitDetailsScreen extends StatefulWidget {
   final int spaceUnitId;
@@ -357,15 +356,12 @@ class _SpaceUnitDetailsTabState extends State<SpaceUnitDetailsTab> {
     } catch (e) {
       String message = "Greška pri rezervaciji.";
 
-      if (e is http.Response) {
-        try {
-          final errorJson = jsonDecode(e.body);
-          if (errorJson["errors"] != null &&
-              errorJson["errors"]["userError"] != null) {
-            message = errorJson["errors"]["userError"][0];
-          }
-        } catch (_) {}
+      if (e is UserException) {
+        message = e.message;
+      } else {
+        message = e.toString();
       }
+
       showTopFlushBar(
         context: context,
         message: message,

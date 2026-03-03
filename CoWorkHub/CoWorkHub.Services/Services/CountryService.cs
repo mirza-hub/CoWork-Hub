@@ -122,7 +122,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "Country",
-            $"Kreirana nova država {entity.CountryId}");
+            $"Kreirana nova država {entity.CountryName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -138,7 +138,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "UPDATE",
             "Country",
-            $"Ažurirana država {entity.CountryId}");
+            $"Ažurirana država {entity.CountryName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -154,7 +154,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "DELETE",
             "City",
-            $"Obrisana država {entity.CountryId}");
+            $"Obrisana država {entity.CountryName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

@@ -1,13 +1,20 @@
 ﻿using DotNetEnv;
-using MimeKit;
 using MailKit.Net.Smtp;
-
+using Microsoft.Extensions.Logging;
+using MimeKit;
 
 namespace CoWorkHub.Subscriber
 {
     public class MailSender
     {
-        public static async Task SendEmail(EmailDTO mailObj)
+        private readonly ILogger<MailSender> _logger;
+
+        public MailSender(ILogger<MailSender> logger)
+        {
+            _logger = logger;
+        }
+
+        public async Task SendEmail(EmailDTO mailObj)
         {
             if (mailObj == null) return;
             //DotNetEnv.Env.Load();
@@ -20,18 +27,11 @@ namespace CoWorkHub.Subscriber
             bool enableSSL = bool.Parse(Environment.GetEnvironmentVariable("_enableSSL") ?? "true");
             string displayName = Environment.GetEnvironmentVariable("_displayName") ?? "no-reply";
             int timeout = int.Parse(Environment.GetEnvironmentVariable("_timeout") ?? "255");
-            Console.WriteLine($"From address: {fromAddress}");
-            Console.WriteLine($"Password: {password}");
-            Console.WriteLine($"Host: {host}");
-            Console.WriteLine($"Port: {port}");
-            Console.WriteLine($"SSL: {enableSSL}");
-            Console.WriteLine($"Dispay name: {displayName}");
-            Console.WriteLine($"Timeout: {timeout}");
-
-            Console.WriteLine($"Ušli smo u metodu prije password: {password}");
+ 
             if (password == string.Empty)
             {
-                Console.WriteLine("Šifra je prazna");
+                //Console.WriteLine("Šifra je prazna");
+                _logger.LogWarning("Šifra je prazna, email se neće poslati");
                 return;
             }
 
@@ -49,7 +49,13 @@ namespace CoWorkHub.Subscriber
 
             try
             {
-                Console.WriteLine($"Slanje emaila od {fromAddress} prema {mailObj.EmailTo}, preko porta: {port}, at {DateTime.Now}");
+                //Console.WriteLine($"Slanje emaila od {fromAddress} prema {mailObj.EmailTo}, preko porta: {port}, at {DateTime.Now}");
+                _logger.LogInformation("Slanje emaila od {FromAddress} prema {ToAddress}, preko porta: {Port}, at {Time}",
+                    fromAddress,
+                    mailObj.EmailTo,
+                    port,
+                    DateTime.Now
+ );
                 using (var smtp = new SmtpClient())
                 {
                     await smtp.ConnectAsync(host, port, enableSSL);
@@ -58,13 +64,16 @@ namespace CoWorkHub.Subscriber
                     await smtp.SendAsync(email);
                     await smtp.DisconnectAsync(true);
                 }
-                Console.WriteLine("Uspjesno poslata poruka");
+                //Console.WriteLine("Uspjesno poslata poruka");
+                _logger.LogInformation("Uspješno poslata poruka");
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Greška SA SLANJEM PORUKA!");
+                _logger.LogError("Greška SA SLANJEM PORUKA!");
+                _logger.LogError(ex.ToString());
 
-                Console.WriteLine($"Error {ex.Message}");
+                //Console.WriteLine($"Error {ex.Message}");
                 return;
             }
         }
