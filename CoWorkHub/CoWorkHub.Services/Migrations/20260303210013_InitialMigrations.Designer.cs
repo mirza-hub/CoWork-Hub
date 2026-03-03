@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CoWorkHub.Services.Migrations
 {
     [DbContext(typeof(_210095Context))]
-    [Migration("20260225150027_AddNotificationTable")]
-    partial class AddNotificationTable
+    [Migration("20260303210013_InitialMigrations")]
+    partial class InitialMigrations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

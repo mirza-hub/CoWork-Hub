@@ -19,7 +19,7 @@ namespace CoWorkHub.Worker
             _scopeFactory = scopeFactory;
         }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var hostname = Environment.GetEnvironmentVariable("_rabbitMqHost") ?? "rabbitmq";
             var username = Environment.GetEnvironmentVariable("_rabbitMqUser") ?? "guest";
@@ -27,8 +27,27 @@ namespace CoWorkHub.Worker
             var port = int.Parse(Environment.GetEnvironmentVariable("_rabbitMqPort") ?? "5672");
 
             var factory = new ConnectionFactory { HostName = hostname, UserName = username, Password = password, Port = port };
-            var connection = factory.CreateConnection();
-            var channel = connection.CreateModel();
+            IConnection connection = null;
+            IModel channel = null;
+
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    _logger.LogInformation("Trying to connect to RabbitMQ...");
+
+                    connection = factory.CreateConnection();
+                    channel = connection.CreateModel();
+
+                    _logger.LogInformation("Connected to RabbitMQ!");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("RabbitMQ not ready. Retrying in 5 seconds...");
+                    await Task.Delay(5000, stoppingToken);
+                }
+            }
 
             channel.QueueDeclare(
                 queue: "reservation_state_check",
@@ -56,7 +75,10 @@ namespace CoWorkHub.Worker
 
             channel.BasicConsume(queue: "reservation_state_check", autoAck: true, consumer: consumer);
 
-            return Task.CompletedTask;
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(1000, stoppingToken);
+            }
         }
     }
 }

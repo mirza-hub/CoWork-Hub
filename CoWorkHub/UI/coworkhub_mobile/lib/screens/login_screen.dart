@@ -128,7 +128,6 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Form(
             key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -155,7 +154,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   inputFormatters: [LengthLimitingTextInputFormatter(15)],
                   validator: _validateUsername,
-                  onChanged: (_) => _formKey.currentState?.validate(),
                   textInputAction: TextInputAction.next,
                 ),
 
