@@ -55,7 +55,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "ACTIVATE",
             "SpaceUnit",
-            $"Prostorna jedinica aktvirana {entity.SpaceUnitId}");
+            $"Prostorna jedinica aktvirana {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -86,7 +86,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "HIDE",
             "SpaceUnit",
-            $"Prostorna jedinica sakrivena {entity.SpaceUnitId}");
+            $"Prostorna jedinica sakrivena {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -118,7 +118,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "DELETE",
             "SpaceUnit",
-            $"Prostorna jedinica obrisana {entity.SpaceUnitId}");
+            $"Prostorna jedinica obrisana {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

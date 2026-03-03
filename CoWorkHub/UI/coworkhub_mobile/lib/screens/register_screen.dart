@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:coworkhub_mobile/models/city.dart';
 import 'package:coworkhub_mobile/providers/city_provider.dart';
 import 'package:coworkhub_mobile/providers/user_provider.dart';
@@ -8,7 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:coworkhub_mobile/exceptions/user_exception.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -75,14 +73,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       String message = "Greška prilikom registracije.";
 
-      if (e is http.Response) {
-        try {
-          final errorJson = jsonDecode(e.body);
-          if (errorJson["errors"] != null &&
-              errorJson["errors"]["userError"] != null) {
-            message = errorJson["errors"]["userError"][0];
-          }
-        } catch (_) {}
+      if (e is UserException) {
+        message = e.message;
+      } else {
+        message = e.toString();
       }
 
       Flushbar(
@@ -131,101 +125,84 @@ class _RegisterScreenState extends State<RegisterScreen> {
     ).show(context);
   }
 
-  String? _validateName(String? value) {
+  String? _validateFirstName(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Polje je obavezno';
+      return 'Ime je obavezno';
     }
 
     final v = value.trim();
 
     if (v.length > 30) {
-      return 'Ne smije biti duže od 30 karaktera';
+      return 'Ime ne smije biti duže od 30 karaktera';
     }
 
-    if (!RegExp(r'^[a-zA-ZšđčćžŠĐČĆŽ]').hasMatch(v)) {
-      return 'Polje mora početi slovom';
+    final regex = RegExp(r"^[a-zA-ZšđčćžŠĐČĆŽ]+([ -][a-zA-ZšđčćžŠĐČĆŽ]+)*$");
+
+    if (!regex.hasMatch(v)) {
+      return 'Dozvoljena su samo slova, razmak ili crta';
     }
 
-    if (!RegExp(r'[a-zA-ZšđčćžŠĐČĆŽ]$').hasMatch(v)) {
-      return 'Polje mora završiti slovom';
+    return null;
+  }
+
+  String? _validateLastName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Prezime je obavezno';
     }
 
-    if (v.contains('--')) {
-      return 'Polje ne može sadržavati dvije uzastopne crtice';
+    final v = value.trim();
+
+    if (v.length > 30) {
+      return 'Prezime ne smije biti duže od 30 karaktera';
     }
 
-    // PRAVILO 4: Ne može sadržavati dva razmaka zaredom
-    if (v.contains('  ')) {
-      return 'Polje ne može sadržavati dva uzastopna razmaka';
-    }
+    final regex = RegExp(r"^[a-zA-ZšđčćžŠĐČĆŽ]+([ -][a-zA-ZšđčćžŠĐČĆŽ]+)*$");
 
-    // PRAVILO 5: Ne može imati crticu i razmak zajedno
-    if (v.contains('- ') || v.contains(' -')) {
-      return 'Crtica i razmak ne mogu biti jedan pored drugog';
-    }
-
-    // PRAVILO 6: Samo slova, razmaci i crtice
-    final fullPattern = RegExp(
-      r'^[a-zA-ZšđčćžŠĐČĆŽ][a-zA-ZšđčćžŠĐČĆŽ \-]*[a-zA-ZšđčćžŠĐČĆŽ]$',
-    );
-
-    if (v.length == 1) {
-      // Ako je samo 1 karakter, mora biti slovo
-      if (!RegExp(r'^[a-zA-ZšđčćžŠĐČĆŽ]$').hasMatch(v)) {
-        return 'Polje mora biti slovo';
-      }
-    } else if (!fullPattern.hasMatch(v)) {
-      return 'Polje može sadržavati samo slova, razmake i crtice';
+    if (!regex.hasMatch(v)) {
+      return 'Dozvoljena su samo slova, razmak ili crta';
     }
 
     return null;
   }
 
   String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) return 'Email je obavezan';
+    if (value == null || value.trim().isEmpty) return 'Email je obavezan';
 
     if (value.length > 100) return 'Email ne smije biti duži od 100 karaktera';
 
     final regex = RegExp(r'^[\w.+-]+@([\w-]+\.)+[\w-]{2,}$');
-    if (!regex.hasMatch(value)) {
-      return 'Neispravan format emaila. Primjer: ime.prezime@gmail.com';
+
+    if (!regex.hasMatch(value.trim())) {
+      return 'Neispravan format emaila';
     }
 
     return null;
   }
 
   String? _validateUsername(String? value) {
-    if (value == null || value.trim().isEmpty) {
+    if (value == null || value.trim().isEmpty)
       return 'Korisničko ime je obavezno';
-    }
 
     final v = value.trim();
-    if (v.length < 3) return 'Mora imati najmanje 3 karaktera';
-    if (v.length > 15) return 'Ne smije biti duže od 15 karaktera';
 
-    // PRAVILO 1: Mora početi slovom ili brojem (ne _ ili -)
-    if (!RegExp(r'^[a-zA-Z0-9]').hasMatch(v)) {
-      return 'Korisničko ime mora početi slovom ili brojem';
-    }
+    if (v.length < 3 || v.length > 15)
+      return 'Korisničko ime mora imati 3–15 karaktera';
 
-    // PRAVILO 2: Mora završiti slovom ili brojem (ne _ ili -)
-    if (!RegExp(r'[a-zA-Z0-9]$').hasMatch(v)) {
-      return 'Korisničko ime mora završiti slovom ili brojem';
-    }
+    if (!RegExp(r'^[a-zA-Z0-9]').hasMatch(v))
+      return 'Mora početi slovom ili brojem';
 
-    // PRAVILO 3: Ne može sadržavati -- ili __ ili -_ ili _-
+    if (!RegExp(r'[a-zA-Z0-9]$').hasMatch(v))
+      return 'Mora završiti slovom ili brojem';
+
     if (v.contains('--') ||
         v.contains('__') ||
         v.contains('-_') ||
-        v.contains('_-')) {
+        v.contains('_-'))
       return 'Ne može sadržavati uzastopne specijalne znakove';
-    }
 
-    // PRAVILO 4: Samo slova, brojevi, _ i -
     final regex = RegExp(r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$');
-    if (!regex.hasMatch(v)) {
-      return 'Korisničko ime može sadržavati samo slova, brojeve, _ i -';
-    }
+
+    if (!regex.hasMatch(v)) return 'Dozvoljena su slova, brojevi, _ i -';
 
     return null;
   }
@@ -236,27 +213,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final trimmed = value.trim();
 
-    final regex2 = RegExp(r'^\+?[0-9]{6,15}$');
-    if (!regex2.hasMatch(trimmed)) {
-      return 'Neispravan format telefona';
-    }
+    final regex = RegExp(r'^\+?[0-9]{6,15}$');
 
-    // Ukloni sve osim brojeva i +
-    final digitsOnly = trimmed.replaceAll(RegExp(r'[^\d+]'), '');
-
-    if (digitsOnly.length < 6 || digitsOnly.length > 15) {
-      return 'Broj telefona mora imati 6-15 cifara';
-    }
-
-    // Ako počinje sa +, mora imati najmanje 8 cifara
-    if (digitsOnly.startsWith('+') && digitsOnly.length < 8) {
-      return 'Međunarodni broj mora imati najmanje 8 cifara';
-    }
-
-    // Provjeri format
-    final regex3 = RegExp(r'^\+?[0-9]{6,15}$');
-    if (!regex3.hasMatch(digitsOnly)) {
-      return 'Neispravan format telefona';
+    if (!regex.hasMatch(trimmed)) {
+      return 'Format: +38761234567';
     }
 
     return null;
@@ -299,6 +259,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: SingleChildScrollView(
                   child: Form(
                     key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -322,7 +283,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           inputFormatters: [
                             LengthLimitingTextInputFormatter(30),
                           ],
-                          validator: _validateName,
+                          validator: _validateFirstName,
+                          onChanged: (_) => _formKey.currentState?.validate(),
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 16),
@@ -337,7 +299,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           inputFormatters: [
                             LengthLimitingTextInputFormatter(30),
                           ],
-                          validator: _validateName,
+                          validator: _validateLastName,
+                          onChanged: (_) => _formKey.currentState?.validate(),
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 16),
@@ -353,6 +316,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             LengthLimitingTextInputFormatter(100),
                           ],
                           validator: _validateEmail,
+                          onChanged: (_) => _formKey.currentState?.validate(),
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                         ),
@@ -369,6 +333,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             LengthLimitingTextInputFormatter(15),
                           ],
                           validator: _validateUsername,
+                          onChanged: (_) => _formKey.currentState?.validate(),
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 16),
@@ -382,9 +347,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           inputFormatters: [
                             LengthLimitingTextInputFormatter(15),
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9+]'),
+                            ),
                           ],
                           validator: _validatePhone,
                           keyboardType: TextInputType.phone,
+                          onChanged: (_) => _formKey.currentState?.validate(),
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 16),
@@ -431,6 +400,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             LengthLimitingTextInputFormatter(64),
                           ],
                           validator: _validatePassword,
+                          onChanged: (_) => _formKey.currentState?.validate(),
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 16),
@@ -456,6 +426,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             LengthLimitingTextInputFormatter(64),
                           ],
                           validator: _validateConfirm,
+                          onChanged: (_) => _formKey.currentState?.validate(),
                         ),
                         const SizedBox(height: 24),
                         SizedBox(

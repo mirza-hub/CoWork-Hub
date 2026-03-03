@@ -10,11 +10,6 @@ using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
-var builder = Host.CreateApplicationBuilder(args);
-
-// eksplicitno učitavanje environment varijabli iz Docker-a
-builder.Configuration.AddEnvironmentVariables();
-
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".env");
 
 if (File.Exists(envPath))
@@ -22,13 +17,13 @@ if (File.Exists(envPath))
     Env.Load(envPath);
 }
 
-// DbContext
+var builder = Host.CreateApplicationBuilder(args);
+
+builder.Configuration.AddEnvironmentVariables();
+
+var connectionString = builder.Configuration.GetConnectionString("CoWorkHubConnection");
 builder.Services.AddDbContext<_210095Context>(options =>
-{
-    // U Dockeru koristi env varijablu, fallback na appsettings
-    var connStr = builder.Configuration.GetConnectionString("CoWorkHubConnection");
-    options.UseSqlServer(connStr);
-});
+    options.UseSqlServer(connectionString));
 
 // Mapster
 var mapsterConfig = new TypeAdapterConfig();

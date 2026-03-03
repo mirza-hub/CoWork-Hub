@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:coworkhub_desktop/exceptions/user_exception.dart';
 import 'package:coworkhub_desktop/models/resource.dart';
 import 'package:coworkhub_desktop/models/review.dart';
 import 'package:coworkhub_desktop/models/space_unit.dart';
@@ -163,14 +164,8 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
     } catch (e) {
       String message = "Greška prilikom učitavanja selektovani hresursa.";
 
-      if (e is http.Response) {
-        try {
-          final errorJson = jsonDecode(e.body);
-          if (errorJson["errors"] != null &&
-              errorJson["errors"]["userError"] != null) {
-            message = errorJson["errors"]["userError"][0];
-          }
-        } catch (_) {}
+      if (e is UserException) {
+        message = e.message;
       }
 
       Flushbar(
@@ -197,14 +192,8 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
     } catch (e) {
       String message = "Greška prilikom učitavanja slika.";
 
-      if (e is http.Response) {
-        try {
-          final errorJson = jsonDecode(e.body);
-          if (errorJson["errors"] != null &&
-              errorJson["errors"]["userError"] != null) {
-            message = errorJson["errors"]["userError"][0];
-          }
-        } catch (_) {}
+      if (e is UserException) {
+        message = e.message;
       }
 
       Flushbar(
@@ -231,14 +220,8 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
     } catch (e) {
       String message = "Greška prilikom učitavanja dozvoljenih akcija.";
 
-      if (e is http.Response) {
-        try {
-          final errorJson = jsonDecode(e.body);
-          if (errorJson["errors"] != null &&
-              errorJson["errors"]["userError"] != null) {
-            message = errorJson["errors"]["userError"][0];
-          }
-        } catch (_) {}
+      if (e is UserException) {
+        message = e.message;
       }
 
       Flushbar(
@@ -271,14 +254,8 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
       setState(() => _loadingWorkspaceTypes = false);
       String message = "Greška prilikom učitavanja tipova prostora.";
 
-      if (e is http.Response) {
-        try {
-          final errorJson = jsonDecode(e.body);
-          if (errorJson["errors"] != null &&
-              errorJson["errors"]["userError"] != null) {
-            message = errorJson["errors"]["userError"][0];
-          }
-        } catch (_) {}
+      if (e is UserException) {
+        message = e.message;
       }
 
       Flushbar(
@@ -305,14 +282,8 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
       setState(() => _loadingResources = false);
       String message = "Greška prilikom učitavanja resursa.";
 
-      if (e is http.Response) {
-        try {
-          final errorJson = jsonDecode(e.body);
-          if (errorJson["errors"] != null &&
-              errorJson["errors"]["userError"] != null) {
-            message = errorJson["errors"]["userError"][0];
-          }
-        } catch (_) {}
+      if (e is UserException) {
+        message = e.message;
       }
 
       Flushbar(
@@ -364,14 +335,8 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
     } catch (e) {
       String message = "Greška prilikom odabira slika.";
 
-      if (e is http.Response) {
-        try {
-          final errorJson = jsonDecode(e.body);
-          if (errorJson["errors"] != null &&
-              errorJson["errors"]["userError"] != null) {
-            message = errorJson["errors"]["userError"][0];
-          }
-        } catch (_) {}
+      if (e is UserException) {
+        message = e.message;
       }
 
       Flushbar(
@@ -480,14 +445,8 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
       } catch (e) {
         String message = "Greška prilikom ažuriranja prostornih jedinica.";
 
-        if (e is http.Response) {
-          try {
-            final errorJson = jsonDecode(e.body);
-            if (errorJson["errors"] != null &&
-                errorJson["errors"]["userError"] != null) {
-              message = errorJson["errors"]["userError"][0];
-            }
-          } catch (_) {}
+        if (e is UserException) {
+          message = e.message;
         }
 
         Flushbar(
@@ -506,14 +465,8 @@ class _SpaceUnitFormScreenState extends State<SpaceUnitFormScreen>
       } catch (e) {
         String message = "Greška prilikom kreiranja prostornih jedinica.";
 
-        if (e is http.Response) {
-          try {
-            final errorJson = jsonDecode(e.body);
-            if (errorJson["errors"] != null &&
-                errorJson["errors"]["userError"] != null) {
-              message = errorJson["errors"]["userError"][0];
-            }
-          } catch (_) {}
+        if (e is UserException) {
+          message = e.message;
         }
 
         Flushbar(

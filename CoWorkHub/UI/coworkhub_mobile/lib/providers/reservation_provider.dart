@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:coworkhub_mobile/models/reservation.dart';
 import 'package:http/http.dart' as http;
+import '../exceptions/user_exception.dart';
 import 'base_provider.dart';
 
 class ReservationProvider extends BaseProvider<Reservation> {
@@ -23,7 +24,7 @@ class ReservationProvider extends BaseProvider<Reservation> {
       final json = jsonDecode(response.body);
       return json['reservationId'];
     } else {
-      throw Exception('Greška prilikom kreiranja rezervacije');
+      throw _handleError(response);
     }
   }
 
@@ -35,16 +36,7 @@ class ReservationProvider extends BaseProvider<Reservation> {
       return fromJson(jsonDecode(response.body));
     }
 
-    final body = jsonDecode(response.body);
-
-    if (body is Map && body['errors'] != null) {
-      final errors = body['errors'] as Map<String, dynamic>;
-      if (errors['userError'] != null && errors['userError'] is List) {
-        throw (errors['userError'][0]);
-      }
-    }
-
-    throw Exception("Greška sa servera (${response.statusCode})");
+    throw _handleError(response);
   }
 
   Future<Reservation> complete(int id) async {
@@ -56,19 +48,7 @@ class ReservationProvider extends BaseProvider<Reservation> {
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
     } else {
-      try {
-        final body = jsonDecode(response.body);
-        if (body is Map && body['errors'] != null) {
-          final errors = body['errors'] as Map<String, dynamic>;
-          if (errors['userError'] != null && errors['userError'] is List) {
-            throw errors['userError'][0].toString();
-          }
-        }
-      } catch (_) {
-        throw "Kompletiranje nije moguće";
-      }
-
-      throw "Greška sa servera: ${response.statusCode}";
+      throw _handleError(response);
     }
   }
 
@@ -81,19 +61,7 @@ class ReservationProvider extends BaseProvider<Reservation> {
     if (isValidResponse(response)) {
       return fromJson(jsonDecode(response.body));
     } else {
-      try {
-        final body = jsonDecode(response.body);
-        if (body is Map && body['errors'] != null) {
-          final errors = body['errors'] as Map<String, dynamic>;
-          if (errors['userError'] != null && errors['userError'] is List) {
-            throw errors['userError'][0].toString();
-          }
-        }
-      } catch (_) {
-        throw "Potvrda nije moguća";
-      }
-
-      throw "Greška sa servera: ${response.statusCode}";
+      throw _handleError(response);
     }
   }
 
@@ -107,7 +75,7 @@ class ReservationProvider extends BaseProvider<Reservation> {
       final data = jsonDecode(response.body) as List;
       return data.map((e) => e.toString()).toList();
     } else {
-      throw Exception('Greška prilikom dohvaćanja dozvoljenih akcija');
+      throw _handleError(response);
     }
   }
 
@@ -121,6 +89,46 @@ class ReservationProvider extends BaseProvider<Reservation> {
       return jsonDecode(response.body) as bool;
     }
 
-    throw Exception('Ne mogu provjeriti recenziju');
+    throw _handleError(response);
+  }
+
+  UserException _handleError(http.Response response) {
+    try {
+      final data = jsonDecode(response.body);
+
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errorsMap = data['errors'] as Map<String, dynamic>;
+
+        if (errorsMap.isNotEmpty) {
+          final firstKey = errorsMap.keys.first;
+          final errorValue = errorsMap[firstKey];
+
+          if (errorValue is List && errorValue.isNotEmpty) {
+            return UserException(
+              errorValue.first.toString(),
+              statusCode: response.statusCode,
+            );
+          }
+        }
+      }
+
+      if (data['message'] != null) {
+        return UserException(
+          data['message'].toString(),
+          statusCode: response.statusCode,
+        );
+      }
+
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      if (e is UserException) rethrow;
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    }
   }
 }

@@ -1,12 +1,10 @@
-import 'dart:convert';
-
+import 'package:coworkhub_desktop/exceptions/user_exception.dart';
 import 'package:coworkhub_desktop/models/country.dart';
 import 'package:coworkhub_desktop/providers/country_provider.dart';
 import 'package:coworkhub_desktop/screens/country_screen.dart';
 import 'package:coworkhub_desktop/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 
 class CountryFormScreen extends StatefulWidget {
   final Country? country;
@@ -78,35 +76,16 @@ class _CountryFormScreenState extends State<CountryFormScreen> {
         });
       }
     } catch (e) {
-      if (e is http.Response) {
-        try {
-          final errorData = jsonDecode(e.body);
-          if (errorData['errors'] != null &&
-              errorData['errors']['userError'] != null) {
-            String message = errorData['errors']['userError'].join("\n");
-            showTopFlushBar(
-              context: context,
-              message: message,
-              backgroundColor: Colors.red,
-            );
-          } else {
-            showTopFlushBar(
-              context: context,
-              message: "Greška: ${e.statusCode}",
-              backgroundColor: Colors.red,
-            );
-          }
-        } catch (_) {
-          showTopFlushBar(
-            context: context,
-            message: "Greška: ${e.statusCode} - ${e.body}",
-            backgroundColor: Colors.red,
-          );
-        }
+      if (e is UserException) {
+        showTopFlushBar(
+          context: context,
+          message: e.message,
+          backgroundColor: Colors.red,
+        );
       } else {
         showTopFlushBar(
           context: context,
-          message: "Došlo je do greške: $e",
+          message: "Neočekivana greška",
           backgroundColor: Colors.red,
         );
       }

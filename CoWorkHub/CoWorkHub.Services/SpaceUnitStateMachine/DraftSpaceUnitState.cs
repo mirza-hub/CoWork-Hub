@@ -60,7 +60,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "ACTIVATE",
             "SpaceUnit",
-            $"Prostorna jedinica aktvirana {entity.SpaceUnitId}");
+            $"Prostorna jedinica aktvirana {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -96,6 +96,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
 
             Mapper.Map(request, entity);
             entity.ModifiedAt = DateTime.UtcNow;
+            int _currentUserId = (int)_currentUserService.GetUserId();
 
             if (request.ResourcesList != null)
             {
@@ -111,6 +112,17 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
                 {
                     del.IsDeleted = true;
                     del.DeletedAt = DateTime.UtcNow;
+                    var resources = Context.SpaceUnitResources.Include(x => x.SpaceUnit).Include(x => x.Resources).FirstOrDefault(x => x.SpaceResourcesId == del.SpaceResourcesId);
+                    _notificationService.Insert(new NotificationInsertRequest
+                    {
+                        UserId = _currentUserId,
+                        Message = $"Uspješno ste obrisali resurs {resources.Resources.ResourceName} za prostor {resources.SpaceUnit.Name}."
+                    });
+                    _activityLogService.LogAsync(
+                        _currentUserId,
+                        "DELETE",
+                        "SpaceUnitResource",
+                        $"Obrisan resurs {resources.Resources.ResourceName.ToUpper()}  za prostor  {resources.SpaceUnit.Name.ToUpper()}");
                 }
 
                 var toAdd = request.ResourcesList
@@ -129,12 +141,11 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
                 }
             }
 
-            int _currentUserId = (int)_currentUserService.GetUserId();
             _activityLogService.LogAsync(
             _currentUserId,
             "UPDATE",
             "SpaceUnit",
-            $"Prostorna jedinica ažurirana {entity.SpaceUnitId}");
+            $"Prostorna jedinica ažurirana {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -165,7 +176,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "HIDE",
             "SpaceUnit",
-            $"Prostorna jedinica sakrivena {entity.SpaceUnitId}");
+            $"Prostorna jedinica sakrivena {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -197,7 +208,7 @@ namespace CoWorkHub.Services.WorkingSpaceStateMachine
             _currentUserId,
             "DELETE",
             "SpaceUnit",
-            $"Prostorna jedinica obrisana {entity.SpaceUnitId}");
+            $"Prostorna jedinica obrisana {entity.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

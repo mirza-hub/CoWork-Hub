@@ -5,6 +5,7 @@ import 'package:coworkhub_mobile/providers/space_unit_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/flushbar_helper.dart';
+import '../../exceptions/user_exception.dart';
 
 class ReviewFormScreen extends StatefulWidget {
   final int spaceUnitId;
@@ -84,9 +85,17 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
 
       Navigator.pop(context, true);
     } catch (e) {
+      String message = "Greška pri slanju recenzije.";
+
+      if (e is UserException) {
+        message = e.message;
+      } else {
+        message = e.toString();
+      }
+
       showTopFlushBar(
         context: context,
-        message: "Greška: $e",
+        message: message,
         backgroundColor: Colors.red,
       );
     } finally {

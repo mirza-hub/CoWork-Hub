@@ -62,7 +62,7 @@ namespace CoWorkHub.Services.Seed
                 context.SaveChanges();
             }
 
-            // 6. Users
+            // 5. Users
             if (!context.Users.Any())
             {
                 var adminSalt = passwordService.GenerateSalt();
@@ -170,7 +170,7 @@ namespace CoWorkHub.Services.Seed
                 context.SaveChanges();
             }
 
-            // 7. User Roles
+            // 6. User Roles
             if (!context.UserRoles.Any())
             {
                 context.UserRoles.AddRange(
@@ -184,7 +184,7 @@ namespace CoWorkHub.Services.Seed
                 context.SaveChanges();
             }
 
-            // 8. Working spaces
+            // 7. Working spaces
             if (!context.WorkingSpaces.Any())
             {
                 context.WorkingSpaces.AddRange(
@@ -264,7 +264,7 @@ namespace CoWorkHub.Services.Seed
                 context.SaveChanges();
             }
 
-            // 9. Resources
+            // 8. Resources
             if (!context.Resources.Any())
             {
                 context.Resources.AddRange(
@@ -279,7 +279,7 @@ namespace CoWorkHub.Services.Seed
                 context.SaveChanges();
             }
 
-            // 11. Payment methods
+            // 9. Payment methods
             if (!context.PaymentMethods.Any())
             {
                 context.PaymentMethods.AddRange(
@@ -288,7 +288,7 @@ namespace CoWorkHub.Services.Seed
                 context.SaveChanges();
             }
 
-            // 12. Space Units
+            // 10. Space Units
             if (!context.SpaceUnits.Any())
             {
                 context.SpaceUnits.AddRange(
@@ -528,7 +528,7 @@ namespace CoWorkHub.Services.Seed
             }
 
 
-            // 12. Space Units Resources
+            // 11. Space Units Resources
             if (!context.SpaceUnitResources.Any())
             {
                 context.SpaceUnitResources.AddRange(

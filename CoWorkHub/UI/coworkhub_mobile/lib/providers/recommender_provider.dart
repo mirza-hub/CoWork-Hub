@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:coworkhub_mobile/models/recommendation.dart';
+import 'package:coworkhub_mobile/exceptions/user_exception.dart';
 import 'package:http/http.dart' as http;
 import 'auth_provider.dart';
 import 'base_provider.dart';
@@ -20,13 +21,53 @@ class RecommenderProvider {
     );
 
     if (response.statusCode >= 300) {
-      throw Exception("Failed to load recommendations");
+      throw _handleError(response);
     }
 
     final data = jsonDecode(response.body);
     final List list = data['recommendations'];
 
     return list.map((e) => Recommendation.fromJson(e)).toList();
+  }
+
+  UserException _handleError(http.Response response) {
+    try {
+      final data = jsonDecode(response.body);
+
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errorsMap = data['errors'] as Map<String, dynamic>;
+
+        if (errorsMap.isNotEmpty) {
+          final firstKey = errorsMap.keys.first;
+          final errorValue = errorsMap[firstKey];
+
+          if (errorValue is List && errorValue.isNotEmpty) {
+            return UserException(
+              errorValue.first.toString(),
+              statusCode: response.statusCode,
+            );
+          }
+        }
+      }
+
+      if (data['message'] != null) {
+        return UserException(
+          data['message'].toString(),
+          statusCode: response.statusCode,
+        );
+      }
+
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      if (e is UserException) rethrow;
+      return UserException(
+        "Greška sa servera (${response.statusCode})",
+        statusCode: response.statusCode,
+      );
+    }
   }
 
   Map<String, String> _createHeaders(bool isLoggedIn) {

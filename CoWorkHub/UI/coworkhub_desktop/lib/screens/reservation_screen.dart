@@ -541,7 +541,8 @@ class _ReservationScreenState extends State<ReservationScreen> {
                             width: constraints.maxWidth,
                             child: DataTable(
                               headingRowHeight: 50,
-                              dataRowHeight: 48,
+                              dataRowMinHeight: 48,
+                              dataRowMaxHeight: 60,
                               columnSpacing: 0,
                               horizontalMargin: 0,
                               headingRowColor:

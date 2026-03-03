@@ -98,43 +98,46 @@ namespace CoWorkHub.Services.Services
         public override void AfterInsert(SpaceUnitResourcesInsertRequest request, SpaceUnitResource entity)
         {
             base.AfterInsert(request, entity);
+            var resources = Context.SpaceUnitResources.Include(x => x.SpaceUnit).Include(x => x.Resources).FirstOrDefault(x => x.SpaceResourcesId == entity.SpaceResourcesId);
             int _currentUserId = (int)_currentUserService.GetUserId();
             _activityLogService.LogAsync(
             _currentUserId,
             "CREATE",
             "SpaceUnitResource",
-            $"Dodan novi resurs {entity.ResourcesId} za prostor {entity.SpaceUnitId}");
+            $"Dodan novi resurs {resources.Resources.ResourceName.ToUpper()} za prostor {resources.SpaceUnit.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
-                Message = $"Uspješno ste dodali resurs {entity.Resources.ResourceName} za prostor {entity.SpaceUnit.Name}."
+                Message = $"Uspješno ste dodali resurs {resources.Resources.ResourceName} za prostor {resources.SpaceUnit.Name}."
             });
         }
 
         public override void AfterUpdate(SpaceUnitResourcesUpdateRequest request, SpaceUnitResource entity)
         {
             base.AfterUpdate(request, entity);
+            var resources = Context.SpaceUnitResources.Include(x => x.SpaceUnit).Include(x => x.Resources).FirstOrDefault(x => x.SpaceResourcesId == entity.SpaceResourcesId);
             int _currentUserId = (int)_currentUserService.GetUserId();
             _activityLogService.LogAsync(
             _currentUserId,
             "UPDATE",
             "SpaceUnitResource",
-            $"Ažuriran novi resurs {entity.ResourcesId} za prostor {entity.SpaceUnitId}");
+            $"Ažuriran novi resurs {resources.Resources.ResourceName.ToUpper()} za prostor {resources.SpaceUnit.Name.ToUpper()}");
         }
 
         public override void AfterDelete(SpaceUnitResource entity)
         {
             base.AfterDelete(entity);
             int _currentUserId = (int)_currentUserService.GetUserId();
+            var resources = Context.SpaceUnitResources.Include(x => x.SpaceUnit).Include(x => x.Resources).FirstOrDefault(x => x.SpaceResourcesId == entity.SpaceResourcesId);
             _activityLogService.LogAsync(
             _currentUserId,
             "DELETE",
             "SpaceUnitResource",
-            $"Obrisan resurs {entity.ResourcesId} za prostor {entity.SpaceUnitId}");
+            $"Obrisan resurs {resources.Resources.ResourceName.ToUpper()}  za prostor  {resources.SpaceUnit.Name.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
-                Message = $"Uspješno ste obrisali resurs {entity.Resources.ResourceName} za prostor {entity.SpaceUnit.Name}."
+                Message = $"Uspješno ste obrisali resurs {resources.Resources.ResourceName} za prostor {resources.SpaceUnit.Name}."
             });
         }
     }

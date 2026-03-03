@@ -164,7 +164,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "City",
-            $"Kreiran novi grad {entity.CityId}");
+            $"Kreiran novi grad {entity.CityName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -180,7 +180,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "UPDATE",
             "City",
-            $"Ažuriran grad {entity.CityId}");
+            $"Ažuriran grad {entity.CityName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -196,7 +196,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "DELETE",
             "City",
-            $"Obrisan grad {entity.CityId}");
+            $"Obrisan grad {entity.CityName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,

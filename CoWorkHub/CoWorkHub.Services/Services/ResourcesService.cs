@@ -110,7 +110,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "CREATE",
             "Resource",
-            $"Kreiran novi resurs {entity.ResourcesId}");
+            $"Kreiran novi resurs {entity.ResourceName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -126,7 +126,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "UPDATE",
             "Resource",
-            $"Ažuriran resurs {entity.ResourcesId}");
+            $"Ažuriran resurs {entity.ResourceName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
@@ -142,7 +142,7 @@ namespace CoWorkHub.Services.Services
             _currentUserId,
             "DELETE",
             "Resource",
-            $"Obrisan resurs {entity.ResourcesId}");
+            $"Obrisan resurs {entity.ResourceName.ToUpper()}");
             _notificationService.Insert(new NotificationInsertRequest
             {
                 UserId = _currentUserId,
